@@ -4,16 +4,17 @@
  * Hero.tsx — BSL Construction
  * -------------------------------------------------------------------------
  * Scroll-scrubbed video hero with a responsive, mobile-first layout.
+ * - Mobile-safe video priming (play -> pause -> seek) so iOS/Android render frames.
+ * - Poster + static fallback image for Low Power Mode / data saver.
  * - Larger, optically centered captions on small screens.
  * - Edge-safe progress bar (inset from screen edges).
- * - Collapsible/compact SEO strip on mobile.
- * - Rely on CSS media queries for layout changes, refs for animation updates.
  * -------------------------------------------------------------------------
  */
 
 import { useEffect, useRef, useState } from "react";
 
 const VIDEO_SRC = "/video1.mp4";
+const POSTER_SRC = "/hero-poster.jpg"; // Fallback image shown while video loads
 
 const START_TIME_SECONDS = 14;
 const SCROLL_LENGTH_VH = 130;
@@ -60,6 +61,7 @@ export default function Hero() {
   const lastFrameTimeRef = useRef<number | null>(null);
   const displayedTimeRef = useRef(START_TIME_SECONDS);
   const [isReady, setIsReady] = useState(false);
+  const [useFallback, setUseFallback] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -68,14 +70,43 @@ export default function Hero() {
 
     let fullDuration = 0;
     let playableDuration = 0;
+    let primed = false;
+
+    // Mobile fix: iOS/Android often will not decode/draw a frame until the
+    // video has actually played once. We briefly play(), then immediately
+    // pause(), then start our normal scroll-seeking. Autoplay policies may
+    // still block this (Low Power Mode / Data Saver), in which case we show
+    // the static fallback poster.
+    const primeVideo = async () => {
+      if (primed || playableDuration <= 0) return;
+      primed = true;
+
+      try {
+        video.muted = true;
+        video.currentTime = START_TIME_SECONDS;
+        await video.play();
+        video.pause();
+        setIsReady(true);
+      } catch {
+        // Autoplay blocked or video failed to start decoding
+        setUseFallback(true);
+      }
+    };
 
     const handleLoadedMetadata = () => {
       fullDuration = video.duration || 0;
       playableDuration = Math.max(fullDuration - START_TIME_SECONDS, 0);
       video.currentTime = START_TIME_SECONDS;
       displayedTimeRef.current = START_TIME_SECONDS;
-      video.pause();
-      setIsReady(true);
+      primeVideo();
+    };
+
+    const handleCanPlay = () => {
+      if (!isReady && !useFallback) primeVideo();
+    };
+
+    const handleError = () => {
+      setUseFallback(true);
     };
 
     const handleSeeking = () => {
@@ -86,8 +117,11 @@ export default function Hero() {
     };
 
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
+    video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("error", handleError);
     video.addEventListener("seeking", handleSeeking);
     video.addEventListener("seeked", handleSeeked);
+
     if (video.readyState >= 1) handleLoadedMetadata();
 
     const textLayers = [textLayerARef, textLayerBRef];
@@ -179,12 +213,14 @@ export default function Hero() {
 
     return () => {
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
+      video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("error", handleError);
       video.removeEventListener("seeking", handleSeeking);
       video.removeEventListener("seeked", handleSeeked);
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
       observer.disconnect();
     };
-  }, []);
+  }, [isReady, useFallback]);
 
   return (
     <div
@@ -197,12 +233,22 @@ export default function Hero() {
         <video
           ref={videoRef}
           src={VIDEO_SRC}
+          poster={POSTER_SRC}
           muted
+          autoPlay
           playsInline
-          preload="auto"
+          webkit-playsinline="true"
+          preload="metadata"
           disablePictureInPicture
           className={`hero-video ${isReady ? "hero-video-ready" : ""}`}
         />
+
+        {/* Static fallback shown when autoplay is blocked or video fails */}
+        {useFallback && (
+          <div className="hero-fallback">
+            <img src={POSTER_SRC} alt="BSL Construction project" />
+          </div>
+        )}
 
         <div className="hero-overlay" />
 
@@ -241,7 +287,6 @@ export default function Hero() {
 
       <style jsx>{`
         .hero-scroll-space {
-          /* Ensure enough vertical room on short landscape phones */
           min-height: 160vh;
         }
 
@@ -249,24 +294,35 @@ export default function Hero() {
           position: sticky;
           top: 0;
           height: 100vh;
-          height: 100dvh; /* dynamic viewport height for mobile browsers */
+          height: 100dvh;
           overflow: hidden;
           display: flex;
           align-items: center;
           justify-content: center;
         }
 
-        .hero-video {
+        .hero-video,
+        .hero-fallback {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
+          z-index: 0;
+        }
+
+        .hero-video {
           object-fit: cover;
           opacity: 0;
           transition: opacity 0.5s ease;
         }
         .hero-video-ready {
           opacity: 1;
+        }
+
+        .hero-fallback img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
         }
 
         .hero-overlay {
@@ -292,7 +348,6 @@ export default function Hero() {
           margin: 0 auto;
           box-sizing: border-box;
           padding: 0 1rem;
-          /* Pull up slightly on very short viewports so the SEO strip + nav don't crowd it */
           min-height: 5rem;
         }
 
@@ -405,9 +460,6 @@ export default function Hero() {
           }
         }
 
-        /* ----------------------------------------------------------------
-           Desktop refinements (> 768px)
-           ---------------------------------------------------------------- */
         @media (min-width: 769px) {
           .hero-caption-stack {
             bottom: 16%;
@@ -431,9 +483,6 @@ export default function Hero() {
           }
         }
 
-        /* ----------------------------------------------------------------
-           Small phones / very short viewports
-           ---------------------------------------------------------------- */
         @media (max-height: 560px) {
           .hero-caption-stack {
             bottom: 20%;
