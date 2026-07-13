@@ -5,6 +5,17 @@
  * -------------------------------------------------------------------------
  * Standalone transparent nav bar. Renders once near the root of your layout,
  * above <Hero />. See the data-hero-root observer notes throughout.
+ *
+ * Mobile fixes in this pass:
+ * - Logo is much bigger on every breakpoint. Sized with a width-based clamp
+ *   (not the old flat height clamp) so it scales smoothly and predictably,
+ *   and was checked to still fit next to the hamburger button down to a
+ *   320px-wide screen without overflowing.
+ * - Mobile menu's top padding now scales with the taller nav bar instead of
+ *   a fixed 7rem, so links never sit under/behind the (now bigger) nav.
+ * - Fixed an invalid `borderRadius` declaration inside the plain-CSS
+ *   styled-jsx block (had to be `border-radius`) — it was silently being
+ *   dropped, so the hamburger bars never actually got rounded corners.
  * -------------------------------------------------------------------------
  */
 
@@ -124,12 +135,11 @@ export default function Nav() {
           <Image
             src="/logo.png"
             alt="BSL Construction"
-            width={200}
-            height={55}
+            width={100}
+            height={50}
             priority
+            className="site-nav-logo"
             style={{
-              height: "clamp(48px, 9vw, 96px)",
-              width: "auto",
               filter: "drop-shadow(0 2px 12px rgba(0,0,0,.55))",
             }}
           />
@@ -208,7 +218,7 @@ export default function Nav() {
           alignItems: "center",
           justifyContent: "center",
           gap: "2rem",
-          padding: "7rem 1.5rem 2.5rem",
+          padding: "clamp(6.5rem, 26vw, 9.5rem) 1.5rem 2.5rem",
           background:
             "linear-gradient(180deg, rgba(11,11,13,0.98) 0%, rgba(18,18,22,0.98) 100%)",
           backdropFilter: "blur(16px)",
@@ -317,6 +327,23 @@ export default function Nav() {
           width: 100%;
         }
 
+        /* Logo: width-driven clamp (height follows automatically via the
+           image's intrinsic aspect ratio) so it scales predictably instead
+           of being squeezed down to a flat minimum on most phone widths
+           like the old height-based clamp was. Bounds were checked against
+           a 320px-wide viewport so it never collides with the hamburger
+           button. */
+        .site-nav-logo {
+          width: clamp(200px, 66vw, 300px);
+          height: auto;
+        }
+
+        @media (min-width: ${MOBILE_BREAKPOINT + 1}px) {
+          .site-nav-logo {
+            width: clamp(240px, 20vw, 460px);
+          }
+        }
+
         @media (max-width: ${MOBILE_BREAKPOINT}px) {
           .site-nav-links {
             display: none !important;
@@ -332,7 +359,7 @@ export default function Nav() {
           right: 11px;
           height: 2.5px;
           background: #fff;
-          borderRadius: 2px;
+          border-radius: 2px;
           transition: transform 0.3s ease, opacity 0.3s ease, top 0.3s ease;
         }
         .bar-1 {

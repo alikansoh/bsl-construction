@@ -4,16 +4,21 @@
  * Hero.tsx — BSL Construction
  * -------------------------------------------------------------------------
  * Scroll-scrubbed video hero with mobile-first responsive sizing.
- * - Video begins at 6 seconds.
- * - On phones the sticky hero viewport is shorter (78dvh) so the video
- *   doesn't feel oversized.
+ * - Video begins at the start of the clip.
+ * - On phones the sticky hero is a full-bleed 100dvh viewport (no side
+ *   "letterboxing" feel), with a top-loading progress bar (like a stories
+ *   UI) instead of the desktop's thin vertical side rail — a vertical bar
+ *   reads as clutter on a narrow screen, a top bar reads as native.
+ * - The SEO strip becomes a horizontally scrollable, snap-aligned row on
+ *   mobile with soft edge fades, instead of wrapping pills into a ragged
+ *   multi-line block.
  * - Scroll runway length is a CSS custom property, overridden per
  *   breakpoint, so the scrub distance itself is responsive (not just the
- *   viewport size) — this also fixes a mismatch that used to exist
- *   between the old JS constant and a hardcoded CSS min-height.
+ *   viewport size).
  * - Mobile-safe priming play-then-pause to force iOS/Android to decode.
  * - Poster + static fallback for Low Power Mode / Data Saver.
- * - Respects prefers-reduced-motion.
+ * - Respects prefers-reduced-motion and safe-area insets (notches/home
+ *   indicators), and has a dedicated short-landscape treatment.
  * -------------------------------------------------------------------------
  */
 
@@ -22,8 +27,8 @@ import { useEffect, useRef, useState } from "react";
 const VIDEO_SRC = "/video1.mp4";
 const POSTER_SRC = "/hero-poster.jpg"; // Add this to /public
 
-// Start playback at 6 seconds
-const START_TIME_SECONDS = 6;
+// Start playback at the beginning of the clip
+const START_TIME_SECONDS = 0;
 
 // How close the video's currentTime needs to be to the smoothed target
 // before we bother re-seeking. Smaller = more precise but more seek calls.
@@ -201,8 +206,12 @@ export default function Hero() {
         swapText(nextText);
       }
 
+      // Drive both the desktop (vertical, height-based) and mobile
+      // (horizontal, width-based) progress bar from a single CSS custom
+      // property, so no JS branching on breakpoint is needed — each
+      // layout just reads the property differently.
       if (progressFillRef.current) {
-        progressFillRef.current.style.height = `${progress * 100}%`;
+        progressFillRef.current.style.setProperty("--hero-progress", `${progress * 100}%`);
       }
 
       rafIdRef.current = requestAnimationFrame(loop);
@@ -257,7 +266,12 @@ export default function Hero() {
 
         <div className="hero-overlay" />
 
+        <div className="hero-progress">
+          <div ref={progressFillRef} className="hero-progress-fill" />
+        </div>
+
         <div className="hero-caption-stack">
+          <div className="hero-caption-glow" aria-hidden="true" />
           <h1
             ref={textLayerARef}
             className="hero-heading hero-text-show"
@@ -272,23 +286,21 @@ export default function Hero() {
           />
         </div>
 
-        <div className="hero-progress">
-          <div ref={progressFillRef} className="hero-progress-fill" />
+        <div className="hero-scroll-hint" aria-hidden="true">
+          <span className="hero-scroll-line" />
         </div>
 
         <div className="hero-seo">
-          {SEO_PHRASES.map((phrase, i) => (
-            <span key={phrase} className="hero-seo-pill">
-              {phrase}
-              {i < SEO_PHRASES.length - 1 && (
-                <span className="hero-seo-dot">•</span>
-              )}
-            </span>
-          ))}
-        </div>
-
-        <div className="hero-scroll-hint" aria-hidden="true">
-          <span className="hero-scroll-line" />
+          <div className="hero-seo-track">
+            {SEO_PHRASES.map((phrase, i) => (
+              <span key={phrase} className="hero-seo-pill">
+                {phrase}
+                {i < SEO_PHRASES.length - 1 && (
+                  <span className="hero-seo-dot">•</span>
+                )}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -345,17 +357,43 @@ export default function Hero() {
           inset: 0;
           background: linear-gradient(
             0deg,
-            rgba(0, 0, 0, 0.65) 0%,
-            rgba(0, 0, 0, 0.28) 30%,
-            rgba(0, 0, 0, 0.15) 50%,
-            rgba(0, 0, 0, 0.42) 100%
+            rgba(0, 0, 0, 0.72) 0%,
+            rgba(0, 0, 0, 0.32) 30%,
+            rgba(0, 0, 0, 0.12) 48%,
+            rgba(0, 0, 0, 0.4) 100%
           );
           z-index: 1;
         }
 
+        /* ----------------------------------------------------------------
+           Progress bar — vertical rail on desktop by default. Driven by
+           the --hero-progress custom property set from rAF.
+           ---------------------------------------------------------------- */
+        .hero-progress {
+          position: absolute;
+          right: 0.75rem;
+          top: 7.5rem;
+          width: 4px;
+          height: calc(100% - 12rem);
+          max-height: 220px;
+          background: rgba(255, 255, 255, 0.18);
+          border-radius: 2px;
+          z-index: 3;
+        }
+        .hero-progress-fill {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: var(--hero-progress, 0%);
+          background: #e0a077;
+          border-radius: 2px;
+          transition: height 0.05s linear;
+        }
+
         .hero-caption-stack {
           position: absolute;
-          bottom: 18%;
+          bottom: 21%;
           left: 0;
           right: 0;
           z-index: 2;
@@ -364,6 +402,19 @@ export default function Hero() {
           box-sizing: border-box;
           padding: 0 1rem;
           min-height: 5rem;
+        }
+
+        .hero-caption-glow {
+          position: absolute;
+          inset: -1.5rem -1rem;
+          background: radial-gradient(
+            ellipse at center,
+            rgba(0, 0, 0, 0.38) 0%,
+            rgba(0, 0, 0, 0.16) 55%,
+            transparent 80%
+          );
+          z-index: -1;
+          pointer-events: none;
         }
 
         .hero-heading {
@@ -390,56 +441,6 @@ export default function Hero() {
         .hero-text-hide {
           opacity: 0;
           transform: translateY(14px);
-        }
-
-        .hero-progress {
-          position: absolute;
-          right: 0.75rem;
-          top: 7.5rem;
-          width: 4px;
-          height: calc(100% - 12rem);
-          max-height: 220px;
-          background: rgba(255, 255, 255, 0.18);
-          border-radius: 2px;
-          z-index: 3;
-        }
-        .hero-progress-fill {
-          position: absolute;
-          bottom: 0;
-          width: 100%;
-          height: 0%;
-          background: #e0a077;
-          border-radius: 2px;
-          transition: height 0.05s linear;
-        }
-
-        .hero-seo {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          z-index: 2;
-          padding: 0.85rem 1rem;
-          padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
-          background: rgba(11, 11, 13, 0.45);
-          backdrop-filter: blur(6px);
-          -webkit-backdrop-filter: blur(6px);
-          display: flex;
-          flex-wrap: wrap;
-          justify-content: center;
-          gap: 0.35rem 1rem;
-        }
-        .hero-seo-pill {
-          font-size: clamp(0.65rem, 1.4vw, 0.75rem);
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.78);
-          font-weight: 600;
-          white-space: nowrap;
-        }
-        .hero-seo-dot {
-          margin-inline-start: 1rem;
-          color: rgba(255, 255, 255, 0.28);
         }
 
         .hero-scroll-hint {
@@ -479,6 +480,41 @@ export default function Hero() {
         }
 
         /* ----------------------------------------------------------------
+           SEO strip — wraps/centers on desktop by default; overridden to a
+           horizontally scrollable snap row on mobile below.
+           ---------------------------------------------------------------- */
+        .hero-seo {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 2;
+          background: rgba(11, 11, 13, 0.45);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+        }
+        .hero-seo-track {
+          padding: 0.85rem 1rem;
+          padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.35rem 1rem;
+        }
+        .hero-seo-pill {
+          font-size: clamp(0.65rem, 1.4vw, 0.75rem);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.78);
+          font-weight: 600;
+          white-space: nowrap;
+        }
+        .hero-seo-dot {
+          margin-inline-start: 1rem;
+          color: rgba(255, 255, 255, 0.28);
+        }
+
+        /* ----------------------------------------------------------------
            Very small phones
            ---------------------------------------------------------------- */
         @media (max-width: 380px) {
@@ -486,36 +522,145 @@ export default function Hero() {
             --hero-scroll-length: 125vh;
           }
           .hero-caption-stack {
-            padding: 0 0.75rem;
-            bottom: 20%;
+            padding: 0 0.5rem;
+            bottom: 23%;
+            min-height: 6.5rem;
           }
           .hero-heading {
-            font-size: clamp(1.5rem, 7vw, 1.9rem);
-          }
-          .hero-seo {
-            padding: 0.65rem 0.75rem;
-            padding-bottom: calc(0.65rem + env(safe-area-inset-bottom));
-            gap: 0.3rem 0.6rem;
-          }
-          .hero-seo-dot {
-            margin-inline-start: 0.6rem;
+            font-size: clamp(1.45rem, 7.5vw, 1.85rem);
+            line-height: 1.22;
           }
         }
 
         /* ----------------------------------------------------------------
-           Phones / small screens: shorter hero viewport + shorter runway
+           Phones / small screens — the big overhaul:
+           - full-bleed 100dvh sticky viewport, no rounded clipping
+           - top-loading progress bar instead of a side rail
+           - horizontally scrollable, snap-aligned SEO strip
+           - caption sits with guaranteed clearance above the SEO strip
+           - shorter, calmer scroll hint
            ---------------------------------------------------------------- */
         @media (max-width: 768px) {
           .hero-scroll-space {
-            --hero-scroll-length: 135vh;
+            --hero-scroll-length: 130vh;
           }
           .hero-sticky {
-            height: 78dvh;
-            border-radius: 0 0 1.5rem 1.5rem;
+            height: 100dvh;
           }
+
+          .hero-overlay {
+            background: linear-gradient(
+              0deg,
+              rgba(0, 0, 0, 0.78) 0%,
+              rgba(0, 0, 0, 0.4) 26%,
+              rgba(0, 0, 0, 0.14) 46%,
+              rgba(0, 0, 0, 0.42) 100%
+            );
+          }
+
+          /* Progress becomes a slim top-loading bar, safe-area aware. */
           .hero-progress {
-            top: 6rem;
-            max-height: 160px;
+            top: env(safe-area-inset-top, 0px);
+            left: 0;
+            right: 0;
+            width: 100%;
+            height: 3px;
+            max-height: none;
+            border-radius: 0;
+            background: rgba(255, 255, 255, 0.16);
+          }
+          .hero-progress-fill {
+            top: 0;
+            bottom: auto;
+            height: 100%;
+            width: var(--hero-progress, 0%);
+            border-radius: 0;
+            transition: width 0.05s linear;
+          }
+
+          .hero-caption-stack {
+            bottom: calc(6.75rem + env(safe-area-inset-bottom));
+            width: min(90vw, 480px);
+            min-height: 6rem;
+          }
+          .hero-heading {
+            font-size: clamp(1.6rem, 6.6vw, 2.1rem);
+            line-height: 1.24;
+            letter-spacing: -0.01em;
+          }
+
+          .hero-scroll-hint {
+            bottom: calc(4.5rem + env(safe-area-inset-bottom));
+            width: 18px;
+            height: 28px;
+          }
+          .hero-scroll-line {
+            height: 6px;
+            margin-top: 6px;
+          }
+
+          /* SEO strip: single row, horizontally scrollable, edge-faded. */
+          .hero-seo-track {
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            overflow-x: auto;
+            overflow-y: hidden;
+            scroll-snap-type: x proximity;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+            padding: 0.7rem 1.25rem;
+            padding-bottom: calc(0.7rem + env(safe-area-inset-bottom));
+            gap: 0.35rem 0.85rem;
+            mask-image: linear-gradient(
+              to right,
+              transparent 0,
+              black 20px,
+              black calc(100% - 20px),
+              transparent 100%
+            );
+            -webkit-mask-image: linear-gradient(
+              to right,
+              transparent 0,
+              black 20px,
+              black calc(100% - 20px),
+              transparent 100%
+            );
+          }
+          .hero-seo-track::-webkit-scrollbar {
+            display: none;
+          }
+          .hero-seo-pill {
+            scroll-snap-align: center;
+            font-size: 0.7rem;
+          }
+          .hero-seo-dot {
+            margin-inline-start: 0.85rem;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Short-landscape phones — dvh is tiny here, so trim vertical
+           chrome aggressively and drop the scroll hint entirely.
+           ---------------------------------------------------------------- */
+        @media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+          .hero-scroll-space {
+            --hero-scroll-length: 220vh;
+          }
+          .hero-caption-stack {
+            bottom: 5rem;
+            width: min(80vw, 460px);
+            min-height: 3.5rem;
+          }
+          .hero-heading {
+            font-size: clamp(1.15rem, 4.5vw, 1.5rem);
+            line-height: 1.2;
+          }
+          .hero-scroll-hint {
+            display: none;
+          }
+          .hero-seo-track {
+            padding-top: 0.5rem;
+            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
           }
         }
 
@@ -543,15 +688,6 @@ export default function Hero() {
           .hero-heading {
             font-size: clamp(2rem, 3.6vw, 2.75rem);
           }
-          .hero-progress {
-            right: 0;
-            top: 0;
-            width: 3px;
-            height: 100%;
-            max-height: none;
-            border-radius: 0;
-            background: rgba(255, 255, 255, 0.15);
-          }
           .hero-scroll-hint {
             display: none;
           }
@@ -572,7 +708,7 @@ export default function Hero() {
           }
         }
 
-        @media (max-height: 560px) {
+        @media (max-height: 560px) and (min-width: 769px) {
           .hero-caption-stack {
             bottom: 20%;
           }
