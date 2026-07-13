@@ -3,23 +3,26 @@
 /**
  * Hero.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Scroll-scrubbed video hero with a responsive, mobile-first layout.
- * - Mobile-safe video priming (play -> pause -> seek) so iOS/Android render frames.
- * - Poster + static fallback image for Low Power Mode / data saver.
- * - Larger, optically centered captions on small screens.
- * - Edge-safe progress bar (inset from screen edges).
+ * Scroll-scrubbed video hero with mobile-first responsive sizing.
+ * - Video begins at 6 seconds.
+ * - On phones the sticky hero viewport is shorter (78dvh) so the video
+ *   doesn't feel oversized.
+ * - Mobile-safe priming play-then-pause to force iOS/Android to decode.
+ * - Poster + static fallback for Low Power Mode / Data Saver.
  * -------------------------------------------------------------------------
  */
 
 import { useEffect, useRef, useState } from "react";
 
 const VIDEO_SRC = "/video1.mp4";
-const POSTER_SRC = "/hero-poster.jpg"; // Fallback image shown while video loads
+const POSTER_SRC = "/hero-poster.jpg"; // Add this to /public
 
-const START_TIME_SECONDS = 14;
+// Start playback at 6 seconds
+const START_TIME_SECONDS = 6;
+
 const SCROLL_LENGTH_VH = 130;
 const SEEK_THRESHOLD = 0.015;
-const SMOOTHING = 0.28;
+const SMOOTHING = 0.24; // slightly gentler catch-up = smoother feel
 const MAX_DT = 1 / 24;
 const OBSERVER_MARGIN = "200px 0px 200px 0px";
 
@@ -72,11 +75,6 @@ export default function Hero() {
     let playableDuration = 0;
     let primed = false;
 
-    // Mobile fix: iOS/Android often will not decode/draw a frame until the
-    // video has actually played once. We briefly play(), then immediately
-    // pause(), then start our normal scroll-seeking. Autoplay policies may
-    // still block this (Low Power Mode / Data Saver), in which case we show
-    // the static fallback poster.
     const primeVideo = async () => {
       if (primed || playableDuration <= 0) return;
       primed = true;
@@ -88,7 +86,6 @@ export default function Hero() {
         video.pause();
         setIsReady(true);
       } catch {
-        // Autoplay blocked or video failed to start decoding
         setUseFallback(true);
       }
     };
@@ -235,7 +232,6 @@ export default function Hero() {
           src={VIDEO_SRC}
           poster={POSTER_SRC}
           muted
-          autoPlay
           playsInline
           webkit-playsinline="true"
           preload="metadata"
@@ -243,7 +239,6 @@ export default function Hero() {
           className={`hero-video ${isReady ? "hero-video-ready" : ""}`}
         />
 
-        {/* Static fallback shown when autoplay is blocked or video fails */}
         {useFallback && (
           <div className="hero-fallback">
             <img src={POSTER_SRC} alt="BSL Construction project" />
@@ -275,7 +270,9 @@ export default function Hero() {
           {SEO_PHRASES.map((phrase, i) => (
             <span key={phrase} className="hero-seo-pill">
               {phrase}
-              {i < SEO_PHRASES.length - 1 && <span className="hero-seo-dot">•</span>}
+              {i < SEO_PHRASES.length - 1 && (
+                <span className="hero-seo-dot">•</span>
+              )}
             </span>
           ))}
         </div>
@@ -460,6 +457,23 @@ export default function Hero() {
           }
         }
 
+        /* ----------------------------------------------------------------
+           Phones / small screens: shorter hero viewport
+           ---------------------------------------------------------------- */
+        @media (max-width: 768px) {
+          .hero-sticky {
+            height: 78dvh;
+            border-radius: 0 0 1.5rem 1.5rem;
+          }
+          .hero-progress {
+            top: 6rem;
+            max-height: 160px;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Desktop refinements
+           ---------------------------------------------------------------- */
         @media (min-width: 769px) {
           .hero-caption-stack {
             bottom: 16%;
