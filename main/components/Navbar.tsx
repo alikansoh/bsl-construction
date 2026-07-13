@@ -128,8 +128,7 @@ export default function Nav() {
             height={55}
             priority
             style={{
-              // Larger logo: bigger minimum, bigger maximum, and faster scale.
-              height: "clamp(36px, 5.5vw, 54px)",
+              height: "clamp(48px, 9vw, 96px)",
               width: "auto",
               filter: "drop-shadow(0 2px 12px rgba(0,0,0,.55))",
             }}
@@ -221,6 +220,38 @@ export default function Nav() {
             "transform .4s cubic-bezier(0.22, 1, 0.36, 1), opacity .35s ease, visibility .4s",
         }}
       >
+        {/* Close X */}
+        <button
+          type="button"
+          className="mobile-nav-close"
+          aria-label="Close menu"
+          onClick={() => setIsMenuOpen(false)}
+          style={{
+            position: "absolute",
+            top: "clamp(1.2rem, 3vw, 2rem)",
+            right: "clamp(1.25rem, 5vw, 3rem)",
+            width: 44,
+            height: 44,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            border: "none",
+            borderRadius: 10,
+            background: "rgba(255,255,255,0.08)",
+            color: "#fff",
+            fontSize: "1.6rem",
+            fontWeight: 300,
+            lineHeight: 1,
+            cursor: "pointer",
+            zIndex: 53,
+            opacity: isMenuOpen ? 1 : 0,
+            transform: isMenuOpen ? "scale(1)" : "scale(0.85)",
+            transition: "opacity .35s ease .25s, transform .35s ease .25s, background .25s ease",
+          }}
+        >
+          ×
+        </button>
+
         {NAV_LINKS.map((label, i) => (
           <Link
             key={label}
@@ -301,7 +332,7 @@ export default function Nav() {
           right: 11px;
           height: 2.5px;
           background: #fff;
-          border-radius: 2px;
+          borderRadius: 2px;
           transition: transform 0.3s ease, opacity 0.3s ease, top 0.3s ease;
         }
         .bar-1 {
@@ -327,6 +358,10 @@ export default function Nav() {
 
         .mobile-nav-link:hover {
           opacity: 0.75 !important;
+        }
+
+        .mobile-nav-close:hover {
+          background: rgba(255,255,255,0.16) !important;
         }
       `}</style>
     </>

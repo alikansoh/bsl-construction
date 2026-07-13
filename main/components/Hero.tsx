@@ -7,8 +7,13 @@
  * - Video begins at 6 seconds.
  * - On phones the sticky hero viewport is shorter (78dvh) so the video
  *   doesn't feel oversized.
+ * - Scroll runway length is a CSS custom property, overridden per
+ *   breakpoint, so the scrub distance itself is responsive (not just the
+ *   viewport size) — this also fixes a mismatch that used to exist
+ *   between the old JS constant and a hardcoded CSS min-height.
  * - Mobile-safe priming play-then-pause to force iOS/Android to decode.
  * - Poster + static fallback for Low Power Mode / Data Saver.
+ * - Respects prefers-reduced-motion.
  * -------------------------------------------------------------------------
  */
 
@@ -20,9 +25,12 @@ const POSTER_SRC = "/hero-poster.jpg"; // Add this to /public
 // Start playback at 6 seconds
 const START_TIME_SECONDS = 6;
 
-const SCROLL_LENGTH_VH = 130;
-const SEEK_THRESHOLD = 0.015;
-const SMOOTHING = 0.24; // slightly gentler catch-up = smoother feel
+// How close the video's currentTime needs to be to the smoothed target
+// before we bother re-seeking. Smaller = more precise but more seek calls.
+const SEEK_THRESHOLD = 0.01;
+// Exponential smoothing factor for the scroll -> video-time follow.
+// Lower = smoother/laggier, higher = snappier/twitchier.
+const SMOOTHING = 0.2;
 const MAX_DT = 1 / 24;
 const OBSERVER_MARGIN = "200px 0px 200px 0px";
 
@@ -66,6 +74,11 @@ export default function Hero() {
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
 
+  // Runs once on mount. Previously this effect re-ran whenever isReady or
+  // useFallback changed, which tore down and rebuilt the rAF loop and the
+  // IntersectionObserver right as the video became ready — causing a visible
+  // hitch. Readiness/fallback are now tracked with local closures instead of
+  // being effect dependencies, so the loop stays uninterrupted.
   useEffect(() => {
     const video = videoRef.current;
     const scrollSpace = scrollSpaceRef.current;
@@ -74,6 +87,8 @@ export default function Hero() {
     let fullDuration = 0;
     let playableDuration = 0;
     let primed = false;
+
+    const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const primeVideo = async () => {
       if (primed || playableDuration <= 0) return;
@@ -99,7 +114,7 @@ export default function Hero() {
     };
 
     const handleCanPlay = () => {
-      if (!isReady && !useFallback) primeVideo();
+      if (!primed) primeVideo();
     };
 
     const handleError = () => {
@@ -143,9 +158,6 @@ export default function Hero() {
       activeLayerRef.current = nextIndex;
     };
 
-    const canFastSeek =
-      typeof (video as unknown as { fastSeek?: unknown }).fastSeek === "function";
-
     const loop = (now: number) => {
       if (!inViewRef.current) {
         rafIdRef.current = null;
@@ -164,20 +176,22 @@ export default function Hero() {
 
       if (playableDuration > 0) {
         const targetTime = START_TIME_SECONDS + progress * playableDuration;
-        const factor = frameFactor(SMOOTHING, dt);
+        // With reduced motion, snap straight to the target instead of
+        // easing toward it — no scroll-linked animation, just the value.
+        const factor = reduceMotionQuery.matches ? 1 : frameFactor(SMOOTHING, dt);
         displayedTimeRef.current += (targetTime - displayedTimeRef.current) * factor;
 
         if (
           !isSeekingRef.current &&
           Math.abs(video.currentTime - displayedTimeRef.current) > SEEK_THRESHOLD
         ) {
-          if (canFastSeek) {
-            (video as unknown as { fastSeek: (t: number) => void }).fastSeek(
-              displayedTimeRef.current
-            );
-          } else {
-            video.currentTime = displayedTimeRef.current;
-          }
+          // Plain currentTime assignment (not fastSeek) on purpose: fastSeek
+          // is unsupported in Chromium entirely, and where it does exist
+          // (Safari) it snaps to the nearest keyframe rather than the exact
+          // requested time, which reads as jumpy during a slow scroll-scrub.
+          // A precise seek every frame looks smoother in practice as long
+          // as the source video has reasonably frequent keyframes.
+          video.currentTime = displayedTimeRef.current;
         }
       }
 
@@ -217,15 +231,11 @@ export default function Hero() {
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
       observer.disconnect();
     };
-  }, [isReady, useFallback]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
-    <div
-      ref={scrollSpaceRef}
-      data-hero-root
-      className="hero-scroll-space"
-      style={{ height: `${SCROLL_LENGTH_VH}vh`, position: "relative" }}
-    >
+    <div ref={scrollSpaceRef} data-hero-root className="hero-scroll-space">
       <div className="hero-sticky">
         <video
           ref={videoRef}
@@ -284,7 +294,13 @@ export default function Hero() {
 
       <style jsx>{`
         .hero-scroll-space {
-          min-height: 160vh;
+          /* Scroll runway length — how much scroll distance it takes to
+             scrub through the whole clip. Overridden per breakpoint below
+             so the pacing feels right on phones vs. desktop, instead of
+             using one fixed length for every viewport. */
+          --hero-scroll-length: 170vh;
+          height: var(--hero-scroll-length);
+          position: relative;
         }
 
         .hero-sticky {
@@ -311,6 +327,8 @@ export default function Hero() {
           object-fit: cover;
           opacity: 0;
           transition: opacity 0.5s ease;
+          will-change: opacity;
+          transform: translateZ(0);
         }
         .hero-video-ready {
           opacity: 1;
@@ -358,7 +376,8 @@ export default function Hero() {
           color: #fff;
           text-align: center;
           text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
-          transition: opacity 0.45s ease, transform 0.45s ease;
+          transition: opacity 0.4s ease, transform 0.4s ease;
+          will-change: opacity, transform;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -391,6 +410,7 @@ export default function Hero() {
           height: 0%;
           background: #e0a077;
           border-radius: 2px;
+          transition: height 0.05s linear;
         }
 
         .hero-seo {
@@ -400,6 +420,7 @@ export default function Hero() {
           right: 0;
           z-index: 2;
           padding: 0.85rem 1rem;
+          padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
           background: rgba(11, 11, 13, 0.45);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
@@ -458,9 +479,36 @@ export default function Hero() {
         }
 
         /* ----------------------------------------------------------------
-           Phones / small screens: shorter hero viewport
+           Very small phones
+           ---------------------------------------------------------------- */
+        @media (max-width: 380px) {
+          .hero-scroll-space {
+            --hero-scroll-length: 125vh;
+          }
+          .hero-caption-stack {
+            padding: 0 0.75rem;
+            bottom: 20%;
+          }
+          .hero-heading {
+            font-size: clamp(1.5rem, 7vw, 1.9rem);
+          }
+          .hero-seo {
+            padding: 0.65rem 0.75rem;
+            padding-bottom: calc(0.65rem + env(safe-area-inset-bottom));
+            gap: 0.3rem 0.6rem;
+          }
+          .hero-seo-dot {
+            margin-inline-start: 0.6rem;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Phones / small screens: shorter hero viewport + shorter runway
            ---------------------------------------------------------------- */
         @media (max-width: 768px) {
+          .hero-scroll-space {
+            --hero-scroll-length: 135vh;
+          }
           .hero-sticky {
             height: 78dvh;
             border-radius: 0 0 1.5rem 1.5rem;
@@ -468,6 +516,18 @@ export default function Hero() {
           .hero-progress {
             top: 6rem;
             max-height: 160px;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Tablets
+           ---------------------------------------------------------------- */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .hero-scroll-space {
+            --hero-scroll-length: 155vh;
+          }
+          .hero-caption-stack {
+            width: min(70vw, 600px);
           }
         }
 
@@ -497,12 +557,42 @@ export default function Hero() {
           }
         }
 
+        /* ----------------------------------------------------------------
+           Large / ultra-wide desktop
+           ---------------------------------------------------------------- */
+        @media (min-width: 1440px) {
+          .hero-scroll-space {
+            --hero-scroll-length: 190vh;
+          }
+          .hero-caption-stack {
+            width: min(56vw, 720px);
+          }
+          .hero-heading {
+            font-size: clamp(2.25rem, 3vw, 3.25rem);
+          }
+        }
+
         @media (max-height: 560px) {
           .hero-caption-stack {
             bottom: 20%;
           }
           .hero-scroll-hint {
             display: none;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Respect reduced-motion preferences
+           ---------------------------------------------------------------- */
+        @media (prefers-reduced-motion: reduce) {
+          .hero-heading {
+            transition: opacity 0.15s linear, transform 0.15s linear;
+          }
+          .hero-video {
+            transition: opacity 0.15s linear;
+          }
+          .hero-scroll-line {
+            animation: none;
           }
         }
       `}</style>
