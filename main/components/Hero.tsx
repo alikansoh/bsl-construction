@@ -19,9 +19,6 @@
  * - Poster + static fallback for Low Power Mode / Data Saver.
  * - Respects prefers-reduced-motion and safe-area insets (notches/home
  *   indicators), and has a dedicated short-landscape treatment.
- * - Mobile fix in this pass: video is scaled down slightly (zoomed out) on
- *   phones so it feels less tightly cropped, with a solid dark background
- *   behind it so no edges are ever visible while scaling.
  * -------------------------------------------------------------------------
  */
 
@@ -327,9 +324,6 @@ export default function Hero() {
           display: flex;
           align-items: center;
           justify-content: center;
-          /* Fallback fill so scaling the video down on mobile never
-             reveals a transparent gap at the edges. */
-          background: #0b0b0d;
         }
 
         .hero-video,
@@ -344,7 +338,7 @@ export default function Hero() {
         .hero-video {
           object-fit: cover;
           opacity: 0;
-          transition: opacity 0.5s ease, transform 0.35s ease;
+          transition: opacity 0.5s ease;
           will-change: opacity;
           transform: translateZ(0);
         }
@@ -525,7 +519,7 @@ export default function Hero() {
            ---------------------------------------------------------------- */
         @media (max-width: 380px) {
           .hero-scroll-space {
-            --hero-scroll-length: 125vh;
+            --hero-scroll-length: 100vh;
           }
           .hero-caption-stack {
             padding: 0 0.5rem;
@@ -545,7 +539,6 @@ export default function Hero() {
            - horizontally scrollable, snap-aligned SEO strip
            - caption sits with guaranteed clearance above the SEO strip
            - shorter, calmer scroll hint
-           - video zoomed out slightly so it reads less tightly cropped
            ---------------------------------------------------------------- */
         @media (max-width: 768px) {
           .hero-scroll-space {
@@ -553,14 +546,6 @@ export default function Hero() {
           }
           .hero-sticky {
             height: 100dvh;
-          }
-
-          .hero-video {
-            /* Slight zoom-out: scales the cropped/cover video down a touch
-               so it feels less zoomed-in on narrow screens. The dark
-               .hero-sticky background behind it fills the edges — those
-               edges blend into the overlay's dark gradient anyway. */
-            transform: scale(0.92) translateZ(0);
           }
 
           .hero-overlay {
