@@ -360,7 +360,7 @@ export default function Hero() {
             rgba(0, 0, 0, 0.72) 0%,
             rgba(0, 0, 0, 0.32) 30%,
             rgba(0, 0, 0, 0.12) 48%,
-            rgba(0, 0, 0, 0.4) 100%
+            rgba(0, 0, 0, 0.16) 100%
           );
           z-index: 1;
         }
@@ -554,7 +554,7 @@ export default function Hero() {
               rgba(0, 0, 0, 0.78) 0%,
               rgba(0, 0, 0, 0.4) 26%,
               rgba(0, 0, 0, 0.14) 46%,
-              rgba(0, 0, 0, 0.42) 100%
+              rgba(0, 0, 0, 0.18) 100%
             );
           }
 

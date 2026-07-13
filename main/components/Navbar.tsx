@@ -135,8 +135,8 @@ export default function Nav() {
           <Image
             src="/logo.png"
             alt="BSL Construction"
-            width={150}
-            height={50}
+            width={200}
+            height={100}
             priority
             className="site-nav-logo"
             style={{
