@@ -3,36 +3,11 @@
 /**
  * Hero.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Scroll-scrubbed video (playback position follows scroll progress) with a
- * single large description that cross-fades to a new line of copy as you
- * scroll through each build stage.
- *
- * Nav has been split out into its own component — see Nav.tsx. Render them
- * together, Nav first, so it sits fixed above this section:
- *
- *   <Nav />
- *   <Hero />
- *
- * Smoothness (improved from the previous version):
- * - One continuous requestAnimationFrame loop (not scroll-event driven)
- * - The scroll → video-time lerp is now frame-rate independent: the catch-up
- *   speed is derived from real elapsed time (dt), not just "per frame", so
- *   scrubbing feels identical on a 60Hz and 120Hz display and doesn't lag
- *   or overshoot after a dropped frame / tab switch.
- * - Uses video.fastSeek() when the browser supports it, which is built for
- *   exactly this kind of rapid scrub-seeking and avoids the small stutter
- *   currentTime can cause when called dozens of times a second.
- * - The rAF loop pauses itself via IntersectionObserver once the hero is
- *   well outside the viewport, and resumes when it's back in range — no
- *   wasted seeks/paint work while you're reading further down the page.
- * - Caption swap is a real two-layer crossfade (both layers animate at once)
- *   instead of fade-out → setTimeout → fade-in, so there's no blank gap.
- * - Progress-bar/caption updates mutate the DOM directly (refs), not state,
- *   so there's no 60x/sec React re-render.
- *
- * Setup in your Next.js project:
- * 1) Put the video file at: public/video.mp4
- * 2) Import the component:  import Hero from "@/components/Hero";
+ * Scroll-scrubbed video hero with a responsive, mobile-first layout.
+ * - Larger, optically centered captions on small screens.
+ * - Edge-safe progress bar (inset from screen edges).
+ * - Collapsible/compact SEO strip on mobile.
+ * - Rely on CSS media queries for layout changes, refs for animation updates.
  * -------------------------------------------------------------------------
  */
 
@@ -40,35 +15,15 @@ import { useEffect, useRef, useState } from "react";
 
 const VIDEO_SRC = "/video1.mp4";
 
-// Fixed start point in seconds — playback always begins here (wood-frame stage)
 const START_TIME_SECONDS = 14;
-
-// Height (in vh) of the scroll-driven space. Must be > 100 (the viewport
-// height) or there's no scroll distance left to track — the animation
-// would just freeze at 0%. Lower = faster scroll, but keep it above ~110.
 const SCROLL_LENGTH_VH = 130;
-
-// Minimum time difference (seconds) before we bother issuing a new seek
 const SEEK_THRESHOLD = 0.015;
-
-// How quickly the video "catches up" to the scroll position, expressed as
-// the fraction of the remaining distance closed per 1/60s tick. Frame-rate
-// independent — see frameFactor() below. Lower = smoother/floatier,
-// higher = snappier/more literal to scroll speed.
 const SMOOTHING = 0.28;
-
-// Longest dt (seconds) we'll honor in one tick — caps the catch-up jump
-// after a dropped frame, background tab, or slow device hiccup.
 const MAX_DT = 1 / 24;
-
-// Rough distance (px) beyond the viewport at which we stop bothering to
-// keep the video synced — saves work while the hero is far off-screen.
 const OBSERVER_MARGIN = "200px 0px 200px 0px";
 
-// Bottom SEO strip — short and broad on purpose, not a long crowded list
 const SEO_PHRASES = ["New Builds", "Renovations", "Home Maintenance", "General Contracting"];
 
-// The one big description — BSL's services, replacing itself as you scroll
 const STAGES: { at: number; text: string }[] = [
   { at: 0.0, text: "Timber-frame construction, built to last." },
   { at: 0.45, text: "Full renovations and home extensions, done right." },
@@ -87,11 +42,6 @@ function getStageText(progress: number) {
   return current;
 }
 
-// Frame-rate independent smoothing factor: turns the "per frame" SMOOTHING
-// constant into a proper exponential decay based on elapsed time, so a
-// 120Hz display (dt ≈ 8ms) and a 60Hz display (dt ≈ 16ms) converge on the
-// target at the same real-world speed instead of the 120Hz one taking twice
-// as many small steps and feeling slower.
 function frameFactor(smoothing: number, dt: number) {
   return 1 - Math.pow(1 - smoothing, dt * 60);
 }
@@ -100,22 +50,15 @@ export default function Hero() {
   const scrollSpaceRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
-
-  // Two stacked caption layers for a true crossfade (both animate together,
-  // no gap between "old text gone" and "new text visible"). Kept as two
-  // explicitly named refs — not an array rendered via .map() — since
-  // mapping refs directly into JSX trips React's render-time ref check.
   const textLayerARef = useRef<HTMLHeadingElement>(null);
   const textLayerBRef = useRef<HTMLHeadingElement>(null);
   const activeLayerRef = useRef(0);
-
   const rafIdRef = useRef<number | null>(null);
   const isSeekingRef = useRef(false);
   const inViewRef = useRef(true);
   const lastTextRef = useRef(STAGES[0].text);
   const lastFrameTimeRef = useRef<number | null>(null);
   const displayedTimeRef = useRef(START_TIME_SECONDS);
-
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -151,27 +94,29 @@ export default function Hero() {
 
     const swapText = (nextText: string) => {
       const activeIndex = activeLayerRef.current;
-      const nextIndex = activeIndex === 0 ? 1 : 0;
+      const nextIndex = (activeIndex + 1) % 2;
       const activeEl = textLayers[activeIndex].current;
       const nextEl = textLayers[nextIndex].current;
       if (!activeEl || !nextEl) return;
 
-      nextEl.textContent = nextText;
-      // Both layers transition simultaneously — true crossfade, no gap.
-      nextEl.style.opacity = "1";
-      nextEl.style.transform = "translateY(0)";
-      activeEl.style.opacity = "0";
-      activeEl.style.transform = "translateY(-10px)";
+      if (nextEl.dataset.text !== nextText) {
+        nextEl.textContent = nextText;
+        nextEl.dataset.text = nextText;
+      }
+
+      nextEl.classList.remove("hero-text-hide");
+      nextEl.classList.add("hero-text-show");
+      activeEl.classList.remove("hero-text-show");
+      activeEl.classList.add("hero-text-hide");
 
       activeLayerRef.current = nextIndex;
     };
 
-    const canFastSeek = typeof (video as unknown as { fastSeek?: unknown }).fastSeek === "function";
+    const canFastSeek =
+      typeof (video as unknown as { fastSeek?: unknown }).fastSeek === "function";
 
     const loop = (now: number) => {
       if (!inViewRef.current) {
-        // Stop scheduling entirely while off-screen; the IntersectionObserver
-        // below will kick the loop back on when the hero re-enters range.
         rafIdRef.current = null;
         lastFrameTimeRef.current = null;
         return;
@@ -188,9 +133,6 @@ export default function Hero() {
 
       if (playableDuration > 0) {
         const targetTime = START_TIME_SECONDS + progress * playableDuration;
-        // Ease toward the target instead of snapping straight to it — this
-        // is what smooths out choppy trackpad/wheel scroll input. The
-        // factor is derived from dt so it behaves the same at any refresh rate.
         const factor = frameFactor(SMOOTHING, dt);
         displayedTimeRef.current += (targetTime - displayedTimeRef.current) * factor;
 
@@ -199,7 +141,9 @@ export default function Hero() {
           Math.abs(video.currentTime - displayedTimeRef.current) > SEEK_THRESHOLD
         ) {
           if (canFastSeek) {
-            (video as unknown as { fastSeek: (t: number) => void }).fastSeek(displayedTimeRef.current);
+            (video as unknown as { fastSeek: (t: number) => void }).fastSeek(
+              displayedTimeRef.current
+            );
           } else {
             video.currentTime = displayedTimeRef.current;
           }
@@ -246,19 +190,10 @@ export default function Hero() {
     <div
       ref={scrollSpaceRef}
       data-hero-root
+      className="hero-scroll-space"
       style={{ height: `${SCROLL_LENGTH_VH}vh`, position: "relative" }}
     >
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          height: "100vh",
-          overflow: "hidden",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
+      <div className="hero-sticky">
         <video
           ref={videoRef}
           src={VIDEO_SRC}
@@ -266,142 +201,248 @@ export default function Hero() {
           playsInline
           preload="auto"
           disablePictureInPicture
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: isReady ? 1 : 0,
-            transition: "opacity .5s ease",
-          }}
+          className={`hero-video ${isReady ? "hero-video-ready" : ""}`}
         />
 
-        {/* A little darkness so the text stays legible, without hiding the video */}
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(0deg, rgba(0,0,0,.55) 0%, rgba(0,0,0,.15) 35%, rgba(0,0,0,.1) 60%, rgba(0,0,0,.35) 100%)",
-            zIndex: 1,
-          }}
-        />
+        <div className="hero-overlay" />
 
-        {/* The one description — bottom-center, bigger, no blur panel behind it.
-            Two stacked layers crossfade between stage captions. */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: "16%",
-            insetInline: 0,
-            zIndex: 2,
-            maxWidth: "min(85vw, 640px)",
-            margin: "0 auto",
-          }}
-        >
+        <div className="hero-caption-stack">
           <h1
             ref={textLayerARef}
-            style={{
-              position: "relative",
-              fontSize: "clamp(1.5rem, 3.6vw, 2.5rem)",
-              fontWeight: 700,
-              lineHeight: 1.3,
-              color: "#fff",
-              textAlign: "center",
-              textShadow: "0 2px 16px rgba(0,0,0,.55)",
-              opacity: 1,
-              transform: "translateY(0)",
-              transition: "opacity .4s ease, transform .4s ease",
-              margin: 0,
-            }}
+            className="hero-heading hero-text-show"
+            data-text={STAGES[0].text}
           >
             {STAGES[0].text}
           </h1>
           <h1
             ref={textLayerBRef}
-            style={{
-              position: "absolute",
-              inset: 0,
-              fontSize: "clamp(1.5rem, 3.6vw, 2.5rem)",
-              fontWeight: 700,
-              lineHeight: 1.3,
-              color: "#fff",
-              textAlign: "center",
-              textShadow: "0 2px 16px rgba(0,0,0,.55)",
-              opacity: 0,
-              transform: "translateY(-10px)",
-              transition: "opacity .4s ease, transform .4s ease",
-              margin: 0,
-            }}
-          >
-            {""}
-          </h1>
-        </div>
-
-        {/* Thin scroll-progress indicator */}
-        <div
-          style={{
-            position: "absolute",
-            insetInlineEnd: 0,
-            top: 0,
-            width: 3,
-            height: "100%",
-            background: "rgba(255,255,255,.15)",
-            zIndex: 3,
-          }}
-        >
-          <div
-            ref={progressFillRef}
-            style={{
-              position: "absolute",
-              bottom: 0,
-              width: "100%",
-              height: "0%",
-              background: "#e0a077",
-            }}
+            className="hero-heading hero-text-hide"
+            data-text=""
           />
         </div>
 
-        {/* Minimal bottom SEO strip, not scroll-tied, kept short so it stays clean */}
-        <div
-          style={{
-            position: "absolute",
-            bottom: 0,
-            insetInline: 0,
-            zIndex: 2,
-            padding: "0.75rem 1rem",
-            background: "rgba(11,11,13,0.4)",
-            backdropFilter: "blur(4px)",
-            WebkitBackdropFilter: "blur(4px)",
-            display: "flex",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            gap: "0.4rem 1rem",
-          }}
-        >
+        <div className="hero-progress">
+          <div ref={progressFillRef} className="hero-progress-fill" />
+        </div>
+
+        <div className="hero-seo">
           {SEO_PHRASES.map((phrase, i) => (
-            <span
-              key={phrase}
-              style={{
-                fontSize: "clamp(0.65rem, 1.4vw, 0.75rem)",
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "rgba(255,255,255,0.7)",
-                fontWeight: 600,
-                whiteSpace: "nowrap",
-              }}
-            >
+            <span key={phrase} className="hero-seo-pill">
               {phrase}
-              {i < SEO_PHRASES.length - 1 && (
-                <span style={{ marginInlineStart: "1rem", color: "rgba(255,255,255,0.25)" }}>
-                  •
-                </span>
-              )}
+              {i < SEO_PHRASES.length - 1 && <span className="hero-seo-dot">•</span>}
             </span>
           ))}
         </div>
+
+        <div className="hero-scroll-hint" aria-hidden="true">
+          <span className="hero-scroll-line" />
+        </div>
       </div>
+
+      <style jsx>{`
+        .hero-scroll-space {
+          /* Ensure enough vertical room on short landscape phones */
+          min-height: 160vh;
+        }
+
+        .hero-sticky {
+          position: sticky;
+          top: 0;
+          height: 100vh;
+          height: 100dvh; /* dynamic viewport height for mobile browsers */
+          overflow: hidden;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .hero-video {
+          position: absolute;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          opacity: 0;
+          transition: opacity 0.5s ease;
+        }
+        .hero-video-ready {
+          opacity: 1;
+        }
+
+        .hero-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.65) 0%,
+            rgba(0, 0, 0, 0.28) 30%,
+            rgba(0, 0, 0, 0.15) 50%,
+            rgba(0, 0, 0, 0.42) 100%
+          );
+          z-index: 1;
+        }
+
+        .hero-caption-stack {
+          position: absolute;
+          bottom: 18%;
+          left: 0;
+          right: 0;
+          z-index: 2;
+          width: min(92vw, 560px);
+          margin: 0 auto;
+          box-sizing: border-box;
+          padding: 0 1rem;
+          /* Pull up slightly on very short viewports so the SEO strip + nav don't crowd it */
+          min-height: 5rem;
+        }
+
+        .hero-heading {
+          position: absolute;
+          inset: 0;
+          margin: 0;
+          font-size: clamp(1.75rem, 6vw, 2.75rem);
+          font-weight: 700;
+          line-height: 1.25;
+          color: #fff;
+          text-align: center;
+          text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
+          transition: opacity 0.45s ease, transform 0.45s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .hero-text-show {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        .hero-text-hide {
+          opacity: 0;
+          transform: translateY(14px);
+        }
+
+        .hero-progress {
+          position: absolute;
+          right: 0.75rem;
+          top: 7.5rem;
+          width: 4px;
+          height: calc(100% - 12rem);
+          max-height: 220px;
+          background: rgba(255, 255, 255, 0.18);
+          border-radius: 2px;
+          z-index: 3;
+        }
+        .hero-progress-fill {
+          position: absolute;
+          bottom: 0;
+          width: 100%;
+          height: 0%;
+          background: #e0a077;
+          border-radius: 2px;
+        }
+
+        .hero-seo {
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          right: 0;
+          z-index: 2;
+          padding: 0.85rem 1rem;
+          background: rgba(11, 11, 13, 0.45);
+          backdrop-filter: blur(6px);
+          -webkit-backdrop-filter: blur(6px);
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 0.35rem 1rem;
+        }
+        .hero-seo-pill {
+          font-size: clamp(0.65rem, 1.4vw, 0.75rem);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: rgba(255, 255, 255, 0.78);
+          font-weight: 600;
+          white-space: nowrap;
+        }
+        .hero-seo-dot {
+          margin-inline-start: 1rem;
+          color: rgba(255, 255, 255, 0.28);
+        }
+
+        .hero-scroll-hint {
+          position: absolute;
+          bottom: 5.5rem;
+          left: 50%;
+          transform: translateX(-50%);
+          z-index: 2;
+          width: 22px;
+          height: 34px;
+          border: 2px solid rgba(255, 255, 255, 0.55);
+          border-radius: 12px;
+          display: flex;
+          justify-content: center;
+          pointer-events: none;
+        }
+        .hero-scroll-line {
+          display: block;
+          width: 3px;
+          height: 7px;
+          margin-top: 7px;
+          background: rgba(255, 255, 255, 0.9);
+          border-radius: 2px;
+          animation: hero-bounce 1.6s ease-in-out infinite;
+        }
+
+        @keyframes hero-bounce {
+          0%,
+          100% {
+            transform: translateY(0);
+            opacity: 1;
+          }
+          50% {
+            transform: translateY(8px);
+            opacity: 0.5;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Desktop refinements (> 768px)
+           ---------------------------------------------------------------- */
+        @media (min-width: 769px) {
+          .hero-caption-stack {
+            bottom: 16%;
+            width: min(78vw, 640px);
+            padding: 0;
+          }
+          .hero-heading {
+            font-size: clamp(2rem, 3.6vw, 2.75rem);
+          }
+          .hero-progress {
+            right: 0;
+            top: 0;
+            width: 3px;
+            height: 100%;
+            max-height: none;
+            border-radius: 0;
+            background: rgba(255, 255, 255, 0.15);
+          }
+          .hero-scroll-hint {
+            display: none;
+          }
+        }
+
+        /* ----------------------------------------------------------------
+           Small phones / very short viewports
+           ---------------------------------------------------------------- */
+        @media (max-height: 560px) {
+          .hero-caption-stack {
+            bottom: 20%;
+          }
+          .hero-scroll-hint {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
