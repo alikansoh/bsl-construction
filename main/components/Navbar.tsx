@@ -3,31 +3,23 @@
 /**
  * Nav.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Standalone transparent nav bar. Renders once near the root of your layout,
- * above <Hero />. See the data-hero-root observer notes throughout.
- *
- * Mobile fixes in this pass:
- * - Logo is much bigger on every breakpoint. Sized with a width-based clamp
- *   (not the old flat height clamp) so it scales smoothly and predictably,
- *   and was checked to still fit next to the hamburger button down to a
- *   320px-wide screen without overflowing.
- * - Mobile menu's top padding now scales with the taller nav bar instead of
- *   a fixed 7rem, so links never sit under/behind the (now bigger) nav.
- * - Fixed an invalid `borderRadius` declaration inside the plain-CSS
- *   styled-jsx block (had to be `border-radius`) — it was silently being
- *   dropped, so the hamburger bars never actually got rounded corners.
- * -------------------------------------------------------------------------
+ * Transparent while the Hero's scroll-scrub video is still pinned/progressing.
+ * Switches to a solid white background only once the hero's scroll runway
+ * has been fully consumed (progress bar finished) and the page starts
+ * actually scrolling past the hero.
  */
 
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-const NAV_LINKS = ["Home", "About", "Services", "Contact Us"];
+const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact Us"];
 
-const HERO_SELECTOR = "[data-hero-root]";
-const FALLBACK_SCROLL_TRIGGER = 24;
 const MOBILE_BREAKPOINT = 768;
+
+// Small buffer so the switch feels intentional rather than firing at the
+// exact last pixel of the hero runway.
+const SCROLL_TRIGGER_BUFFER = 0;
 
 function navHref(label: string) {
   return label === "Home" ? "/" : `/${label.toLowerCase().replace(" ", "-")}`;
@@ -37,18 +29,31 @@ export default function Nav() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Observe hero bottom edge to decide when to apply the nav background.
+  // Switch nav background once the hero's scroll-scrub runway has been
+  // fully consumed — i.e. once the progress bar finishes and the sticky
+  // video releases and the page actually starts moving. Falls back to
+  // "any scroll" behavior if no [data-hero-root] element is found on the
+  // page, so this component still works on pages without the Hero.
   useEffect(() => {
     let ticking = false;
+    let threshold = 0;
+
+    const computeThreshold = () => {
+      const heroRoot = document.querySelector<HTMLElement>("[data-hero-root]");
+      if (heroRoot) {
+        // The sticky hero stays pinned for (scrollSpaceHeight - viewportHeight)
+        // of scroll distance. Once scrollY passes that, the hero has been
+        // fully scrubbed and the page is genuinely scrolling past it.
+        const runway = heroRoot.offsetHeight - window.innerHeight;
+        threshold = Math.max(runway, 0) + SCROLL_TRIGGER_BUFFER;
+      } else {
+        // No hero on this page — treat any scroll as "scrolled".
+        threshold = 0;
+      }
+    };
 
     const update = () => {
-      const heroEl = document.querySelector<HTMLElement>(HERO_SELECTOR);
-      if (heroEl) {
-        const heroBottom = heroEl.getBoundingClientRect().bottom;
-        setIsScrolled(heroBottom <= 0);
-      } else {
-        setIsScrolled(window.scrollY > FALLBACK_SCROLL_TRIGGER);
-      }
+      setIsScrolled(window.scrollY > threshold);
       ticking = false;
     };
 
@@ -59,17 +64,23 @@ export default function Nav() {
       }
     };
 
-    onScroll();
+    const onResize = () => {
+      computeThreshold();
+      onScroll();
+    };
+
+    computeThreshold();
+    update(); // check on mount
     window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+    window.addEventListener("resize", onResize, { passive: true });
+
     return () => {
       window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("resize", onResize);
     };
   }, []);
 
-  // Lock background scroll while mobile menu is open.
-  // Auto-close menu when returning to desktop width.
+  // Lock body scroll while mobile menu is open.
   useEffect(() => {
     document.body.style.overflow = isMenuOpen ? "hidden" : "";
 
@@ -109,16 +120,15 @@ export default function Nav() {
           alignItems: "center",
           justifyContent: "space-between",
           padding: "clamp(1rem, 2.5vw, 1.75rem) clamp(1.25rem, 5vw, 3rem)",
-          background: showBackground
-            ? "rgba(11,11,13,0.88)"
-            : "transparent",
+          background: showBackground ? "#ffffff" : "transparent",
           backdropFilter: showBackground ? "blur(12px)" : "none",
           WebkitBackdropFilter: showBackground ? "blur(12px)" : "none",
           borderBottom: showBackground
-            ? "1px solid rgba(255,255,255,0.10)"
+            ? "1px solid rgba(0,0,0,0.08)"
             : "1px solid transparent",
+          boxShadow: showBackground ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
           transition:
-            "background .35s ease, backdrop-filter .35s ease, border-color .35s ease",
+            "background .35s ease, backdrop-filter .35s ease, border-color .35s ease, box-shadow .35s ease",
         }}
       >
         <Link
@@ -129,7 +139,7 @@ export default function Nav() {
             alignItems: "center",
             lineHeight: 0,
             flexShrink: 0,
-            zIndex: 52, // sits above the mobile panel if needed
+            zIndex: 52,
           }}
         >
           <Image
@@ -140,7 +150,9 @@ export default function Nav() {
             priority
             className="site-nav-logo"
             style={{
-              filter: "drop-shadow(0 2px 12px rgba(0,0,0,.55))",
+              filter: showBackground
+                ? "drop-shadow(0 1px 4px rgba(0,0,0,0.1))"
+                : "drop-shadow(0 2px 12px rgba(0,0,0,.55))",
             }}
           />
         </Link>
@@ -162,20 +174,40 @@ export default function Nav() {
               style={{
                 fontSize: "0.92rem",
                 fontWeight: 600,
-                color: "#fff",
+                color: showBackground ? "#0b0b0d" : "#fff",
                 textDecoration: "none",
-                textShadow: "0 2px 10px rgba(0,0,0,.45)",
+                textShadow: showBackground
+                  ? "none"
+                  : "0 2px 10px rgba(0,0,0,.45)",
+                transition: "color .35s ease, text-shadow .35s ease",
               }}
             >
               {label}
             </Link>
           ))}
+
+          <Link
+            href="/contact#quote"
+            className="site-nav-cta"
+            style={{
+              fontSize: "0.9rem",
+              fontWeight: 600,
+              color: "#fff",
+              textDecoration: "none",
+              background: "#0b0b0d",
+              padding: "0.55rem 1.25rem",
+              borderRadius: 9999,
+              transition: "background .25s ease, transform .25s ease",
+            }}
+          >
+            Get Free Quote
+          </Link>
         </div>
 
         {/* Hamburger toggle */}
         <button
           type="button"
-          className="site-nav-toggle"
+          className={`site-nav-toggle${showBackground ? " scrolled" : ""}`}
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
           aria-expanded={isMenuOpen}
           aria-controls="site-nav-mobile-panel"
@@ -187,9 +219,9 @@ export default function Nav() {
             padding: 0,
             border: "none",
             borderRadius: 10,
-            background: isMenuOpen
-              ? "rgba(255,255,255,0.12)"
-              : "rgba(255,255,255,0.06)",
+            background: showBackground
+              ? "rgba(0,0,0,0.06)"
+              : "rgba(255,255,255,0.12)",
             cursor: "pointer",
             position: "relative",
             flexShrink: 0,
@@ -256,7 +288,8 @@ export default function Nav() {
             zIndex: 53,
             opacity: isMenuOpen ? 1 : 0,
             transform: isMenuOpen ? "scale(1)" : "scale(0.85)",
-            transition: "opacity .35s ease .25s, transform .35s ease .25s, background .25s ease",
+            transition:
+              "opacity .35s ease .25s, transform .35s ease .25s, background .25s ease",
           }}
         >
           ×
@@ -286,10 +319,11 @@ export default function Nav() {
           </Link>
         ))}
 
-        {/* Optional mobile CTA */}
-        <a
-          href="tel:+1234567890"
+        {/* Mobile CTA */}
+        <Link
+          href="/contact#quote"
           onClick={() => setIsMenuOpen(false)}
+          className="mobile-nav-cta"
           style={{
             marginTop: "1rem",
             fontSize: "0.95rem",
@@ -305,8 +339,8 @@ export default function Nav() {
               "opacity .35s ease .45s, transform .35s ease .45s, background .25s ease",
           }}
         >
-          Call Us Now
-        </a>
+          Get Free Quote
+        </Link>
       </div>
 
       <style jsx>{`
@@ -320,19 +354,18 @@ export default function Nav() {
           bottom: -4px;
           width: 0%;
           height: 2px;
-          background: #fff;
+          background: currentColor;
           transition: width 0.25s ease;
         }
         .site-nav-link:hover::after {
           width: 100%;
         }
 
-        /* Logo: width-driven clamp (height follows automatically via the
-           image's intrinsic aspect ratio) so it scales predictably instead
-           of being squeezed down to a flat minimum on most phone widths
-           like the old height-based clamp was. Bounds were checked against
-           a 320px-wide viewport so it never collides with the hamburger
-           button. */
+        .site-nav-cta:hover {
+          background: #2a2a2e !important;
+          transform: translateY(-1px);
+        }
+
         .site-nav-logo {
           width: clamp(200px, 66vw, 300px);
           height: auto;
@@ -360,7 +393,11 @@ export default function Nav() {
           height: 2.5px;
           background: #fff;
           border-radius: 2px;
-          transition: transform 0.3s ease, opacity 0.3s ease, top 0.3s ease;
+          transition: transform 0.3s ease, opacity 0.3s ease, top 0.3s ease,
+            background 0.35s ease;
+        }
+        .site-nav-toggle.scrolled .site-nav-bar {
+          background: #0b0b0d;
         }
         .bar-1 {
           top: 13px;
@@ -387,8 +424,12 @@ export default function Nav() {
           opacity: 0.75 !important;
         }
 
+        .mobile-nav-cta:hover {
+          background: #e8e8e8 !important;
+        }
+
         .mobile-nav-close:hover {
-          background: rgba(255,255,255,0.16) !important;
+          background: rgba(255, 255, 255, 0.16) !important;
         }
       `}</style>
     </>

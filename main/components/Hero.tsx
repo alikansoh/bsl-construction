@@ -19,6 +19,25 @@
  * - Poster + static fallback for Low Power Mode / Data Saver.
  * - Respects prefers-reduced-motion and safe-area insets (notches/home
  *   indicators), and has a dedicated short-landscape treatment.
+ *
+ * Perf notes (scroll-scrub smoothness):
+ * - Scroll-space geometry (top offset, runway height) is cached instead of
+ *   calling getBoundingClientRect() every rAF frame — that call forces a
+ *   synchronous layout, which is a big cause of scrub jank. Geometry is
+ *   recomputed only on resize/orientation change.
+ * - preload="auto" so the browser buffers actual frame data up front
+ *   instead of just metadata, avoiding stalls on early scrub.
+ * - Seeks are no longer gated behind an in-flight "seeking" check — if the
+ *   target has moved on, we let a newer seek interrupt the previous one.
+ *   Gating on isSeekingRef caused the video to visibly "catch up" in jumps
+ *   whenever a seek was slow, which read as laggy/stuttery.
+ * - Smoothing factor increased so the video position tracks scroll more
+ *   tightly (less perceived delay), while still taking the edge off raw
+ *   scroll jitter.
+ * - For genuinely smooth results the source video should ALSO be encoded
+ *   with a short GOP (frequent keyframes) and +faststart — see note near
+ *   VIDEO_SRC. No amount of JS tuning fully compensates for a video that
+ *   must decode long stretches of frames on every seek.
  * -------------------------------------------------------------------------
  */
 
@@ -27,15 +46,24 @@ import { useEffect, useRef, useState } from "react";
 const VIDEO_SRC = "/video1.mp4";
 const POSTER_SRC = "/hero-poster.jpg"; // Add this to /public
 
+// NOTE: For smooth scroll-scrubbing, re-encode this file with a short GOP
+// (frequent keyframes) and faststart so seeks don't stall, e.g.:
+//   ffmpeg -i input.mp4 -vf "scale=1920:-2" \
+//     -c:v libx264 -preset slow -crf 22 -g 15 -keyint_min 15 \
+//     -sc_threshold 0 -movflags +faststart -an video1.mp4
+
 // Start playback at the beginning of the clip
 const START_TIME_SECONDS = 0;
 
 // How close the video's currentTime needs to be to the smoothed target
-// before we bother re-seeking. Smaller = more precise but more seek calls.
-const SEEK_THRESHOLD = 0.01;
+// before we bother re-seeking. Slightly higher than the original default
+// on purpose — issuing a seek for a sub-frame-imperceptible delta just
+// adds decode overhead without any visible benefit.
+const SEEK_THRESHOLD = 0.035;
 // Exponential smoothing factor for the scroll -> video-time follow.
-// Lower = smoother/laggier, higher = snappier/twitchier.
-const SMOOTHING = 0.2;
+// Higher = tighter to scroll / less perceived lag, lower = smoother but
+// more trailing. Raised from 0.2 to reduce the "always behind" feeling.
+const SMOOTHING = 0.45;
 const MAX_DT = 1 / 24;
 const OBSERVER_MARGIN = "200px 0px 200px 0px";
 
@@ -71,11 +99,13 @@ export default function Hero() {
   const textLayerBRef = useRef<HTMLHeadingElement>(null);
   const activeLayerRef = useRef(0);
   const rafIdRef = useRef<number | null>(null);
-  const isSeekingRef = useRef(false);
   const inViewRef = useRef(true);
   const lastTextRef = useRef(STAGES[0].text);
   const lastFrameTimeRef = useRef<number | null>(null);
   const displayedTimeRef = useRef(START_TIME_SECONDS);
+  // Cached scroll-space geometry — recomputed only on mount/resize, not
+  // on every rAF tick, to avoid forcing layout during scroll.
+  const geometryRef = useRef({ top: 0, total: 0 });
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
 
@@ -94,6 +124,17 @@ export default function Hero() {
     let primed = false;
 
     const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+    const measureGeometry = () => {
+      // getBoundingClientRect().top is relative to the viewport, so add
+      // the current scroll position to get an absolute document offset
+      // we can diff against window.scrollY cheaply on every frame without
+      // touching layout again until the next resize.
+      const rect = scrollSpace.getBoundingClientRect();
+      const top = rect.top + window.scrollY;
+      const total = scrollSpace.offsetHeight - window.innerHeight;
+      geometryRef.current = { top, total: Math.max(total, 0) };
+    };
 
     const primeVideo = async () => {
       if (primed || playableDuration <= 0) return;
@@ -126,20 +167,13 @@ export default function Hero() {
       setUseFallback(true);
     };
 
-    const handleSeeking = () => {
-      isSeekingRef.current = true;
-    };
-    const handleSeeked = () => {
-      isSeekingRef.current = false;
-    };
-
     video.addEventListener("loadedmetadata", handleLoadedMetadata);
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
-    video.addEventListener("seeking", handleSeeking);
-    video.addEventListener("seeked", handleSeeked);
 
     if (video.readyState >= 1) handleLoadedMetadata();
+
+    measureGeometry();
 
     const textLayers = [textLayerARef, textLayerBRef];
 
@@ -174,9 +208,10 @@ export default function Hero() {
       const dt = clamp((now - last) / 1000, 0, MAX_DT);
       lastFrameTimeRef.current = now;
 
-      const rect = scrollSpace.getBoundingClientRect();
-      const total = scrollSpace.offsetHeight - window.innerHeight;
-      const scrolled = clamp(-rect.top, 0, total);
+      // Cheap arithmetic only — no getBoundingClientRect() here. window.scrollY
+      // is effectively free (no forced layout), unlike rect measurement.
+      const { top, total } = geometryRef.current;
+      const scrolled = clamp(window.scrollY - top, 0, total);
       const progress = total > 0 ? scrolled / total : 0;
 
       if (playableDuration > 0) {
@@ -186,16 +221,17 @@ export default function Hero() {
         const factor = reduceMotionQuery.matches ? 1 : frameFactor(SMOOTHING, dt);
         displayedTimeRef.current += (targetTime - displayedTimeRef.current) * factor;
 
-        if (
-          !isSeekingRef.current &&
-          Math.abs(video.currentTime - displayedTimeRef.current) > SEEK_THRESHOLD
-        ) {
+        // Always issue the seek if the delta is meaningful — do NOT gate
+        // this on an "isSeeking" flag. Skipping seeks while a previous one
+        // is still resolving causes the video to visibly "catch up" in
+        // jumps once it finally seeks, which reads as laggy/stuttery.
+        // Letting the browser interrupt its own in-flight seek with a
+        // newer one tracks scroll much more closely.
+        if (Math.abs(video.currentTime - displayedTimeRef.current) > SEEK_THRESHOLD) {
           // Plain currentTime assignment (not fastSeek) on purpose: fastSeek
           // is unsupported in Chromium entirely, and where it does exist
           // (Safari) it snaps to the nearest keyframe rather than the exact
           // requested time, which reads as jumpy during a slow scroll-scrub.
-          // A precise seek every frame looks smoother in practice as long
-          // as the source video has reasonably frequent keyframes.
           video.currentTime = displayedTimeRef.current;
         }
       }
@@ -231,12 +267,25 @@ export default function Hero() {
     );
     observer.observe(scrollSpace);
 
+    // Recompute geometry on resize/orientation change only — not on scroll.
+    let resizeRaf: number | null = null;
+    const handleResize = () => {
+      if (resizeRaf !== null) return;
+      resizeRaf = requestAnimationFrame(() => {
+        measureGeometry();
+        resizeRaf = null;
+      });
+    };
+    window.addEventListener("resize", handleResize, { passive: true });
+    window.addEventListener("orientationchange", handleResize, { passive: true });
+
     return () => {
       video.removeEventListener("loadedmetadata", handleLoadedMetadata);
       video.removeEventListener("canplay", handleCanPlay);
       video.removeEventListener("error", handleError);
-      video.removeEventListener("seeking", handleSeeking);
-      video.removeEventListener("seeked", handleSeeked);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
       if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
       observer.disconnect();
     };
@@ -253,7 +302,7 @@ export default function Hero() {
           muted
           playsInline
           webkit-playsinline="true"
-          preload="metadata"
+          preload="auto"
           disablePictureInPicture
           className={`hero-video ${isReady ? "hero-video-ready" : ""}`}
         />
@@ -519,7 +568,7 @@ export default function Hero() {
            ---------------------------------------------------------------- */
         @media (max-width: 380px) {
           .hero-scroll-space {
-            --hero-scroll-length: 100vh;
+            --hero-scroll-length: 125vh;
           }
           .hero-caption-stack {
             padding: 0 0.5rem;
