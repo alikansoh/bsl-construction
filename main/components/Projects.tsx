@@ -23,7 +23,10 @@
  *   sides.
  * - Mobile: photo stacks above details; scroll-pinning is disabled (see
  *   "SCROLL BEHAVIOUR" below) and the section behaves as a normal, static,
- *   swipeable stack controlled by the arrows / thumbnail rail.
+ *   swipeable stack. On mobile you can switch projects by:
+ *     1. Swiping left/right on the photograph (touch gesture),
+ *     2. Tapping the (larger, mobile-sized) prev/next arrows, or
+ *     3. Tapping a thumbnail in the rail.
  *
  * DESIGN LANGUAGE
  * - Warm ivory "mat" frame (#FBF9F6) around every hero photograph, like a
@@ -39,9 +42,6 @@
  *   page an editorial, real-estate-brochure voice. Loaded via a plain
  *   <style> @import for portability; swap for `next/font/google` in
  *   production (see comment near the bottom of the file).
- * - Two small "spec" chips (investment / programme length) sit under the
- *   project counter — real, distinguishing facts about each job, not
- *   decoration.
  *
  * SCROLL BEHAVIOUR — pinned, scroll-driven project switcher
  * - Desktop (≥1024px, no reduced-motion): the two-column stage is pinned
@@ -53,12 +53,12 @@
  *   overlaps the pinned stage.
  * - Mobile / touch / reduced-motion: no pinning (scroll-jacking is a poor
  *   fit for touch scrolling). The stage plays a single entrance reveal and
- *   is then driven entirely by the arrows and thumbnail rail, exactly like
- *   a normal carousel.
- * - Manual navigation (arrows, thumbnails, numeral rail) works in both
- *   modes: on desktop it scrolls the page to the matching pinned position
- *   (ScrollTrigger's onUpdate then plays the crossfade); on mobile it
- *   plays the crossfade directly.
+ *   is then driven entirely by swipe gestures, arrows, and the thumbnail
+ *   rail, exactly like a normal carousel.
+ * - Manual navigation (arrows, thumbnails, numeral rail, swipe) works in
+ *   both modes: on desktop it scrolls the page to the matching pinned
+ *   position (ScrollTrigger's onUpdate then plays the crossfade); on
+ *   mobile it plays the crossfade directly.
  * - Implemented with `gsap.matchMedia()` so the two modes are cleanly
  *   isolated and torn down on breakpoint change / unmount. A
  *   `ScrollTrigger.refresh()` is forced once the hero image has loaded,
@@ -88,10 +88,7 @@ type Project = {
   kicker: string;
   title: string;
   location: string;
-  value: string;
-  duration: string;
   description: string;
-  highlights: string[];
   image: string;
 };
 
@@ -106,11 +103,8 @@ const PROJECTS: Project[] = [
     kicker: "Full Renovation",
     title: "The Kensington Townhouse",
     location: "Kensington",
-    value: "From £380,000",
-    duration: "22-week programme",
     description:
       "A stucco-fronted townhouse stripped to brick and rebuilt from front door to garden wall — new structure, new services, and a run of bespoke joinery that carries through every room.",
-    highlights: ["Full structural rebuild", "Bespoke joinery throughout", "Smart-home integration"],
     image:
       "https://images.unsplash.com/photo-1682888813913-e13f18692019?auto=format&fit=crop&w=1600&h=1200&q=80",
   },
@@ -120,11 +114,8 @@ const PROJECTS: Project[] = [
     kicker: "Kitchen Extension",
     title: "The Chelsea Riverside Kitchen",
     location: "Chelsea",
-    value: "From £165,000",
-    duration: "14-week programme",
     description:
       "A glazed side-return extension built around river light — a book-matched marble island, and a wall of glass that disappears entirely into the structure on warm evenings.",
-    highlights: ["Book-matched marble island", "Disappearing glass wall", "Zoned underfloor heating"],
     image:
       "https://images.unsplash.com/photo-1722247482141-f5112a19bed2?auto=format&fit=crop&w=1600&h=1200&q=80",
   },
@@ -134,11 +125,8 @@ const PROJECTS: Project[] = [
     kicker: "Loft Conversion",
     title: "The Hampstead Loft Retreat",
     location: "Hampstead",
-    value: "From £145,000",
-    duration: "12-week programme",
     description:
       "An unused attic reworked into a principal suite — the original ridge beam kept exposed, a walk-in dressing room built beneath the eaves, and an ensuite tucked into the slope.",
-    highlights: ["Original ridge beam retained", "Walk-in dressing room", "Ensuite beneath the eaves"],
     image:
       "https://images.unsplash.com/photo-1746531431369-3b83b957f0bf?auto=format&fit=crop&w=1600&h=1200&q=80",
   },
@@ -148,11 +136,8 @@ const PROJECTS: Project[] = [
     kicker: "Rear Extension",
     title: "The Notting Hill Garden Extension",
     location: "Notting Hill",
-    value: "From £210,000",
-    duration: "16-week programme",
     description:
       "A full-width rear extension that opened the ground floor to the garden — Crittall-style glazing, a poured resin floor running straight out to the terrace, and a kitchen built to entertain.",
-    highlights: ["Crittall-style glazing", "Poured resin flooring", "Full-width bi-fold doors"],
     image:
       "https://images.unsplash.com/photo-1682888813788-bf57c360123e?auto=format&fit=crop&w=1600&h=1200&q=80",
   },
@@ -167,6 +152,10 @@ const SUBTITLE =
 // overlaps the pinned photograph/details or an anchored scroll target.
 const NAVBAR_HEIGHT = 80;
 
+// Minimum horizontal drag distance (px) before a touch gesture on the
+// photograph counts as a swipe rather than a tap/scroll.
+const SWIPE_THRESHOLD = 40;
+
 function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   return (
     <svg
@@ -174,7 +163,7 @@ function ChevronIcon({ direction }: { direction: "left" | "right" }) {
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
-      className="h-4 w-4"
+      className="h-4 w-4 lg:h-4 lg:w-4"
       aria-hidden="true"
     >
       <path
@@ -206,21 +195,6 @@ function PinIcon() {
   );
 }
 
-function CheckIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      className="h-3.5 w-3.5 flex-none"
-      aria-hidden="true"
-    >
-      <path d="M5 12.5l4.5 4.5L19 7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 export default function Projects() {
   const [activeIndex, setActiveIndex] = useState(0);
   const total = PROJECTS.length;
@@ -240,6 +214,13 @@ export default function Projects() {
   const activeIndexRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+
+  // ---- Touch swipe tracking (mobile). Only horizontal drags on the
+  // photograph past SWIPE_THRESHOLD trigger a project switch; anything
+  // smaller is left alone so normal page scrolling still works.
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const touchTracking = useRef(false);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -284,10 +265,10 @@ export default function Projects() {
     });
   }
 
-  // ---- Manual navigation (arrows / thumbnails / numeral rail). When the
-  // desktop pin is active this scrolls the page to the matching position
-  // instead of transitioning directly — ScrollTrigger's onUpdate then
-  // plays the crossfade, keeping scroll position and content in sync.
+  // ---- Manual navigation (arrows / thumbnails / numeral rail / swipe).
+  // When the desktop pin is active this scrolls the page to the matching
+  // position instead of transitioning directly — ScrollTrigger's onUpdate
+  // then plays the crossfade, keeping scroll position and content in sync.
   function goTo(nextIndex: number) {
     const clamped = ((nextIndex % total) + total) % total;
     if (clamped === activeIndexRef.current) return;
@@ -298,6 +279,35 @@ export default function Projects() {
       window.scrollTo({ top: target, behavior: "smooth" });
     } else {
       transitionTo(clamped);
+    }
+  }
+
+  // ---- Swipe handlers, bound to the photograph frame. No-ops when the
+  // desktop pin/scrub is active (scrollTriggerRef is set), since scroll
+  // already drives switching there.
+  function handleTouchStart(e: React.TouchEvent) {
+    if (scrollTriggerRef.current) return;
+    const touch = e.touches[0];
+    touchStartX.current = touch.clientX;
+    touchStartY.current = touch.clientY;
+    touchTracking.current = true;
+  }
+
+  function handleTouchEnd(e: React.TouchEvent) {
+    if (!touchTracking.current) return;
+    touchTracking.current = false;
+
+    const touch = e.changedTouches[0];
+    const dx = touch.clientX - touchStartX.current;
+    const dy = touch.clientY - touchStartY.current;
+
+    // Ignore mostly-vertical drags so page scroll isn't hijacked.
+    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
+
+    if (dx < 0) {
+      goTo(activeIndexRef.current + 1); // swipe left → next
+    } else {
+      goTo(activeIndexRef.current - 1); // swipe right → prev
     }
   }
 
@@ -594,7 +604,8 @@ export default function Projects() {
             </nav>
 
             {/* Photograph — framed like a mounted print. Always the left
-                column; a real link through to the project's full write-up. */}
+                column; a real link through to the project's full write-up.
+                Swipeable on touch devices (left/right switches project). */}
             <div className="relative rounded-[22px] bg-[#FBF9F6] p-3 shadow-[0_1px_2px_rgba(28,23,18,0.06)] ring-1 ring-[#1C1712]/[0.06] sm:p-4">
               <a
                 ref={heroRef}
@@ -603,6 +614,8 @@ export default function Projects() {
                 onMouseLeave={() => heroTimeline.current?.reverse()}
                 onFocus={() => heroTimeline.current?.play()}
                 onBlur={() => heroTimeline.current?.reverse()}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
                 className="group relative block overflow-hidden rounded-2xl bg-white transition-shadow duration-300 ease-out hover:shadow-[0_28px_56px_-20px_rgba(28,23,18,0.28),0_8px_20px_-8px_rgba(162,96,40,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A26028]"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
@@ -613,6 +626,7 @@ export default function Projects() {
                       src={active.image}
                       alt={`${active.title} in ${active.location} — completed by BSL Construction`}
                       className="h-full w-full object-cover"
+                      draggable={false}
                     />
                   </div>
 
@@ -690,6 +704,18 @@ export default function Projects() {
                       </svg>
                     </span>
                   </div>
+
+                  {/* Mobile-only swipe hint — quietly teaches the gesture
+                      the first time the section is seen; purely visual,
+                      no interaction. */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/35 px-3 py-1 text-[0.65rem] font-medium text-white/90 backdrop-blur-sm lg:hidden"
+                  >
+                    <ChevronIcon direction="left" />
+                    Swipe
+                    <ChevronIcon direction="right" />
+                  </span>
                 </div>
 
                 <span
@@ -711,33 +737,13 @@ export default function Projects() {
                 <span aria-hidden="true" className="h-px flex-1 bg-[#A26028]/25" />
               </span>
 
-              <div className="mb-4 flex flex-wrap items-center gap-2">
-                <span className="rounded-full border border-[#1C1712]/12 px-3 py-1 text-[0.72rem] font-medium text-[#6E6259]">
-                  {active.value}
-                </span>
-                <span className="rounded-full border border-[#1C1712]/12 px-3 py-1 text-[0.72rem] font-medium text-[#6E6259]">
-                  {active.duration}
-                </span>
-              </div>
-
               <h3 className="bsl-serif mb-3 text-[clamp(1.5rem,2.6vw,2.1rem)] font-medium leading-tight tracking-[-0.01em] text-[#1C1712]">
                 {active.title}
               </h3>
 
-              <p className="mb-6 text-[clamp(0.95rem,1.4vw,1.02rem)] leading-[1.75] text-[#6E6259]">
+              <p className="mb-8 text-[clamp(0.95rem,1.4vw,1.02rem)] leading-[1.75] text-[#6E6259]">
                 {active.description}
               </p>
-
-              <ul className="mb-8 flex flex-col gap-2.5">
-                {active.highlights.map((point) => (
-                  <li key={point} className="flex items-center gap-2.5 text-[0.92rem] text-[#1C1712]">
-                    <span className="flex h-5 w-5 flex-none items-center justify-center rounded-full bg-[#A26028]/10 text-[#A26028]">
-                      <CheckIcon />
-                    </span>
-                    {point}
-                  </li>
-                ))}
-              </ul>
 
               <a
                 href="/contact#quote"
@@ -746,14 +752,18 @@ export default function Projects() {
                 Start a Project Like This
               </a>
 
-              {/* Switcher: prev/next arrows + thumbnail rail + progress line */}
+              {/* Switcher: prev/next arrows + thumbnail rail + progress
+                  line. Arrows are enlarged on mobile (h-11 w-11) for
+                  easier tapping, then step back down to a tighter size on
+                  desktop where they're a secondary control next to the
+                  numeral rail and swipe/scroll. */}
               <div ref={switcherRef} className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <button
                     type="button"
                     onClick={() => goTo(activeIndex - 1)}
                     aria-label="Previous project"
-                    className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028]"
+                    className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028] active:bg-[#A26028]/10 lg:h-9 lg:w-9"
                   >
                     <ChevronIcon direction="left" />
                   </button>
@@ -774,7 +784,7 @@ export default function Projects() {
                         aria-selected={index === activeIndex}
                         aria-label={`${project.title}, ${project.location}`}
                         onClick={() => goTo(index)}
-                        className="group/thumb relative h-14 w-20 flex-none overflow-hidden rounded-lg border border-[#1C1712]/10"
+                        className="group/thumb relative h-16 w-24 flex-none overflow-hidden rounded-lg border border-[#1C1712]/10 lg:h-14 lg:w-20"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
@@ -799,7 +809,7 @@ export default function Projects() {
                     type="button"
                     onClick={() => goTo(activeIndex + 1)}
                     aria-label="Next project"
-                    className="flex h-9 w-9 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028]"
+                    className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028] active:bg-[#A26028]/10 lg:h-9 lg:w-9"
                   >
                     <ChevronIcon direction="right" />
                   </button>
