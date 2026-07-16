@@ -64,17 +64,17 @@
  *   `ScrollTrigger.refresh()` is forced once the hero image has loaded,
  *   since async image loads are a common cause of mistimed trigger math.
  *
- * PLACEHOLDER IMAGES
- * - Real photography sourced from Unsplash (free license) as a stand-in
- *   for commissioned project photography — swap the `image` field for the
- *   client's own photos in /public and switch these <img> tags for
- *   next/image once that's in place.
+ * IMAGES
+ * - Uses next/image. For external Unsplash placeholders you must allow the
+ *   domain in next.config.js (see note after component). Swap `image` for
+ *   commissioned project photography in /public when available.
  *
  * DEPENDENCY: requires `gsap` (npm install gsap).
  * -------------------------------------------------------------------------
  */
 
 import { Fragment, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -92,10 +92,6 @@ type Project = {
   image: string;
 };
 
-// TODO: replace `image` with commissioned project photography once
-// available, and point `slug` at the real /projects/[slug] route for each
-// job. Photography below is real (Unsplash, free license) and is used only
-// as a stand-in for the finished renovations described in the copy.
 const PROJECTS: Project[] = [
   {
     id: "kensington-townhouse",
@@ -146,15 +142,15 @@ const PROJECTS: Project[] = [
 const SUBTITLE =
   "Every project below was delivered on time, on budget, and finished to a standard our clients are proud to show off.";
 
-// Height of the site's fixed navbar, in pixels. Update this if the navbar's
-// height changes — it's used both to offset the pinned stage's start
-// point and as the section's scroll-margin-top, so the navbar never
-// overlaps the pinned photograph/details or an anchored scroll target.
-const NAVBAR_HEIGHT = 80;
-
-// Minimum horizontal drag distance (px) before a touch gesture on the
-// photograph counts as a swipe rather than a tap/scroll.
+const NAVBAR_HEIGHT_FALLBACK = 80;
 const SWIPE_THRESHOLD = 40;
+
+function getNavbarHeight(): number {
+  if (typeof document === "undefined") return NAVBAR_HEIGHT_FALLBACK;
+  const nav = document.querySelector<HTMLElement>(".site-nav");
+  const height = nav?.getBoundingClientRect().height;
+  return height && height > 0 ? height : NAVBAR_HEIGHT_FALLBACK;
+}
 
 function ChevronIcon({ direction }: { direction: "left" | "right" }) {
   return (
@@ -197,6 +193,7 @@ function PinIcon() {
 
 export default function Projects() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [navbarHeight, setNavbarHeight] = useState(NAVBAR_HEIGHT_FALLBACK);
   const total = PROJECTS.length;
   const active = PROJECTS[activeIndex];
 
@@ -215,9 +212,6 @@ export default function Projects() {
   const isAnimatingRef = useRef(false);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
 
-  // ---- Touch swipe tracking (mobile). Only horizontal drags on the
-  // photograph past SWIPE_THRESHOLD trigger a project switch; anything
-  // smaller is left alone so normal page scrolling still works.
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchTracking = useRef(false);
@@ -226,8 +220,6 @@ export default function Projects() {
     activeIndexRef.current = activeIndex;
   }, [activeIndex]);
 
-  // ---- Crossfade to a given project. Image stays left, details stay
-  // right — only the content inside each column changes.
   function transitionTo(nextIndex: number) {
     const stage = stageRef.current;
     const details = detailsRef.current;
@@ -265,10 +257,6 @@ export default function Projects() {
     });
   }
 
-  // ---- Manual navigation (arrows / thumbnails / numeral rail / swipe).
-  // When the desktop pin is active this scrolls the page to the matching
-  // position instead of transitioning directly — ScrollTrigger's onUpdate
-  // then plays the crossfade, keeping scroll position and content in sync.
   function goTo(nextIndex: number) {
     const clamped = ((nextIndex % total) + total) % total;
     if (clamped === activeIndexRef.current) return;
@@ -282,9 +270,6 @@ export default function Projects() {
     }
   }
 
-  // ---- Swipe handlers, bound to the photograph frame. No-ops when the
-  // desktop pin/scrub is active (scrollTriggerRef is set), since scroll
-  // already drives switching there.
   function handleTouchStart(e: React.TouchEvent) {
     if (scrollTriggerRef.current) return;
     const touch = e.touches[0];
@@ -301,19 +286,22 @@ export default function Projects() {
     const dx = touch.clientX - touchStartX.current;
     const dy = touch.clientY - touchStartY.current;
 
-    // Ignore mostly-vertical drags so page scroll isn't hijacked.
     if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
 
     if (dx < 0) {
-      goTo(activeIndexRef.current + 1); // swipe left → next
+      goTo(activeIndexRef.current + 1);
     } else {
-      goTo(activeIndexRef.current - 1); // swipe right → prev
+      goTo(activeIndexRef.current - 1);
     }
   }
 
-  // ---- Stage setup: entrance reveal, hover/tilt choreography on the
-  // photograph, and the desktop pinned scroll-switcher. Isolated per
-  // breakpoint with gsap.matchMedia so mobile never gets scroll-jacked.
+  useEffect(() => {
+    const handleResize = () => setNavbarHeight(getNavbarHeight());
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     const stage = stageRef.current;
     const hero = heroRef.current;
@@ -345,7 +333,6 @@ export default function Projects() {
 
         const triggers: ScrollTrigger[] = [];
 
-        // Initial state
         gsap.set(stage, {
           opacity: reduceMotion ? 1 : 0,
           y: reduceMotion ? 0 : 26,
@@ -386,7 +373,6 @@ export default function Projects() {
           })
         );
 
-        // Hover / focus choreography on the framed photograph
         const tl = gsap.timeline({ paused: true, defaults: { ease: "power2.out" } });
         tl.to(hero, { y: reduceMotion ? 0 : -6, duration: reduceMotion ? 0.01 : 0.5 }, 0)
           .to(image, { scale: reduceMotion ? 1.03 : 1.14, duration: reduceMotion ? 0.01 : 0.9 }, 0)
@@ -430,16 +416,12 @@ export default function Projects() {
           };
         }
 
-        // Desktop, motion-enabled: pin the stage and drive the switcher
-        // from scroll position, one snap-stop per project. Pin starts
-        // NAVBAR_HEIGHT px below the top of the viewport so the fixed
-        // navbar never overlaps the pinned photograph/details.
         if (isDesktop && !reduceMotion) {
           const distancePerProject = Math.max(window.innerHeight * 0.85, 560);
 
           const st = ScrollTrigger.create({
             trigger: stage,
-            start: `top ${NAVBAR_HEIGHT}px`,
+            start: () => `top ${getNavbarHeight()}px`,
             end: () => `+=${(total - 1) * distancePerProject}`,
             pin: true,
             pinSpacing: true,
@@ -462,7 +444,6 @@ export default function Projects() {
           scrollTriggerRef.current = null;
         }
 
-        // Async image loads can shift layout — refresh cached trigger math.
         const imgEl = hero.querySelector("img");
         const onLoad = () => ScrollTrigger.refresh();
         imgEl?.addEventListener("load", onLoad);
@@ -481,7 +462,6 @@ export default function Projects() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ---- Ambient per-letter wave on the intro line
   useEffect(() => {
     const subtitle = subtitleRef.current;
     if (!subtitle) return;
@@ -514,13 +494,9 @@ export default function Projects() {
     <section
       ref={sectionRef}
       aria-labelledby="projects-heading"
-      style={{ scrollMarginTop: NAVBAR_HEIGHT }}
-      className="bg-white px-5 py-16 lg:px-8 lg:py-24"
+      style={{ scrollMarginTop: navbarHeight }}
+      className="bg-white px-5 pb-16 pt-2 lg:px-8 lg:pb-24 lg:pt-3"
     >
-      {/* Serif display face for the numeral rail and project titles only.
-          For production, replace with next/font/google and drop this tag:
-            import { Fraunces } from "next/font/google";
-            const fraunces = Fraunces({ subsets: ["latin"], weight: ["400","500","600"] }); */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400&display=swap');
         .bsl-serif { font-family: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
@@ -528,8 +504,8 @@ export default function Projects() {
       `}</style>
 
       <div className="mx-auto max-w-[1180px] min-[1440px]:max-w-[1360px]">
-        <header className="mb-12 max-w-[640px] lg:mb-14">
-          <span className="mb-3 inline-flex items-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[#A26028]">
+        <header className="mx-auto mb-12 max-w-[640px] text-center lg:mb-14">
+          <span className="mx-auto mb-3 inline-flex items-center justify-center gap-2 text-[0.72rem] font-semibold uppercase tracking-[0.2em] text-[#A26028]">
             <span aria-hidden="true" className="h-px w-6 bg-[#A26028]" />
             Our Projects
           </span>
@@ -558,20 +534,15 @@ export default function Projects() {
           </p>
           <div
             aria-hidden="true"
-            className="mt-7 h-px w-full max-w-[220px] bg-[repeating-linear-gradient(90deg,rgba(162,96,40,0.55)_0px,rgba(162,96,40,0.55)_6px,transparent_6px,transparent_14px)]"
+            className="mx-auto mt-7 h-px w-full max-w-[220px] bg-[repeating-linear-gradient(90deg,rgba(162,96,40,0.55)_0px,rgba(162,96,40,0.55)_6px,transparent_6px,transparent_14px)]"
           />
         </header>
 
-        {/* Pin host — a plain block element so ScrollTrigger can insert its
-            spacer here without disturbing the header above or the "view
-            all" button below. */}
         <div ref={pinHostRef} className="relative">
           <div
             ref={stageRef}
             className="grid grid-cols-1 items-center gap-8 lg:grid-cols-[auto_1fr_1fr] lg:gap-10 xl:gap-14"
           >
-            {/* Numeral rail — real scroll position, not decoration. Desktop
-                only; hidden below lg where the pin is also disabled. */}
             <nav
               aria-label="Jump to a project"
               className="hidden flex-col items-center lg:flex"
@@ -603,9 +574,6 @@ export default function Projects() {
               ))}
             </nav>
 
-            {/* Photograph — framed like a mounted print. Always the left
-                column; a real link through to the project's full write-up.
-                Swipeable on touch devices (left/right switches project). */}
             <div className="relative rounded-[22px] bg-[#FBF9F6] p-3 shadow-[0_1px_2px_rgba(28,23,18,0.06)] ring-1 ring-[#1C1712]/[0.06] sm:p-4">
               <a
                 ref={heroRef}
@@ -620,12 +588,14 @@ export default function Projects() {
               >
                 <div className="relative aspect-[4/3] overflow-hidden">
                   <div ref={imageInnerRef} className="absolute inset-0 -top-[8%] h-[116%] w-full">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       data-card-image
                       src={active.image}
                       alt={`${active.title} in ${active.location} — completed by BSL Construction`}
-                      className="h-full w-full object-cover"
+                      fill
+                      sizes="(max-width: 1024px) 100vw, 50vw"
+                      priority
+                      className="object-cover"
                       draggable={false}
                     />
                   </div>
@@ -640,8 +610,6 @@ export default function Projects() {
                     className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/15 to-transparent"
                   />
 
-                  {/* Blueprint corner registration marks / photo-mount
-                      corners — drawn on in gold by the hover/focus timeline. */}
                   <svg
                     className="pointer-events-none absolute inset-2.5 h-[calc(100%-1.25rem)] w-[calc(100%-1.25rem)]"
                     viewBox="0 0 100 100"
@@ -705,9 +673,6 @@ export default function Projects() {
                     </span>
                   </div>
 
-                  {/* Mobile-only swipe hint — quietly teaches the gesture
-                      the first time the section is seen; purely visual,
-                      no interaction. */}
                   <span
                     aria-hidden="true"
                     className="pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/35 px-3 py-1 text-[0.65rem] font-medium text-white/90 backdrop-blur-sm lg:hidden"
@@ -730,7 +695,6 @@ export default function Projects() {
               </a>
             </div>
 
-            {/* Details — always the right column. */}
             <div ref={detailsRef} className="flex flex-col" aria-live="polite">
               <span className="mb-3 flex items-center gap-2 text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-[#A26028]">
                 Project {String(activeIndex + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
@@ -752,11 +716,6 @@ export default function Projects() {
                 Start a Project Like This
               </a>
 
-              {/* Switcher: prev/next arrows + thumbnail rail + progress
-                  line. Arrows are enlarged on mobile (h-11 w-11) for
-                  easier tapping, then step back down to a tighter size on
-                  desktop where they're a secondary control next to the
-                  numeral rail and swipe/scroll. */}
               <div ref={switcherRef} className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
                   <button
@@ -786,12 +745,13 @@ export default function Projects() {
                         onClick={() => goTo(index)}
                         className="group/thumb relative h-16 w-24 flex-none overflow-hidden rounded-lg border border-[#1C1712]/10 lg:h-14 lg:w-20"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
+                        <Image
                           src={project.image}
                           alt=""
+                          fill
+                          sizes="(max-width: 1024px) 96px, 80px"
                           aria-hidden="true"
-                          className={`h-full w-full object-cover transition-opacity duration-200 ${
+                          className={`object-cover transition-opacity duration-200 ${
                             index === activeIndex ? "opacity-100" : "opacity-45 group-hover/thumb:opacity-75"
                           }`}
                         />
