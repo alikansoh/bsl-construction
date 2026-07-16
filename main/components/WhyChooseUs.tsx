@@ -142,9 +142,9 @@ const REASONS: Reason[] = [
 
 // Placeholder — replace with real, verifiable figures before launch.
 const STATS: { value: number; suffix: string; label: string }[] = [
-  { value: 25, suffix: "+", label: "Years Trading" },
-  { value: 500, suffix: "+", label: "Homes Renovated" },
-  { value: 10, suffix: "-Yr", label: "Structural Guarantee" },
+  { value: 15, suffix: "+", label: "Years Experience" },
+  { value: 100, suffix: "%", label: "Client Satisfaction" },
+  { value: 12, suffix: "-Mo", label: "Workmanship Guarantee" },
 ];
 
 function LayersIcon() {
