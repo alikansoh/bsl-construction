@@ -3,148 +3,76 @@
 /**
  * Hero.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Scroll-scrubbed hero, rebuilt around a canvas + pre-extracted frame
- * sequence instead of <video> + currentTime seeking.
+ * CONCEPT CHANGE — this is a full rewrite, not a tweak.
  *
- * WHY THE REWRITE
- * ----------------------------------------------------------------------
- * The previous version drove scrub by setting video.currentTime on every
- * rAF tick. That works, but every seek forces the browser's video decoder
- * to hunt for the nearest keyframe and decode forward to the target frame
- * — real, unavoidable async work, most expensive exactly where it hurts
- * most (mobile Chrome/Safari). No amount of threshold tuning, smoothing,
- * or seek-gating removes that cost; it can only redistribute it, which is
- * why the old version could still stutter on a fast flick-scroll.
+ * The previous version was a scroll-scrubbed hero: a canvas painted one of
+ * 96/36 pre-extracted frames per scroll position, standing in for a video
+ * the user "played" by scrolling. That solved a real problem (video.
+ * currentTime seeking is janky) but it's a lot of machinery — a frame
+ * build step, two frame sets, a sticky scroll-space, priority/background
+ * loading, a rAF loop driving canvas draws — for an effect most visitors
+ * only ever perceive as "there's a video back there."
  *
- * This version instead:
- *   1. Extracts the clip to a numbered sequence of still images at build
- *      time (ffmpeg command below).
- *   2. Loads those images with the browser's normal image pipeline.
- *   3. On scroll, picks the frame whose index matches progress and draws
- *      it onto a <canvas> with drawImage().
+ * This version is a straightforward, full-bleed autoplaying background
+ * video (`/hero-video.mp4`) — the standard, well-understood pattern (the
+ * kind of hero Apple/Stripe-style sites use when they're *not* doing a
+ * scroll-scrub set piece). It plays once the page has settled and loops
+ * quietly behind the copy. Far less code, no build step, no 2.5-4MB frame
+ * set — just one video file the browser streams and decodes natively.
  *
- * A frame "seek" is now just an array index + a synchronous canvas draw —
- * no decode, no async seek, nothing to stall. This is the same technique
- * behind most award-winning scroll-hero sites (Apple product pages,
- * Stripe, etc). It also removes the iOS/Android autoplay "priming" hack
- * entirely, since there's no <video> element to fight with.
+ * PERFORMANCE / GOOD-CITIZEN BEHAVIOR (kept from the old version)
+ * - The poster image is what actually renders first and is what LCP
+ *   measures — it's a normal <img fetchPriority="high">, not a video
+ *   frame, so it paints immediately with no decode latency.
+ * - The video itself doesn't start loading until after `window.load`, so
+ *   it never competes with the poster, fonts, or initial JS for
+ *   bandwidth on a cold load.
+ * - `prefers-reduced-motion: reduce`, Save-Data, and slow connections
+ *   (2g/slow-2g) all skip the video entirely — the poster stays as the
+ *   hero, permanently, no wasted download.
+ * - An IntersectionObserver pauses the video whenever the hero scrolls
+ *   out of view and resumes it when it scrolls back in, so it isn't
+ *   decoding off-screen.
+ * - `muted`, `playsInline`, and `loop` are all set directly on the
+ *   element (required for autoplay to be allowed on iOS/Android/most
+ *   desktop browsers without a user gesture).
  *
- * BUILD STEP — generate the frames before shipping
- * ----------------------------------------------------------------------
- *   # duration of your source clip, in seconds
- *   DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 video1.mp4)
+ * SIGNATURE ELEMENT
+ * A small spirit-level glyph sits beside the eyebrow label — the same
+ * "level" idea that shows up in OurProcess.tsx's traveling checkpoint dot,
+ * carried over as a literal instrument here. Its bubble settles into
+ * center once, on load (not a loop), like a level being set down at the
+ * start of a job.
  *
- *   # Desktop set — 96 frames, 1920px wide, JPEG
- *   mkdir -p public/hero-frames/desktop
- *   ffmpeg -i video1.mp4 -vf "fps=$(echo "96/$DURATION" | bc -l),scale=1920:-2" \
- *     -q:v 4 public/hero-frames/desktop/frame-%04d.jpg
- *
- *   # Mobile set — fewer frames, smaller width, saves mobile data
- *   mkdir -p public/hero-frames/mobile
- *   ffmpeg -i video1.mp4 -vf "fps=$(echo "60/$DURATION" | bc -l),scale=900:-2" \
- *     -q:v 5 public/hero-frames/mobile/frame-%04d.jpg
- *
- * (Using JPEG here because it's always available in every ffmpeg build —
- * some ffmpeg installs, notably some Homebrew setups, don't ship with the
- * WebP encoder compiled in.)
- *
- * Tune the frame counts to your clip length / motion: more frames =
- * smoother but bigger download. 60-100 frames is a good starting point
- * for a 4-10s clip; each JPEG typically lands ~20-45KB at these settings,
- * so a 96-frame desktop set is usually ~2.5-4MB total — loaded in the
- * background, not blocking first paint (see PRIORITY_FRAMES below).
- *
- * IF YOU CAN'T PRE-EXTRACT FRAMES
- * ----------------------------------------------------------------------
- * If frame extraction isn't feasible in your pipeline, the video-seeking
- * approach can still be improved somewhat: raise SEEK_THRESHOLD to
- * roughly 1/(2*targetFPS) so you're never seeking finer than a frame
- * boundary, gate new seeks behind the video's `requestVideoFrameCallback`
- * instead of firing on every rAF tick, and fully pre-buffer the source as
- * a blob (fetch + URL.createObjectURL) so seeks resolve against local
- * data rather than a network stream. That will reduce jank but won't
- * eliminate it the way frame-sequence scrubbing does.
+ * DECLUTTER / TONE PASS
+ * - Dropped the bouncing scroll-chevron: on mobile it stacked directly
+ *   on top of the SEO pill strip, so the bottom of the viewport carried
+ *   two independent moving elements at once. The pill strip alone is
+ *   enough of a "there's more below" cue.
+ * - Overlay gradient moved off near-black (#1C1712) to a warmer, lighter
+ *   walnut (#241C15) with a lower peak opacity — the video reads more
+ *   clearly through it and the copy still holds full contrast against it.
+ * - Eyebrow copy now leads with "New Builds, Renovations & Maintenance"
+ *   as a single line instead of a 4-item rotating list, so maintenance
+ *   reads as a core service on first glance, not one of a crowd of tags.
+ * - SEO strip: fewer, calmer chips (dot separators removed, spacing
+ *   opened up) so it reads as a quiet footer credential, not a second
+ *   headline competing with the real one.
  * -------------------------------------------------------------------------
  */
 
 import { useEffect, useRef, useState } from "react";
 
-const POSTER_SRC = "/hero-poster.webp"; // shown until first frame batch is ready
-const POSTER_SRC_MOBILE = "/hero-poster-mobile.webp"; // swapped in via <picture> below MOBILE_BREAKPOINT
+const POSTER_SRC = "/hero-poster.webp";
+const POSTER_SRC_MOBILE = "/hero-poster-mobile.webp";
+const VIDEO_SRC = "/hero-video.mp4";
 
-// Frame sets — one per breakpoint, generated by the ffmpeg commands above.
-const MOBILE_BREAKPOINT = 768; // keep in sync with the <picture> media query below
-const FRAME_SETS = {
-  desktop: {
-    count: 96,
-    path: (i: number) => `/hero-frames/desktop/frame-${String(i + 1).padStart(4, "0")}.jpg`,
-  },
-  mobile: {
-    count: 36,
-    path: (i: number) => `/hero-frames/mobile/frame-${String(i + 1).padStart(4, "0")}.jpg`,
-  },
-} as const;
+const SEO_PHRASES = ["New Builds", "Renovations", "Property Maintenance", "General Contracting"];
 
-// How many frames to block on before revealing the canvas. Keeps first
-// paint fast; the rest load in the background with limited concurrency.
-const PRIORITY_FRAMES = 14;
-const BACKGROUND_LOAD_CONCURRENCY = 4;
-
-// Exponential smoothing factor for scroll -> frame-progress follow. Safe
-// to run tighter than the old video version (0.2-0.45) because there's no
-// seek latency to "catch up" from — frame draws are effectively instant.
-const SMOOTHING = 0.6;
-const MAX_DT = 1 / 24;
 const OBSERVER_MARGIN = "200px 0px 200px 0px";
-// Cap device pixel ratio for the canvas backing store — 3x on a phone is
-// wasted fill-rate for a full-bleed hero image.
-const MAX_DPR = 2;
-
-const SEO_PHRASES = ["New Builds", "Renovations", "Home Maintenance", "General Contracting"];
-
-const STAGES: { at: number; text: string }[] = [
-  { at: 0.0, text: "Timber-frame construction, built to last." },
-  { at: 0.45, text: "Full renovations and home extensions, done right." },
-  { at: 0.8, text: "Ongoing home maintenance — the job doesn't end at handover." },
-];
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(Math.max(value, min), max);
-}
-
-function getStageText(progress: number) {
-  let current = STAGES[0].text;
-  for (const item of STAGES) {
-    if (progress >= item.at) current = item.text;
-  }
-  return current;
-}
-
-function frameFactor(smoothing: number, dt: number) {
-  return 1 - Math.pow(1 - smoothing, dt * 60);
-}
-
-// fetchPriority isn't in every TS DOM lib version yet, so it's typed here
-// explicitly rather than reaching for `any`.
-type PriorityImage = HTMLImageElement & { fetchPriority?: "high" | "low" | "auto" };
-
-function loadImage(src: string, priority: "high" | "low" | "auto" = "auto") {
-  return new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image() as PriorityImage;
-    img.decoding = "async";
-    // Frame images are never LCP-critical — the poster is. Marking them
-    // "low" tells the browser to let the poster (and any other critical
-    // resource) win the network queue first, instead of competing with
-    // 60-96 simultaneous requests on a throttled connection.
-    img.fetchPriority = priority;
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = src;
-  });
-}
 
 // The Network Information API isn't in TypeScript's built-in DOM types
-// (it's still non-standard / Chromium-only), so it's typed manually here
+// (still non-standard / Chromium-only), so it's typed manually here
 // instead of reaching for `any`. Every field is optional since support
 // is inconsistent across browsers.
 interface NetworkInformation {
@@ -156,363 +84,153 @@ interface NavigatorWithConnection extends Navigator {
 }
 
 export default function Hero() {
-  const scrollSpaceRef = useRef<HTMLDivElement>(null);
-  const heroStickyRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const progressFillRef = useRef<HTMLDivElement>(null);
-  const textLayerARef = useRef<HTMLHeadingElement>(null);
-  const textLayerBRef = useRef<HTMLHeadingElement>(null);
-  const activeLayerRef = useRef(0);
-  const rafIdRef = useRef<number | null>(null);
-  const inViewRef = useRef(true);
-  const lastTextRef = useRef(STAGES[0].text);
-  const lastFrameTimeRef = useRef<number | null>(null);
-  const displayedProgressRef = useRef(0);
-  const geometryRef = useRef({ top: 0, total: 0 });
-  const framesRef = useRef<(HTMLImageElement | null)[]>([]);
-  const desiredFrameIndexRef = useRef(0);
-  const paintedFrameIndexRef = useRef(-1);
-  const canvasSizeRef = useRef({ w: 0, h: 0 });
-  const useFallbackRef = useRef(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const [isReady, setIsReady] = useState(false);
-  const [useFallback, setUseFallback] = useState(false);
+  const [canLoadVideo, setCanLoadVideo] = useState(false);
+  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
+  const [videoErrored, setVideoErrored] = useState(false);
 
+  // Decide once whether the video is even allowed to load, then wait for
+  // `window.load` so it never competes with the poster / fonts / initial
+  // JS for bandwidth.
   useEffect(() => {
-    useFallbackRef.current = useFallback;
-  }, [useFallback]);
+    const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const conn = (navigator as NavigatorWithConnection).connection;
+    const dataSaver = Boolean(conn?.saveData);
+    const slowConn = conn?.effectiveType && ["slow-2g", "2g"].includes(conn.effectiveType);
 
-  // Runs once on mount — readiness/fallback are tracked via refs/closures
-  // rather than effect deps so the rAF loop and IntersectionObserver never
-  // get torn down and rebuilt mid-scroll.
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const scrollSpace = scrollSpaceRef.current;
-    if (!canvas || !scrollSpace) return;
-
-    const ctx = canvas.getContext("2d", { alpha: false });
-    if (!ctx) {
-      setUseFallback(true);
+    if (reduceMotionQuery.matches || dataSaver || slowConn) {
+      // Poster stays as the permanent hero image — no video request made.
       return;
     }
 
-    const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-
-    const variant: keyof typeof FRAME_SETS =
-      window.innerWidth <= MOBILE_BREAKPOINT ? "mobile" : "desktop";
-    const { count: FRAME_COUNT, path: framePath } = FRAME_SETS[variant];
-    framesRef.current = new Array(FRAME_COUNT).fill(null);
-
-    const measureGeometry = () => {
-      const rect = scrollSpace.getBoundingClientRect();
-      const top = rect.top + window.scrollY;
-      // Position: sticky unpins once scroll has advanced past
-      // (scrollSpace height - sticky element's own height) — NOT
-      // necessarily the full viewport height, since the sticky element
-      // can be shorter than 100dvh (e.g. the reduced mobile height
-      // below). Measuring the sticky element directly keeps the scrub
-      // perfectly synced to when it actually unpins.
-      const stickyHeight = heroStickyRef.current?.offsetHeight ?? window.innerHeight;
-      const total = scrollSpace.offsetHeight - stickyHeight;
-      geometryRef.current = { top, total: Math.max(total, 0) };
-    };
-
-    const getNearestFrame = (index: number) => {
-      const frames = framesRef.current;
-      if (frames[index]) return frames[index];
-      for (let d = 1; d < frames.length; d++) {
-        if (frames[index - d]) return frames[index - d];
-        if (frames[index + d]) return frames[index + d];
-      }
-      return null;
-    };
-
-    const drawFrame = (index: number, force = false) => {
-      if (!force && index === paintedFrameIndexRef.current) return;
-      const img = getNearestFrame(index);
-      const { w, h } = canvasSizeRef.current;
-      if (!img || w === 0 || h === 0) return;
-
-      const canvasRatio = w / h;
-      const imgRatio = img.naturalWidth / img.naturalHeight;
-      let sx: number, sy: number, sw: number, sh: number;
-      if (imgRatio > canvasRatio) {
-        sh = img.naturalHeight;
-        sw = sh * canvasRatio;
-        sx = (img.naturalWidth - sw) / 2;
-        sy = 0;
-      } else {
-        sw = img.naturalWidth;
-        sh = sw / canvasRatio;
-        sx = 0;
-        sy = (img.naturalHeight - sh) / 2;
-      }
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
-      paintedFrameIndexRef.current = index;
-    };
-
-    const resizeCanvas = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-      const rect = canvas.getBoundingClientRect();
-      const w = Math.round(rect.width * dpr);
-      const h = Math.round(rect.height * dpr);
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
-      canvasSizeRef.current = { w, h };
-      // Canvas size changed, so the previous paint no longer matches —
-      // force a redraw at the desired frame even if the index is unchanged.
-      drawFrame(desiredFrameIndexRef.current, true);
-    };
-
     let cancelled = false;
-
-    const loadFrames = async () => {
-      const conn = (navigator as NavigatorWithConnection).connection;
-      const dataSaver = Boolean(conn?.saveData);
-      const slowConn = conn?.effectiveType && ["slow-2g", "2g"].includes(conn.effectiveType);
-      if (dataSaver || slowConn) {
-        // Skip the frame sequence entirely — poster image stays as the
-        // hero. Scroll-linked text/progress bar still work (cheap, no
-        // network cost), only the frame scrub is disabled.
-        setUseFallback(true);
-        return;
-      }
-
-      try {
-        const priorityCount = Math.min(PRIORITY_FRAMES, FRAME_COUNT);
-        const priorityIdx = Array.from({ length: priorityCount }, (_, i) => i);
-        const priorityImgs = await Promise.all(
-          priorityIdx.map((i) => loadImage(framePath(i), "low"))
-        );
-        if (cancelled) return;
-        priorityIdx.forEach((i, idx) => {
-          framesRef.current[i] = priorityImgs[idx];
-        });
-
-        drawFrame(desiredFrameIndexRef.current, true);
-        setIsReady(true);
-
-        const rest = Array.from({ length: FRAME_COUNT }, (_, i) => i).filter(
-          (i) => !framesRef.current[i]
-        );
-        let cursor = 0;
-        const workers = Array.from({ length: BACKGROUND_LOAD_CONCURRENCY }, async () => {
-          while (cursor < rest.length) {
-            const i = rest[cursor++];
-            try {
-              const img = await loadImage(framePath(i), "low");
-              if (cancelled) return;
-              framesRef.current[i] = img;
-            } catch {
-              // Leave as null — getNearestFrame() falls back to the
-              // closest loaded neighbor, so a missed frame never shows
-              // as blank.
-            }
-          }
-        });
-        await Promise.all(workers);
-      } catch {
-        if (!cancelled) setUseFallback(true);
-      }
-    };
-
-    measureGeometry();
-    resizeCanvas();
-
-    // Don't start the frame-sequence downloads until the page's critical
-    // resources (poster, fonts, initial JS) have already finished loading.
-    // Starting immediately on mount would have 60-96 frame requests
-    // competing for bandwidth against the LCP-critical poster image,
-    // which is exactly what was slowing LCP down.
-    let frameLoadingStarted = false;
-    const startFrameLoading = () => {
-      if (frameLoadingStarted) return;
-      frameLoadingStarted = true;
-      loadFrames();
+    const start = () => {
+      if (!cancelled) setCanLoadVideo(true);
     };
     if (document.readyState === "complete") {
-      startFrameLoading();
+      start();
     } else {
-      window.addEventListener("load", startFrameLoading, { once: true });
+      window.addEventListener("load", start, { once: true });
     }
-
-    const textLayers = [textLayerARef, textLayerBRef];
-
-    const swapText = (nextText: string) => {
-      const activeIndex = activeLayerRef.current;
-      const nextIndex = (activeIndex + 1) % 2;
-      const activeEl = textLayers[activeIndex].current;
-      const nextEl = textLayers[nextIndex].current;
-      if (!activeEl || !nextEl) return;
-
-      if (nextEl.dataset.text !== nextText) {
-        nextEl.textContent = nextText;
-        nextEl.dataset.text = nextText;
-      }
-
-      nextEl.classList.remove("hero-text-hide");
-      nextEl.classList.add("hero-text-show");
-      activeEl.classList.remove("hero-text-show");
-      activeEl.classList.add("hero-text-hide");
-
-      activeLayerRef.current = nextIndex;
+    return () => {
+      cancelled = true;
+      window.removeEventListener("load", start);
     };
+  }, []);
 
-    const loop = (now: number) => {
-      if (!inViewRef.current) {
-        rafIdRef.current = null;
-        lastFrameTimeRef.current = null;
-        return;
-      }
-
-      const last = lastFrameTimeRef.current ?? now;
-      const dt = clamp((now - last) / 1000, 0, MAX_DT);
-      lastFrameTimeRef.current = now;
-
-      const { top, total } = geometryRef.current;
-      const scrolled = clamp(window.scrollY - top, 0, total);
-      const progress = total > 0 ? scrolled / total : 0;
-
-      const factor = reduceMotionQuery.matches ? 1 : frameFactor(SMOOTHING, dt);
-      displayedProgressRef.current += (progress - displayedProgressRef.current) * factor;
-
-      const frameIndex = Math.round(
-        clamp(displayedProgressRef.current, 0, 1) * (FRAME_COUNT - 1)
-      );
-      desiredFrameIndexRef.current = frameIndex;
-      if (!useFallbackRef.current) drawFrame(frameIndex);
-
-      const nextText = getStageText(progress);
-      if (nextText !== lastTextRef.current) {
-        lastTextRef.current = nextText;
-        swapText(nextText);
-      }
-
-      if (progressFillRef.current) {
-        progressFillRef.current.style.setProperty("--hero-progress", `${progress * 100}%`);
-      }
-
-      rafIdRef.current = requestAnimationFrame(loop);
-    };
-
-    rafIdRef.current = requestAnimationFrame(loop);
+  // Pause off-screen, resume on-screen — a background video decoding
+  // outside the viewport is pure waste.
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section || !canLoadVideo) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        inViewRef.current = entry.isIntersecting;
-        if (entry.isIntersecting && rafIdRef.current === null) {
-          lastFrameTimeRef.current = null;
-          rafIdRef.current = requestAnimationFrame(loop);
+        const video = videoRef.current;
+        if (!video) return;
+        if (entry.isIntersecting) {
+          video.play().catch(() => {
+            // Autoplay can still be rejected in some contexts (e.g. very
+            // aggressive power-saving modes) — the poster remains visible
+            // underneath, so this is a silent, harmless no-op.
+          });
+        } else {
+          video.pause();
         }
       },
       { rootMargin: OBSERVER_MARGIN }
     );
-    observer.observe(scrollSpace);
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, [canLoadVideo]);
 
-    let resizeRaf: number | null = null;
-    const handleResize = () => {
-      if (resizeRaf !== null) return;
-      resizeRaf = requestAnimationFrame(() => {
-        measureGeometry();
-        resizeCanvas();
-        resizeRaf = null;
-      });
-    };
-    window.addEventListener("resize", handleResize, { passive: true });
-    window.addEventListener("orientationchange", handleResize, { passive: true });
-
-    return () => {
-      cancelled = true;
-      window.removeEventListener("load", startFrameLoading);
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("orientationchange", handleResize);
-      if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
-      if (rafIdRef.current !== null) cancelAnimationFrame(rafIdRef.current);
-      observer.disconnect();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const showVideo = canLoadVideo && !videoErrored;
 
   return (
-    <div ref={scrollSpaceRef} data-hero-root className="hero-scroll-space">
-      <div ref={heroStickyRef} className="hero-sticky">
+    <section ref={sectionRef} className="hero">
+      <div className="hero-media" aria-hidden="true">
         <picture className="hero-poster-picture">
           <source media="(max-width: 768px)" srcSet={POSTER_SRC_MOBILE} type="image/webp" />
-          <img
-            src={POSTER_SRC}
-            alt=""
-            aria-hidden="true"
-            className="hero-poster"
-            fetchPriority="high"
-          />
+          <img src={POSTER_SRC} alt="" className="hero-poster" fetchPriority="high" />
         </picture>
-        <canvas
-          ref={canvasRef}
-          aria-hidden="true"
-          className={`hero-canvas ${isReady && !useFallback ? "hero-canvas-ready" : ""}`}
-        />
 
-        <div className="hero-overlay" />
-
-        <div className="hero-progress">
-          <div ref={progressFillRef} className="hero-progress-fill" />
-        </div>
-
-        <div className="hero-caption-stack">
-          <div className="hero-caption-glow" aria-hidden="true" />
-          <h1
-            ref={textLayerARef}
-            className="hero-heading hero-text-show"
-            data-text={STAGES[0].text}
+        {showVideo && (
+          <video
+            ref={videoRef}
+            className={`hero-video ${isVideoPlaying ? "hero-video-ready" : ""}`}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            onPlaying={() => setIsVideoPlaying(true)}
+            onError={() => setVideoErrored(true)}
           >
-            {STAGES[0].text}
-          </h1>
-          <h1
-            ref={textLayerBRef}
-            className="hero-heading hero-text-hide"
-            data-text=""
-          />
+            <source src={VIDEO_SRC} type="video/mp4" />
+          </video>
+        )}
+      </div>
+
+      <div className="hero-overlay" />
+
+      <div className="hero-content">
+        <div className="hero-eyebrow-row">
+          <svg
+            className="hero-level"
+            width="46"
+            height="16"
+            viewBox="0 0 46 16"
+            fill="none"
+            aria-hidden="true"
+          >
+            <rect x="1" y="1" width="44" height="14" rx="7" stroke="#E3C69B" strokeWidth="1.25" />
+            <line x1="15.3" y1="3" x2="15.3" y2="13" stroke="#E3C69B" strokeOpacity="0.55" strokeWidth="1" />
+            <line x1="30.7" y1="3" x2="30.7" y2="13" stroke="#E3C69B" strokeOpacity="0.55" strokeWidth="1" />
+            <circle className="hero-level-bubble" cy="8" r="3.6" fill="#E3C69B" />
+          </svg>
+          <span className="hero-eyebrow">New Builds, Renovations &amp; Maintenance</span>
         </div>
 
-        <div className="hero-scroll-hint" aria-hidden="true">
-          <span className="hero-scroll-line" />
-        </div>
+        <h1 className="hero-heading">Every Build Follows A Plan You Can See.</h1>
 
-        <div className="hero-seo">
-          <div className="hero-seo-track">
-            {SEO_PHRASES.map((phrase, i) => (
-              <span key={phrase} className="hero-seo-pill">
-                {phrase}
-                {i < SEO_PHRASES.length - 1 && (
-                  <span className="hero-seo-dot">•</span>
-                )}
-              </span>
-            ))}
-          </div>
+        <p className="hero-subhead">
+          Timber-frame builds, full renovations, and ongoing property maintenance — carried
+          through the same disciplined process from first site visit to final handover.
+        </p>
+
+        <div className="hero-actions">
+          <a href="#contact" className="hero-btn hero-btn-primary">
+            Book A Site Visit
+          </a>
+          <a href="#our-process-heading" className="hero-btn hero-btn-secondary">
+            See Our Process
+            <span aria-hidden="true" className="hero-btn-arrow">
+              →
+            </span>
+          </a>
+        </div>
+      </div>
+
+      <div className="hero-seo">
+        <div className="hero-seo-track">
+          {SEO_PHRASES.map((phrase) => (
+            <span key={phrase} className="hero-seo-pill">
+              {phrase}
+            </span>
+          ))}
         </div>
       </div>
 
       <style jsx>{`
-        .hero-scroll-space {
-          /* Scroll runway length — how much scroll distance it takes to
-             scrub through the whole clip. Overridden per breakpoint below
-             so the pacing feels right on phones vs. desktop, instead of
-             using one fixed length for every viewport. */
-          --hero-scroll-length: 170vh;
-          height: var(--hero-scroll-length);
+        .hero {
           position: relative;
-        }
-
-        .hero-sticky {
-          position: sticky;
-          top: 0;
           height: 100vh;
           height: 100dvh;
           overflow: hidden;
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           justify-content: center;
         }
 
@@ -520,276 +238,245 @@ export default function Hero() {
           display: contents;
         }
 
+        .hero-media,
         .hero-poster,
-        .hero-canvas {
+        .hero-video {
           position: absolute;
           inset: 0;
           width: 100%;
           height: 100%;
-          z-index: 0;
         }
 
         .hero-poster {
           object-fit: cover;
+          z-index: 0;
         }
 
-        .hero-canvas {
-          display: block;
+        .hero-video {
+          object-fit: cover;
+          z-index: 1;
           opacity: 0;
-          transition: opacity 0.5s ease;
+          transition: opacity 0.7s ease;
           will-change: opacity;
           transform: translateZ(0);
         }
-        .hero-canvas-ready {
+        .hero-video-ready {
           opacity: 1;
         }
 
         .hero-overlay {
           position: absolute;
           inset: 0;
+          z-index: 2;
           background: linear-gradient(
             0deg,
-            rgba(0, 0, 0, 0.72) 0%,
-            rgba(0, 0, 0, 0.32) 30%,
-            rgba(0, 0, 0, 0.12) 48%,
-            rgba(0, 0, 0, 0.16) 100%
+            rgba(36, 28, 21, 0.74) 0%,
+            rgba(36, 28, 21, 0.38) 34%,
+            rgba(36, 28, 21, 0.1) 54%,
+            rgba(36, 28, 21, 0.18) 100%
           );
-          z-index: 1;
         }
 
         /* ----------------------------------------------------------------
-           Progress bar — vertical rail on desktop by default. Driven by
-           the --hero-progress custom property set from rAF.
+           Content — headline, subhead, CTAs. Page-load sequence: eyebrow,
+           heading, subhead, actions fade/rise in with a short stagger.
+           Reduced-motion collapses this to an instant appearance below.
            ---------------------------------------------------------------- */
-        .hero-progress {
-          position: absolute;
-          right: 0.75rem;
-          top: 7.5rem;
-          width: 4px;
-          height: calc(100% - 12rem);
-          max-height: 220px;
-          background: rgba(255, 255, 255, 0.18);
-          border-radius: 2px;
+        .hero-content {
+          position: relative;
           z-index: 3;
-        }
-        .hero-progress-fill {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          width: 100%;
-          height: var(--hero-progress, 0%);
-          background: #e0a077;
-          border-radius: 2px;
-          transition: height 0.05s linear;
-        }
-
-        .hero-caption-stack {
-          position: absolute;
-          bottom: 21%;
-          left: 0;
-          right: 0;
-          z-index: 2;
-          width: min(92vw, 560px);
+          width: min(92vw, 640px);
           margin: 0 auto;
+          padding: 0 1.25rem;
+          padding-bottom: 7rem;
           box-sizing: border-box;
-          padding: 0 1rem;
-          min-height: 5rem;
+          text-align: center;
         }
 
-        .hero-caption-glow {
-          position: absolute;
-          inset: -1.5rem -1rem;
-          background: radial-gradient(
-            ellipse at center,
-            rgba(0, 0, 0, 0.38) 0%,
-            rgba(0, 0, 0, 0.16) 55%,
-            transparent 80%
-          );
-          z-index: -1;
-          pointer-events: none;
+        .hero-eyebrow-row {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.6rem;
+          margin-bottom: 1.1rem;
+          opacity: 0;
+          animation: hero-rise 0.7s ease forwards;
+          animation-delay: 0.1s;
+        }
+        .hero-eyebrow {
+          font-size: 0.72rem;
+          font-weight: 600;
+          letter-spacing: 0.18em;
+          text-transform: uppercase;
+          color: #e3c69b;
+        }
+
+        .hero-level {
+          flex-shrink: 0;
+        }
+        .hero-level-bubble {
+          transform-box: fill-box;
+          transform-origin: 50% 50%;
+          animation: hero-level-settle 1.3s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+          animation-delay: 0.25s;
+        }
+        @keyframes hero-level-settle {
+          0% {
+            transform: translateX(-7.5px);
+          }
+          55% {
+            transform: translateX(8px);
+          }
+          78% {
+            transform: translateX(-2.5px);
+          }
+          100% {
+            transform: translateX(0);
+          }
         }
 
         .hero-heading {
-          position: absolute;
-          inset: 0;
-          margin: 0;
-          font-size: clamp(1.75rem, 6vw, 2.75rem);
-          font-weight: 700;
-          line-height: 1.25;
-          color: #fff;
-          text-align: center;
-          text-shadow: 0 2px 18px rgba(0, 0, 0, 0.55);
-          transition: opacity 0.4s ease, transform 0.4s ease;
-          will-change: opacity, transform;
+          margin: 0 0 0.9rem;
+          font-family: var(--font-fraunces, inherit);
+          font-size: clamp(1.9rem, 5.2vw, 3.1rem);
+          font-weight: 500;
+          line-height: 1.14;
+          letter-spacing: -0.01em;
+          color: #fbf9f6;
+          text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+          opacity: 0;
+          animation: hero-rise 0.8s ease forwards;
+          animation-delay: 0.2s;
+        }
+
+        .hero-subhead {
+          margin: 0 auto 1.9rem;
+          max-width: 46ch;
+          font-size: clamp(0.95rem, 1.7vw, 1.08rem);
+          line-height: 1.65;
+          color: rgba(251, 249, 246, 0.85);
+          opacity: 0;
+          animation: hero-rise 0.8s ease forwards;
+          animation-delay: 0.32s;
+        }
+
+        .hero-actions {
           display: flex;
+          flex-wrap: wrap;
           align-items: center;
           justify-content: center;
-        }
-
-        .hero-text-show {
-          opacity: 1;
-          transform: translateY(0);
-        }
-        .hero-text-hide {
+          gap: 0.85rem;
           opacity: 0;
-          transform: translateY(14px);
+          animation: hero-rise 0.8s ease forwards;
+          animation-delay: 0.44s;
         }
 
-        .hero-scroll-hint {
-          position: absolute;
-          bottom: 5.5rem;
-          left: 50%;
-          transform: translateX(-50%);
-          z-index: 2;
-          width: 22px;
-          height: 34px;
-          border: 2px solid rgba(255, 255, 255, 0.55);
-          border-radius: 12px;
-          display: flex;
-          justify-content: center;
-          pointer-events: none;
+        .hero-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.85rem 1.6rem;
+          border-radius: 9999px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          text-decoration: none;
+          white-space: nowrap;
+          transition: transform 0.25s ease, background 0.25s ease, border-color 0.25s ease,
+            color 0.25s ease;
         }
-        .hero-scroll-line {
-          display: block;
-          width: 3px;
-          height: 7px;
-          margin-top: 7px;
-          background: rgba(255, 255, 255, 0.9);
-          border-radius: 2px;
-          animation: hero-bounce 1.6s ease-in-out infinite;
+        .hero-btn-primary {
+          background: #a26028;
+          color: #fbf9f6;
+          box-shadow: 0 10px 24px -10px rgba(162, 96, 40, 0.6);
+        }
+        .hero-btn-secondary {
+          background: transparent;
+          color: #fbf9f6;
+          border: 1.5px solid rgba(251, 249, 246, 0.4);
+        }
+        .hero-btn-arrow {
+          transition: transform 0.25s ease;
         }
 
-        @keyframes hero-bounce {
-          0%,
-          100% {
-            transform: translateY(0);
-            opacity: 1;
+        @media (hover: hover) and (pointer: fine) {
+          .hero-btn-primary:hover {
+            transform: translateY(-2px);
           }
-          50% {
-            transform: translateY(8px);
-            opacity: 0.5;
+          .hero-btn-secondary:hover {
+            border-color: #e3c69b;
+            color: #e3c69b;
+          }
+          .hero-btn-secondary:hover .hero-btn-arrow {
+            transform: translateX(3px);
+          }
+        }
+
+        @keyframes hero-rise {
+          from {
+            opacity: 0;
+            transform: translateY(14px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
           }
         }
 
         /* ----------------------------------------------------------------
-           SEO strip — wraps/centers on desktop by default; overridden to a
-           horizontally scrollable snap row on mobile below.
+           SEO strip — quiet footer credential, not a second headline.
+           Wraps/centers on desktop; a horizontally scrollable snap row on
+           mobile below.
            ---------------------------------------------------------------- */
         .hero-seo {
           position: absolute;
           bottom: 0;
           left: 0;
           right: 0;
-          z-index: 2;
-          background: rgba(11, 11, 13, 0.45);
+          z-index: 3;
+          background: rgba(36, 28, 21, 0.42);
           backdrop-filter: blur(6px);
           -webkit-backdrop-filter: blur(6px);
         }
         .hero-seo-track {
-          padding: 0.85rem 1rem;
-          padding-bottom: calc(0.85rem + env(safe-area-inset-bottom));
+          padding: 0.9rem 1rem;
+          padding-bottom: calc(0.9rem + env(safe-area-inset-bottom));
           display: flex;
           flex-wrap: wrap;
           justify-content: center;
-          gap: 0.35rem 1rem;
+          gap: 0.5rem 1.6rem;
         }
         .hero-seo-pill {
           font-size: clamp(0.65rem, 1.4vw, 0.75rem);
           letter-spacing: 0.08em;
           text-transform: uppercase;
-          color: rgba(255, 255, 255, 0.78);
+          color: rgba(255, 255, 255, 0.72);
           font-weight: 600;
           white-space: nowrap;
-        }
-        .hero-seo-dot {
-          margin-inline-start: 1rem;
-          color: rgba(255, 255, 255, 0.28);
         }
 
         /* ----------------------------------------------------------------
            Very small phones
            ---------------------------------------------------------------- */
         @media (max-width: 380px) {
-          .hero-scroll-space {
-            --hero-scroll-length: 125vh;
-          }
-          .hero-caption-stack {
-            padding: 0 0.5rem;
-            bottom: 23%;
-            min-height: 6.5rem;
+          .hero-content {
+            padding-bottom: 8rem;
           }
           .hero-heading {
-            font-size: clamp(1.45rem, 7.5vw, 1.85rem);
-            line-height: 1.22;
+            font-size: clamp(1.5rem, 7vw, 1.9rem);
+            line-height: 1.2;
           }
         }
 
         /* ----------------------------------------------------------------
-           Phones / small screens — slightly shorter than full-bleed
-           (92dvh instead of 100dvh) so a hint of the next section peeks
-           in, top-loading progress bar, horizontally scrollable SEO strip.
+           Phones / small screens
            ---------------------------------------------------------------- */
         @media (max-width: 768px) {
-          .hero-scroll-space {
-            --hero-scroll-length: 130vh;
-          }
-          .hero-sticky {
+          .hero {
             height: 92vh;
             height: 92dvh;
           }
-
-          .hero-overlay {
-            background: linear-gradient(
-              0deg,
-              rgba(0, 0, 0, 0.78) 0%,
-              rgba(0, 0, 0, 0.4) 26%,
-              rgba(0, 0, 0, 0.14) 46%,
-              rgba(0, 0, 0, 0.18) 100%
-            );
+          .hero-content {
+            padding-bottom: 6.5rem;
           }
-
-          /* Progress becomes a slim top-loading bar, safe-area aware. */
-          .hero-progress {
-            top: env(safe-area-inset-top, 0px);
-            left: 0;
-            right: 0;
-            width: 100%;
-            height: 3px;
-            max-height: none;
-            border-radius: 0;
-            background: rgba(255, 255, 255, 0.16);
-          }
-          .hero-progress-fill {
-            top: 0;
-            bottom: auto;
-            height: 100%;
-            width: var(--hero-progress, 0%);
-            border-radius: 0;
-            transition: width 0.05s linear;
-          }
-
-          .hero-caption-stack {
-            bottom: calc(6.75rem + env(safe-area-inset-bottom));
-            width: min(90vw, 480px);
-            min-height: 6rem;
-          }
-          .hero-heading {
-            font-size: clamp(1.6rem, 6.6vw, 2.1rem);
-            line-height: 1.24;
-            letter-spacing: -0.01em;
-          }
-
-          .hero-scroll-hint {
-            bottom: calc(4.5rem + env(safe-area-inset-bottom));
-            width: 18px;
-            height: 28px;
-          }
-          .hero-scroll-line {
-            height: 6px;
-            margin-top: 6px;
-          }
-
-          /* SEO strip: single row, horizontally scrollable, edge-faded. */
           .hero-seo-track {
             flex-wrap: nowrap;
             justify-content: flex-start;
@@ -798,9 +485,9 @@ export default function Hero() {
             scroll-snap-type: x proximity;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
-            padding: 0.7rem 1.25rem;
-            padding-bottom: calc(0.7rem + env(safe-area-inset-bottom));
-            gap: 0.35rem 0.85rem;
+            padding: 0.75rem 1.25rem;
+            padding-bottom: calc(0.75rem + env(safe-area-inset-bottom));
+            gap: 0.5rem 1.4rem;
             mask-image: linear-gradient(
               to right,
               transparent 0,
@@ -823,46 +510,20 @@ export default function Hero() {
             scroll-snap-align: center;
             font-size: 0.7rem;
           }
-          .hero-seo-dot {
-            margin-inline-start: 0.85rem;
-          }
         }
 
         /* ----------------------------------------------------------------
-           Short-landscape phones — dvh is tiny here, so trim vertical
-           chrome aggressively and drop the scroll hint entirely.
+           Short-landscape phones
            ---------------------------------------------------------------- */
         @media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
-          .hero-scroll-space {
-            --hero-scroll-length: 220vh;
-          }
-          .hero-caption-stack {
-            bottom: 5rem;
-            width: min(80vw, 460px);
-            min-height: 3.5rem;
+          .hero-content {
+            padding-bottom: 4.5rem;
           }
           .hero-heading {
-            font-size: clamp(1.15rem, 4.5vw, 1.5rem);
-            line-height: 1.2;
+            font-size: clamp(1.3rem, 4.5vw, 1.7rem);
           }
-          .hero-scroll-hint {
+          .hero-subhead {
             display: none;
-          }
-          .hero-seo-track {
-            padding-top: 0.5rem;
-            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-          }
-        }
-
-        /* ----------------------------------------------------------------
-           Tablets
-           ---------------------------------------------------------------- */
-        @media (min-width: 769px) and (max-width: 1024px) {
-          .hero-scroll-space {
-            --hero-scroll-length: 155vh;
-          }
-          .hero-caption-stack {
-            width: min(70vw, 600px);
           }
         }
 
@@ -870,58 +531,45 @@ export default function Hero() {
            Desktop refinements
            ---------------------------------------------------------------- */
         @media (min-width: 769px) {
-          .hero-caption-stack {
-            bottom: 16%;
-            width: min(78vw, 640px);
-            padding: 0;
-          }
-          .hero-heading {
-            font-size: clamp(2rem, 3.6vw, 2.75rem);
-          }
-          .hero-scroll-hint {
-            display: none;
+          .hero-content {
+            padding-bottom: 5.5rem;
           }
         }
 
-        /* ----------------------------------------------------------------
-           Large / ultra-wide desktop
-           ---------------------------------------------------------------- */
         @media (min-width: 1440px) {
-          .hero-scroll-space {
-            --hero-scroll-length: 190vh;
-          }
-          .hero-caption-stack {
-            width: min(56vw, 720px);
-          }
-          .hero-heading {
-            font-size: clamp(2.25rem, 3vw, 3.25rem);
+          .hero-content {
+            width: min(60vw, 760px);
           }
         }
 
         @media (max-height: 560px) and (min-width: 769px) {
-          .hero-caption-stack {
-            bottom: 20%;
-          }
-          .hero-scroll-hint {
-            display: none;
+          .hero-content {
+            padding-bottom: 3.5rem;
           }
         }
 
         /* ----------------------------------------------------------------
-           Respect reduced-motion preferences
+           Reduced motion — instant final state, no page-load sequence,
+           no level-bubble settle.
            ---------------------------------------------------------------- */
         @media (prefers-reduced-motion: reduce) {
-          .hero-heading {
-            transition: opacity 0.15s linear, transform 0.15s linear;
-          }
-          .hero-canvas {
-            transition: opacity 0.15s linear;
-          }
-          .hero-scroll-line {
+          .hero-eyebrow-row,
+          .hero-heading,
+          .hero-subhead,
+          .hero-actions {
             animation: none;
+            opacity: 1;
+            transform: none;
+          }
+          .hero-level-bubble {
+            animation: none;
+            transform: translateX(0);
+          }
+          .hero-video {
+            transition: none;
           }
         }
       `}</style>
-    </div>
+    </section>
   );
 }
