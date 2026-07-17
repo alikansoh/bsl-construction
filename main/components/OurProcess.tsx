@@ -3,68 +3,51 @@
 /**
  * OurProcess.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * "Our Process" — a step-by-step section. Palette and type still come from
- * the shared site system (#1C1712 / #6E6259 / #A26028 / #E8C599, Fraunces
- * serif, warm ivory background) so it doesn't clash with Projects.tsx /
- * WhyChooseUs.tsx, but the composition itself is a deliberate departure
- * from the previous pass.
+ * "Our Process" — a step-by-step section. Same palette/type system as the
+ * rest of the site (#1C1712 / #6E6259 / #A26028 / #E8C599, Fraunces serif,
+ * warm ivory background).
  *
- * WHAT CHANGED IN THIS PASS (full rebuild, not a tweak)
- * - No icons, anywhere. No medallions, no artwork, no per-stage imagery
- *   at all — every prior icon (raster or inline SVG) is gone.
- * - Replaced the zig-zag flip-card grid with a single, quiet step strip:
- *   a numbered marker, a title, a description — connected by one hairline
- *   rule that runs the full width on desktop (stacking to a plain list on
- *   mobile, where a cross-page line has no room to read as a line).
- * - Replaced four separate flourish animations (card flip, travelling
- *   marker, stamp punch, numeral tally + gleam) with exactly two
- *   restrained ones: the connecting rule fills in as you scroll past the
- *   section, and each step's text settles in with a plain fade + rise —
- *   the kind of motion a professional-services site uses, not a novelty.
- * - Dropped the blueprint dot-grid backdrop and the custom pencil cursor.
- *   Both were charming but read as playful rather than as a company you'd
- *   trust with a renovation budget; the section now sits on plain ivory.
- * - Numerals are no longer oversized brass-gradient display type — they're
- *   modest, sit inside a plain ring marker, and only change from a hollow
- *   outline to a filled brass ring once their step has been read, as a
- *   quiet progress cue rather than a spectacle.
+ * WHAT CHANGED IN THIS PASS
+ * - The connecting rule is no longer just a fill bar — it now carries a
+ *   small brass "checkpoint" dot that physically rides along its leading
+ *   edge as you scroll, like a level or plumb-line moving down a job site.
+ *   That's the signature element: one literal, on-brand piece of motion,
+ *   everything else stays quiet.
+ * - Each marker "activates" with a short, bouncy checkpoint pop (a quick
+ *   overshoot scale-in) plus a single soft pulse-ring — the visual
+ *   equivalent of a level hitting its mark — instead of the previous
+ *   plain colour crossfade. It happens once per step, never loops.
+ * - The step number gets a small pop/settle of its own, timed a beat
+ *   after the marker, so the numeral doesn't just appear — it "clicks"
+ *   into place.
+ * - Everything from the previous pass is kept: numbered strip layout, no
+ *   icons/artwork, hairline connecting rule (desktop only), plain list on
+ *   mobile, full prefers-reduced-motion support, matchMedia teardown.
  *
- * SIGNATURE ELEMENT — the connecting rule
- * - A single hairline line runs behind all four markers. A second line,
- *   drawn in brass, grows across the top of it in lock-step with scroll
- *   position, so the whole strip reads as one continuous line being
- *   completed left-to-right — a plain, literal "process" metaphor with no
- *   ornament attached to it.
+ * THREE GSAP ANIMATIONS (up from two, still deliberately few)
+ *   1. Rule fill + traveling dot — scroll-scrubbed width grow on the brass
+ *      overlay line, with a small dot pinned to its leading edge so the
+ *      line reads as something moving, not just growing.
+ *   2. Checkpoint pop — each marker scales in with a back-ease overshoot
+ *      and a single CSS pulse-ring the moment its step scrolls into view;
+ *      its numeral pops a beat later.
+ *   3. Step reveal — each step's text still fades up once on scroll into
+ *      view, staggered per-row exactly as before.
  *
- * TWO GSAP ANIMATIONS (down from four)
- *   1. Rule fill — scroll-scrubbed width grow on the brass overlay line,
- *      tied to how far the visitor has scrolled through the step list.
- *   2. Step reveal — each step's text fades up once on scroll-into-view;
- *      its marker swaps from a hollow ring to a filled brass ring at the
- *      same moment, via a CSS class toggle (no per-property tween needed).
+ * CONTENT — unchanged, sourced from the client's own "Our Process" copy.
  *
- * CONTENT
- * - Four stages, taken directly from the client's own "Our Process" copy:
- *   Consultation & Site Visit, Planning & Quotation, Build & Project
- *   Management, Completion & Aftercare. Nothing invented; copy unchanged
- *   from the previous pass.
- *
- * SEO
- * - Single <h2> with four <h3> stage headings, no skipped levels. Marker
- *   numerals are decorative and aria-hidden; the "Step 0X" label next to
- *   each heading carries the equivalent information for assistive tech.
- * - Minimal HowTo JSON-LD retained. Placeholder fields are marked TODO —
- *   merge with any existing structured data rather than duplicating.
+ * SEO — unchanged: single <h2>, four <h3>s, aria-hidden numerals, "Step 0X"
+ * label for assistive tech, minimal HowTo JSON-LD (placeholder fields
+ * marked TODO — merge with any existing structured data).
  *
  * ACCESSIBILITY / PERFORMANCE
- * - `prefers-reduced-motion: reduce` disables the rule-fill scrub and the
- *   fade/rise; markers render already-filled and text renders already
- *   visible.
- * - The connecting rule is desktop-only (`lg:` and up, matching a 4-column
- *   grid); on mobile the steps stack as a plain list with no line, since a
- *   line across a single narrow column has nothing to connect.
- * - Implemented with `gsap.matchMedia()` so behaviour is cleanly torn
- *   down on breakpoint change / unmount.
+ * - `prefers-reduced-motion: reduce` disables all three animations —
+ *   markers, numerals and text render already in their settled state, and
+ *   the traveling dot/pulse-ring are never shown.
+ * - Connecting rule + dot are desktop-only (`lg:` and up); mobile stacks
+ *   as a plain list with a lighter, direct-set checkpoint pop (no rule to
+ *   travel along).
+ * - `gsap.matchMedia()` for clean teardown on breakpoint change / unmount.
  *
  * DEPENDENCY: requires `gsap` (npm install gsap).
  * -------------------------------------------------------------------------
@@ -142,8 +125,10 @@ const RULE_SPAN_PCT = 100 - RULE_INSET_PCT * 2;
 export default function OurProcess() {
   const listRef = useRef<HTMLOListElement | null>(null);
   const ruleFillRef = useRef<HTMLDivElement | null>(null);
+  const ruleDotRef = useRef<HTMLDivElement | null>(null);
   const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
   const markerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const numeralRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const contentRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -152,6 +137,7 @@ export default function OurProcess() {
 
     const rows = rowRefs.current.filter((el): el is HTMLLIElement => Boolean(el));
     const markers = markerRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
+    const numerals = numeralRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
     const contents = contentRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
     if (rows.length === 0) return;
 
@@ -167,6 +153,9 @@ export default function OurProcess() {
         y: reduceMotion ? 0 : 14,
       });
 
+      gsap.set(markers, { scale: reduceMotion ? 1 : 0.72, transformOrigin: "50% 50%" });
+      gsap.set(numerals, { opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 });
+
       if (reduceMotion) {
         markers.forEach((marker) => marker.classList.add("is-active"));
       }
@@ -174,10 +163,18 @@ export default function OurProcess() {
       if (ruleFillRef.current) {
         gsap.set(ruleFillRef.current, { width: reduceMotion ? `${RULE_SPAN_PCT}%` : "0%" });
       }
+      if (ruleDotRef.current) {
+        gsap.set(ruleDotRef.current, {
+          left: `${RULE_INSET_PCT}%`,
+          opacity: reduceMotion ? 0 : 0,
+        });
+      }
 
       // ---- ANIMATION 1: connecting rule fills in, scrubbed to how far the
-      // visitor has scrolled through the step list. Desktop only (the rule
-      // itself is hidden below `lg` via CSS).
+      // visitor has scrolled through the step list, with a small brass
+      // "checkpoint" dot riding its leading edge — the line reads as
+      // something moving across the strip, like a level on a job site.
+      // Desktop only (the rule itself is hidden below `lg` via CSS).
       if (!reduceMotion && ruleFillRef.current) {
         const ruleTrigger = ScrollTrigger.create({
           trigger: list,
@@ -185,27 +182,68 @@ export default function OurProcess() {
           end: "bottom 62%",
           scrub: 0.6,
           onUpdate: (self) => {
-            gsap.set(ruleFillRef.current, { width: `${self.progress * RULE_SPAN_PCT}%` });
+            const fillPct = self.progress * RULE_SPAN_PCT;
+            gsap.set(ruleFillRef.current, { width: `${fillPct}%` });
+            if (ruleDotRef.current) {
+              gsap.set(ruleDotRef.current, {
+                left: `${RULE_INSET_PCT + fillPct}%`,
+                opacity: self.progress > 0.01 && self.progress < 0.999 ? 1 : self.progress >= 0.999 ? 1 : 0,
+              });
+            }
           },
         });
         triggers.push(ruleTrigger);
       }
 
-      // ---- ANIMATION 2: each step's text fades up once on scroll-into-
-      // view; its marker swaps from hollow to filled at the same moment.
+      // ---- ANIMATION 2 + 3: on scroll into view, each marker "checks in"
+      // with a quick back-ease overshoot pop and a single pulse-ring, its
+      // numeral clicks into place a beat later, and its text fades up —
+      // staggered per row so four steps read as one-by-one even when
+      // several enter the viewport together (the desktop 4-column strip).
+      const STEP_STAGGER = 0.16;
       rows.forEach((row, i) => {
         const t = ScrollTrigger.create({
           trigger: row,
           start: "top 80%",
           once: true,
           onEnter: () => {
+            const delay = reduceMotion ? 0 : i * STEP_STAGGER;
+            const marker = markers[i];
+            const numeral = numerals[i];
+
             gsap.to(contents[i], {
               opacity: 1,
               y: 0,
               duration: reduceMotion ? 0.01 : 0.7,
               ease: "power2.out",
+              delay,
             });
-            markers[i]?.classList.add("is-active");
+
+            if (marker) {
+              gsap.to(marker, {
+                scale: 1,
+                duration: reduceMotion ? 0.01 : 0.55,
+                ease: "back.out(2.4)",
+                delay,
+                onStart: () => {
+                  marker.classList.add("is-active");
+                  if (!reduceMotion) {
+                    marker.classList.add("is-checking-in");
+                    window.setTimeout(() => marker.classList.remove("is-checking-in"), 900);
+                  }
+                },
+              });
+            }
+
+            if (numeral) {
+              gsap.to(numeral, {
+                opacity: 1,
+                scale: 1,
+                duration: reduceMotion ? 0.01 : 0.4,
+                ease: "back.out(2.8)",
+                delay: delay + (reduceMotion ? 0 : 0.12),
+              });
+            }
           },
         });
         triggers.push(t);
@@ -246,6 +284,37 @@ export default function OurProcess() {
         .bsl-step-title {
           transition: color 0.3s ease;
         }
+
+        /* Checkpoint pulse-ring — plays once, the instant a marker activates.
+           A single soft ripple, not a loop: the "level hitting its mark". */
+        @keyframes bsl-pulse-ring {
+          0% {
+            box-shadow: 0 0 0 0 rgba(162, 96, 40, 0.42), 0 6px 16px -9px rgba(162, 96, 40, 0.5),
+              inset 0 1px 1px rgba(255, 255, 255, 0.7);
+          }
+          70% {
+            box-shadow: 0 0 0 13px rgba(162, 96, 40, 0), 0 6px 16px -9px rgba(162, 96, 40, 0.5),
+              inset 0 1px 1px rgba(255, 255, 255, 0.7);
+          }
+          100% {
+            box-shadow: 0 0 0 0 rgba(162, 96, 40, 0), 0 6px 16px -9px rgba(162, 96, 40, 0.5),
+              inset 0 1px 1px rgba(255, 255, 255, 0.7);
+          }
+        }
+        .bsl-step-marker.is-checking-in {
+          animation: bsl-pulse-ring 0.85s ease-out;
+        }
+
+        /* Traveling checkpoint dot — a soft, breathing brass halo so it
+           reads as something in motion rather than a static marker. */
+        @keyframes bsl-dot-breathe {
+          0%, 100% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 0 4px #fbf9f6, 0 0 10px 2px rgba(162, 96, 40, 0.55); }
+          50% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 0 4px #fbf9f6, 0 0 15px 4px rgba(162, 96, 40, 0.75); }
+        }
+        .bsl-rule-dot {
+          animation: bsl-dot-breathe 1.6s ease-in-out infinite;
+        }
+
         @media (hover: hover) and (pointer: fine) {
           .bsl-step-row:hover .bsl-step-title {
             color: #8a5121;
@@ -253,6 +322,13 @@ export default function OurProcess() {
           .bsl-step-row:hover .bsl-step-marker.is-active {
             box-shadow: 0 9px 20px -9px rgba(162, 96, 40, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.7);
           }
+          .bsl-step-row:hover .bsl-step-marker.is-active {
+            transform: translateY(-2px);
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .bsl-rule-dot { animation: none; }
         }
       `}</style>
 
@@ -282,8 +358,9 @@ export default function OurProcess() {
         </header>
 
         <div className="relative">
-          {/* Base rule + brass fill overlay — desktop only. Insets match the
-              center of the first/last marker in the 4-column grid below. */}
+          {/* Base rule + brass fill overlay + traveling checkpoint dot —
+              desktop only. Insets match the center of the first/last
+              marker in the 4-column grid below. */}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute top-7 hidden h-px bg-[#1C1712]/10 lg:block"
@@ -294,6 +371,12 @@ export default function OurProcess() {
             aria-hidden="true"
             className="pointer-events-none absolute top-7 hidden h-px bg-[#A26028] lg:block"
             style={{ left: `${RULE_INSET_PCT}%`, width: 0 }}
+          />
+          <div
+            ref={ruleDotRef}
+            aria-hidden="true"
+            className="bsl-rule-dot pointer-events-none absolute top-7 hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A26028] lg:block"
+            style={{ left: `${RULE_INSET_PCT}%`, opacity: 0 }}
           />
 
           <ol ref={listRef} className="relative grid grid-cols-1 gap-14 lg:grid-cols-4 lg:gap-6">
@@ -312,7 +395,14 @@ export default function OurProcess() {
                   aria-hidden="true"
                   className="bsl-step-marker relative z-10 mb-5 flex h-14 w-14 shrink-0 items-center justify-center rounded-full"
                 >
-                  <span className="bsl-step-num bsl-serif text-[1.05rem] font-medium">{stage.number}</span>
+                  <span
+                    ref={(el) => {
+                      numeralRefs.current[i] = el;
+                    }}
+                    className="bsl-step-num bsl-serif text-[1.05rem] font-medium"
+                  >
+                    {stage.number}
+                  </span>
                 </div>
 
                 <div
