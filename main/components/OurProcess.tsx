@@ -8,19 +8,25 @@
  * Fraunces serif, warm ivory panels, blueprint dot-grid).
  *
  * WHAT CHANGED IN THIS PASS
- * - The stage numeral is no longer a faint background watermark. It's now
- *   the section's signature move: a bold engraved-brass numeral, milled
- *   from the same metal language as the rail marker, that free-falls into
- *   place, counts up from 00 like a mechanical tally counter, and then
- *   catches the light with a single sweeping gleam — as if a stamp had
- *   just struck the plate. It now sits front-and-centre next to the icon,
- *   not hidden behind the copy.
- * - Added quiet blueprint "registration marks" (corner brackets) on each
- *   card, echoing the dimension-line rail and dot-grid backdrop so the
- *   whole section reads as one consistent drafting-table system.
- * - Added a brass gradient underline beneath the section heading.
- * - Card hover state, icon stamp, and rail marker are unchanged from the
- *   previous pass; icons remain un-badged, artwork-forward.
+ * - Removed every raster image dependency (/visit.png, /planning.png,
+ *   /build.avif, /maintenance.png). Each stage's artwork is now a
+ *   hand-drawn, brass-stroke line icon — set inside a struck brass
+ *   medallion that reuses the exact conic-gradient ring + radial-gradient
+ *   disc technique already built for the rail marker, so the icon, the
+ *   numeral, and the marker now visibly read as one metal/drafting
+ *   language instead of three unrelated devices.
+ * - Because the icons are vector paths rather than photos, they can be
+ *   *drawn on*: each icon's strokes are traced in from 0 → 100% length
+ *   right after the medallion's stamp-punch lands, like a line being
+ *   inked onto a plate. This is a genuinely new animation beat, not a
+ *   reskin of the old img-scale hover.
+ * - Added a hairline brass gradient accent along the top edge of each
+ *   card, echoing the underline beneath the section heading, so the
+ *   card itself gets a quiet signature detail rather than being a plain
+ *   white box.
+ * - Card hover now lifts the whole medallion (scale) instead of scaling
+ *   an <img>; rail marker, card flip-in, and numeral drop/tally/gleam
+ *   are unchanged from the previous pass.
  *
  * SIGNATURE ELEMENT — the engraved numeral drop + count + gleam
  * - On scroll-into-view, the numeral drops from above with a heavy
@@ -29,8 +35,8 @@
  *   counter clicking over. The instant it lands, a single warm gleam
  *   sweeps across the brass gradient, as though light had just caught a
  *   freshly struck plate. This runs once per card, independent of the
- *   rail and icon-stamp animations, so all four cards feel considered
- *   rather than uniform.
+ *   rail and icon animations, so all four cards feel considered rather
+ *   than uniform.
  *
  * FOUR DISTINCT GSAP ANIMATIONS
  *   1. Card reveal — each stage panel flips in with real 3D (rotateY +
@@ -39,9 +45,11 @@
  *   2. Rail marker — a single scroll-scrubbed animation that moves the
  *      brass marker from 0% to 100% down the rail across the full
  *      timeline's scroll range (continuous, not once-only).
- *   3. Stage stamp — a short rotateX "punch" + scale pop on each stage's
- *      icon, firing once as that stage's card enters view.
- *   4. Numeral drop + tally + gleam — the new signature move described
+ *   3. Medallion stamp + icon trace — the medallion punches in
+ *      (rotateX + scale, once per card), then each stroke of its line
+ *      icon draws itself in from 0 → full length, as if freshly
+ *      engraved into the plate.
+ *   4. Numeral drop + tally + gleam — the signature move described
  *      above, firing once as that stage's card enters view.
  *
  * CONTENT
@@ -51,19 +59,29 @@
  *   for on-screen length but preserve the client's own claims and voice —
  *   nothing has been invented.
  *
+ * ICONS
+ * - All four icons are original inline SVGs drawn for this section
+ *   (hard hat / blueprint-and-page / mallet / key) — no external image
+ *   files, no icon library. Stroke-only, single brass color, so they sit
+ *   quietly inside the medallion rather than competing with it.
+ * - Custom section cursor (/images/cursor-pencil.png) is unrelated
+ *   decorative chrome, not content artwork, and is left as-is.
+ *
  * SEO
  * - Single <h2> with four <h3> stage headings, no skipped levels. The
- *   large numeral is decorative and aria-hidden; "Step 0X" carries the
- *   equivalent information for assistive tech.
+ *   large numeral and the stage icon are both decorative and
+ *   aria-hidden; "Step 0X" plus the stage heading carry the equivalent
+ *   information for assistive tech.
  * - A minimal HowTo JSON-LD block is included since this content really
  *   is a step-by-step process. Placeholder fields are marked TODO — merge
  *   with any existing structured data rather than duplicating.
  *
  * ACCESSIBILITY / PERFORMANCE
- * - `prefers-reduced-motion: reduce` disables all transform/count/gleam
- *   animation; numerals render their final digits immediately and the
- *   rail marker is hidden (its motion is the whole point of it, so a
- *   static mid-rail dot would be misleading rather than helpful).
+ * - `prefers-reduced-motion: reduce` disables all transform/count/gleam/
+ *   trace animation; numerals render their final digits immediately,
+ *   icon strokes render fully drawn immediately, and the rail marker is
+ *   hidden (its motion is the whole point of it, so a static mid-rail
+ *   dot would be misleading rather than helpful).
  * - Rail + travelling marker are desktop-only (`lg:` and up); on mobile
  *   the numbered cards still flip in individually, just without the rail.
  * - The custom cursor is desktop/fine-pointer only (`@media (hover: hover)
@@ -72,13 +90,6 @@
  * - Implemented with `gsap.matchMedia()` so behaviour is cleanly torn
  *   down on breakpoint change / unmount, matching the pattern used
  *   elsewhere on the site.
- *
- * ASSETS
- * - /visit.png        — Consultation & Site Visit
- * - /planning.png      — Planning & Quotation
- * - /build.avif        — Build & Project Management
- * - /maintenance.png   — Completion & Aftercare
- * - /images/cursor-pencil.png (+ @2x) — custom section cursor
  *
  * DEPENDENCY: requires `gsap` (npm install gsap).
  * -------------------------------------------------------------------------
@@ -92,13 +103,14 @@ if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
 }
 
+type StageIcon = "siteVisit" | "planning" | "build" | "completion";
+
 type Stage = {
   id: string;
   number: string;
   title: string;
   description: string;
-  icon: string;
-  iconAlt: string;
+  icon: StageIcon;
 };
 
 // Copy sourced from the client's own "Our Process" section — tightened
@@ -110,8 +122,7 @@ const STAGES: Stage[] = [
     title: "Consultation & Site Visit",
     description:
       "We start by getting to know you, your space, and your goals — understanding your priorities and any challenges up front. Then we visit the site in person, assess the work required, and gather everything we need to prepare a clear, accurate proposal built around your vision.",
-    icon: "/visit.png",
-    iconAlt: "Hard hat icon representing an on-site consultation visit",
+    icon: "siteVisit",
   },
   {
     id: "planning",
@@ -119,8 +130,7 @@ const STAGES: Stage[] = [
     title: "Planning & Quotation",
     description:
       "You receive a detailed quote and timeline outlining exactly what's included, how long it will take, and when each phase happens. No vague promises — just clear expectations and full transparency before any work begins.",
-    icon: "/planning.png",
-    iconAlt: "Blueprint document icon representing the project quote and timeline",
+    icon: "planning",
   },
   {
     id: "build",
@@ -128,8 +138,7 @@ const STAGES: Stage[] = [
     title: "Build & Project Management",
     description:
       "Our experienced team gets to work, handling every trade and keeping the site safe, clean, and on schedule. You'll receive regular updates throughout, and we're always available to answer questions or adjust plans as needed.",
-    icon: "/build.avif",
-    iconAlt: "Hammer icon representing hands-on construction work",
+    icon: "build",
   },
   {
     id: "completion",
@@ -137,8 +146,7 @@ const STAGES: Stage[] = [
     title: "Completion & Aftercare",
     description:
       "We walk through everything together and don't sign off until you're 100% satisfied. We're still here after handover, should anything need attention — every project includes our aftercare support for full peace of mind.",
-    icon: "/maintenance.png",
-    iconAlt: "Key icon representing project handover",
+    icon: "completion",
   },
 ];
 
@@ -157,6 +165,65 @@ const STRUCTURED_DATA = {
   })),
 };
 
+/**
+ * Original line-art strokes for each stage, drawn on a 24x24 grid.
+ * Every element is a plain SVG geometry primitive (path/line/rect/circle)
+ * so it exposes `getTotalLength()`, which the trace-in animation relies on.
+ */
+function StageIconPaths({ icon }: { icon: StageIcon }) {
+  switch (icon) {
+    case "siteVisit":
+      return (
+        <>
+          <path d="M4 16C4 10.5 7.5 7 12 7C16.5 7 20 10.5 20 16" />
+          <line x1="2" y1="16" x2="22" y2="16" />
+          <line x1="12" y1="7" x2="12" y2="4" />
+          <line x1="7.5" y1="12" x2="16.5" y2="12" />
+        </>
+      );
+    case "planning":
+      return (
+        <>
+          <path d="M6 3H14L18 7V21H6Z" />
+          <path d="M14 3V7H18" />
+          <line x1="9" y1="12" x2="15" y2="12" />
+          <line x1="9" y1="15" x2="15" y2="15" />
+          <line x1="9" y1="18" x2="13" y2="18" />
+        </>
+      );
+    case "build":
+      return (
+        <>
+          <rect x="7" y="4" width="10" height="4" rx="2" />
+          <line x1="12" y1="8" x2="12" y2="19" />
+          <line x1="9" y1="16" x2="15" y2="16" />
+        </>
+      );
+    case "completion":
+      return (
+        <>
+          <circle cx="8" cy="8" r="3.5" />
+          <line x1="10.5" y1="10.5" x2="19" y2="19" />
+          <line x1="15" y1="15" x2="17" y2="13" />
+          <line x1="17.5" y1="17.5" x2="19.5" y2="15.5" />
+        </>
+      );
+  }
+}
+
+/** Type guard so we only ever call getTotalLength() on elements that have it. */
+function isGeometryElement(
+  el: Element
+): el is Element & { getTotalLength: () => number } {
+  return typeof (el as { getTotalLength?: unknown }).getTotalLength === "function";
+}
+
+function getDrawableShapes(svg: SVGSVGElement) {
+  return Array.from(svg.querySelectorAll("path, line, circle, rect, polyline")).filter(
+    isGeometryElement
+  );
+}
+
 export default function OurProcess() {
   const sectionRef = useRef<HTMLDivElement | null>(null);
   const listRef = useRef<HTMLOListElement | null>(null);
@@ -165,6 +232,7 @@ export default function OurProcess() {
   const markerCoreRef = useRef<HTMLDivElement | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const badgeRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const iconRefs = useRef<(SVGSVGElement | null)[]>([]);
   const numberRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   useEffect(() => {
@@ -203,7 +271,20 @@ export default function OurProcess() {
             transformOrigin: fromLeft ? "left center" : "right center",
           });
         });
-        gsap.set(badges, { rotateX: reduceMotion ? 0 : 0, scale: 1 });
+        gsap.set(badges, { rotateX: 0, scale: 1 });
+
+        // Icon strokes: hidden behind their own length so the trace-in
+        // reads as ink being drawn rather than a fade.
+        iconRefs.current.forEach((svg) => {
+          if (!svg) return;
+          getDrawableShapes(svg).forEach((shape) => {
+            const len = shape.getTotalLength();
+            gsap.set(shape, {
+              strokeDasharray: len,
+              strokeDashoffset: reduceMotion ? 0 : len,
+            });
+          });
+        });
 
         // Engraved numeral: starts lifted, tilted and oversized, ready to
         // drop and "stamp" down; digits reset to 00 so the tally-up reads
@@ -242,8 +323,8 @@ export default function OurProcess() {
                 ease: "power3.out",
               });
 
-              // ---- ANIMATION 3: stage "stamp" punch on that card's icon,
-              // timed just behind the card's own reveal.
+              // ---- ANIMATION 3a: medallion "stamp" punch, timed just
+              // behind the card's own reveal.
               const badge = badges[i];
               if (badge) {
                 gsap.fromTo(
@@ -257,6 +338,20 @@ export default function OurProcess() {
                     delay: reduceMotion ? 0 : 0.28,
                   }
                 );
+              }
+
+              // ---- ANIMATION 3b: icon strokes trace in right after the
+              // medallion lands, like lines being engraved into the plate.
+              const iconSvg = iconRefs.current[i];
+              if (iconSvg && !reduceMotion) {
+                getDrawableShapes(iconSvg).forEach((shape, shapeIndex) => {
+                  gsap.to(shape, {
+                    strokeDashoffset: 0,
+                    duration: 0.55,
+                    ease: "power2.out",
+                    delay: 0.5 + shapeIndex * 0.05,
+                  });
+                });
               }
 
               // ---- ANIMATION 4: engraved numeral — drop, tally 00 → 0X,
@@ -385,9 +480,8 @@ export default function OurProcess() {
             box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1),
             border-color 0.35s ease;
         }
-        .bsl-stage-badge img {
-          transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-            filter 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+        .bsl-stage-badge {
+          transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
         }
         @media (hover: hover) and (pointer: fine) {
           .bsl-stage-card:hover {
@@ -395,9 +489,11 @@ export default function OurProcess() {
             box-shadow: 0 22px 40px -24px rgba(28, 23, 18, 0.28);
             border-color: rgba(162, 96, 40, 0.28);
           }
-          .bsl-stage-card:hover .bsl-stage-badge img {
-            transform: scale(1.08);
-            filter: drop-shadow(0 10px 18px rgba(28, 23, 18, 0.28)) drop-shadow(0 1px 0 rgba(255, 255, 255, 0.4));
+          .bsl-stage-card:hover .bsl-stage-badge {
+            transform: scale(1.07);
+          }
+          .bsl-stage-card:hover .bsl-corner-mark {
+            opacity: 0.55;
           }
         }
 
@@ -435,6 +531,7 @@ export default function OurProcess() {
           height: 14px;
           opacity: 0.3;
           pointer-events: none;
+          transition: opacity 0.35s ease;
         }
         .bsl-corner-mark--tl {
           top: 10px;
@@ -531,14 +628,24 @@ export default function OurProcess() {
                     className="bsl-stage-card relative w-full overflow-hidden rounded-2xl bg-white p-7 pt-8 ring-1 ring-[#1C1712]/[0.06] shadow-[0_1px_2px_rgba(28,23,18,0.05)] lg:p-8 lg:pt-9"
                     style={{ willChange: "transform" }}
                   >
+                    {/* Hairline brass accent along the top edge — a quiet
+                        echo of the underline beneath the section heading. */}
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-x-7 top-0 h-[2px] rounded-full lg:inset-x-8"
+                      style={{
+                        background: "linear-gradient(90deg, transparent, #A26028 50%, transparent)",
+                        opacity: 0.4,
+                      }}
+                    />
+
                     <span aria-hidden="true" className="bsl-corner-mark bsl-corner-mark--tl" />
                     <span aria-hidden="true" className="bsl-corner-mark bsl-corner-mark--br" />
 
                     {/* Numeral + icon duo — the card's signature header row.
                         The numeral drops, tallies up, and gleams once on
-                        entry; the icon stamps in a beat behind it. Neither
-                        is hidden as a watermark any more — both carry equal
-                        visual weight. */}
+                        entry; the medallion punches in a beat behind it and
+                        its icon then traces itself in stroke by stroke. */}
                     <div className="mb-5 flex items-center gap-4 lg:gap-5">
                       <span
                         ref={(el) => {
@@ -553,28 +660,45 @@ export default function OurProcess() {
 
                       <span aria-hidden="true" className="h-10 w-px shrink-0 bg-[#1C1712]/[0.08] lg:h-12" />
 
-                      {/* Icon shown large and un-badged — no circular medallion
-                          behind it, so the artwork itself carries the visual
-                          weight. */}
+                      {/* Struck brass medallion — same conic-gradient ring +
+                          radial-gradient disc as the rail marker, so the
+                          icon reads as part of the same metal system. */}
                       <div
                         ref={(el) => {
                           badgeRefs.current[i] = el;
                         }}
-                        className="bsl-stage-badge relative flex h-16 w-16 shrink-0 items-center justify-center lg:h-[4.5rem] lg:w-[4.5rem]"
-                        style={{ transformStyle: "preserve-3d" }}
+                        aria-hidden="true"
+                        className="bsl-stage-badge relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full p-[2.5px] lg:h-[4.5rem] lg:w-[4.5rem]"
+                        style={{
+                          background:
+                            "conic-gradient(from 200deg, #8A5121, #E8C599 25%, #A26028 55%, #E8C599 80%, #8A5121)",
+                          boxShadow: "0 10px 20px -10px rgba(162,96,40,0.4), 0 2px 4px rgba(28,23,18,0.16)",
+                          transformStyle: "preserve-3d",
+                        }}
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={stage.icon}
-                          alt={stage.iconAlt}
-                          width={72}
-                          height={72}
-                          className="h-14 w-14 object-contain lg:h-16 lg:w-16"
+                        <div
+                          className="flex h-full w-full items-center justify-center rounded-full"
                           style={{
-                            filter:
-                              "drop-shadow(0 8px 16px rgba(28,23,18,0.22)) drop-shadow(0 1px 0 rgba(255,255,255,0.4))",
+                            background: "radial-gradient(circle at 32% 28%, #FFF9EF, #F3E4CC 68%, #E8D3AC)",
+                            boxShadow:
+                              "inset 0 1px 2px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(28,23,18,0.1)",
                           }}
-                        />
+                        >
+                          <svg
+                            ref={(el) => {
+                              iconRefs.current[i] = el;
+                            }}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#7C4A1E"
+                            strokeWidth={1.6}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="h-8 w-8 lg:h-9 lg:w-9"
+                          >
+                            <StageIconPaths icon={stage.icon} />
+                          </svg>
+                        </div>
                       </div>
                     </div>
 
