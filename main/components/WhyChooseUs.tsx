@@ -427,7 +427,7 @@ export default function WhyChooseUs() {
     <section
       ref={sectionRef}
       aria-labelledby="why-choose-us-heading"
-      className="bg-white px-5 pt-8 pb-16 lg:px-8 lg:pt-10 lg:pb-24"
+      className="bg-white px-5 pt-2 pb-16 lg:px-8 lg:pt-2 lg:pb-24"
     >
       {/* Serif display face, shared with Projects.tsx. For production,
           replace with next/font/google and drop this tag. */}

@@ -93,7 +93,7 @@ export default function Gallery() {
         />
 
         <div
-          className="bsl-gallery-row relative z-10 mt-6 flex gap-0 overflow-x-auto sm:mt-8 sm:overflow-visible md:mt-10"
+          className="bsl-gallery-row relative z-10 mt-2 flex gap-0 overflow-x-auto sm:mt-2 sm:overflow-visible md:mt-2"
         >
           {GALLERY_IMAGES.map((item, index) => (
             <div

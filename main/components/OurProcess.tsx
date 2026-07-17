@@ -7,59 +7,41 @@
  * rest of the site (#1C1712 / #6E6259 / #A26028 / #E8C599, Fraunces serif,
  * warm ivory background).
  *
- * WHAT CHANGED IN THIS PASS
- * - The connecting rule is no longer just a fill bar — it now carries a
- *   small brass "checkpoint" dot that physically rides along its leading
- *   edge as you scroll, like a level or plumb-line moving down a job site.
- *   That's the signature element: one literal, on-brand piece of motion,
- *   everything else stays quiet.
- * - Each marker "activates" with a short, bouncy checkpoint pop (a quick
- *   overshoot scale-in) plus a single soft pulse-ring — the visual
- *   equivalent of a level hitting its mark — instead of the previous
- *   plain colour crossfade. It happens once per step, never loops.
- * - The step number gets a small pop/settle of its own, timed a beat
- *   after the marker, so the numeral doesn't just appear — it "clicks"
- *   into place.
- * - Everything from the previous pass is kept: numbered strip layout, no
- *   icons/artwork, hairline connecting rule (desktop only), plain list on
- *   mobile, full prefers-reduced-motion support, matchMedia teardown.
- *
- * THREE GSAP ANIMATIONS (up from two, still deliberately few)
- *   1. Rule fill + traveling dot — scroll-scrubbed width grow on the brass
- *      overlay line, with a small dot pinned to its leading edge so the
- *      line reads as something moving, not just growing.
- *   2. Checkpoint pop — each marker scales in with a back-ease overshoot
- *      and a single CSS pulse-ring the moment its step scrolls into view;
- *      its numeral pops a beat later.
- *   3. Step reveal — each step's text still fades up once on scroll into
- *      view, staggered per-row exactly as before.
- *
- * CONTENT — unchanged, sourced from the client's own "Our Process" copy.
- *
- * SEO — unchanged: single <h2>, four <h3>s, aria-hidden numerals, "Step 0X"
- * label for assistive tech, minimal HowTo JSON-LD (placeholder fields
- * marked TODO — merge with any existing structured data).
+ * ANIMATION TRIGGER — CHANGED IN THIS PASS
+ * - The whole sequence now plays once, automatically, the moment the
+ *   component mounts — it no longer waits on ScrollTrigger visibility
+ *   thresholds. If this section is likely to render near the top of the
+ *   page (or inside a tab/modal/route that doesn't get scrolled past a
+ *   viewport %), a scroll trigger can silently never fire; a mount-driven
+ *   timeline can't have that problem.
+ * - Signature element unchanged: a small brass "checkpoint" dot rides the
+ *   leading edge of the connecting rule as it fills, like a level moving
+ *   across a job site. Each marker then "checks in" with a bouncy
+ *   overshoot pop and a single pulse-ring the instant the dot reaches it,
+ *   its numeral clicking into place a beat later, and its text fading up
+ *   — staggered per step so the four read as one-by-one, not simultaneous.
+ * - Everything else — layout, copy, SEO markup, no icons — is unchanged
+ *   from the previous pass.
  *
  * ACCESSIBILITY / PERFORMANCE
- * - `prefers-reduced-motion: reduce` disables all three animations —
- *   markers, numerals and text render already in their settled state, and
- *   the traveling dot/pulse-ring are never shown.
- * - Connecting rule + dot are desktop-only (`lg:` and up); mobile stacks
- *   as a plain list with a lighter, direct-set checkpoint pop (no rule to
- *   travel along).
- * - `gsap.matchMedia()` for clean teardown on breakpoint change / unmount.
+ * - `prefers-reduced-motion: reduce` skips the animated sequence entirely:
+ *   the rule renders already filled, markers/numerals/text render already
+ *   in their settled state, and the traveling dot is never shown.
+ * - Connecting rule + dot are desktop-only (`lg:` and up, matching the
+ *   4-column grid); mobile stacks as a plain list and still gets the
+ *   per-marker checkpoint pop/numeral/text sequence, just without a rule
+ *   to travel along.
+ * - Runs once per mount; the timeline and any pending timers are killed on
+ *   unmount so nothing fires after the component is gone.
  *
- * DEPENDENCY: requires `gsap` (npm install gsap).
+ * DEPENDENCY: requires `gsap` (npm install gsap). ScrollTrigger is not
+ * required for this pass, since the sequence is mount-driven rather than
+ * scroll-driven — only base `gsap` is imported.
  * -------------------------------------------------------------------------
  */
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-
-if (typeof window !== "undefined") {
-  gsap.registerPlugin(ScrollTrigger);
-}
 
 type Stage = {
   id: string;
@@ -121,140 +103,111 @@ const STAGE_COUNT = STAGES.length;
 // grid that's 12.5% / 87.5%, so the connecting rule spans the 75% between.
 const RULE_INSET_PCT = 100 / (STAGE_COUNT * 2);
 const RULE_SPAN_PCT = 100 - RULE_INSET_PCT * 2;
+const STEP_STAGGER = 0.35;
 
 export default function OurProcess() {
-  const listRef = useRef<HTMLOListElement | null>(null);
   const ruleFillRef = useRef<HTMLDivElement | null>(null);
   const ruleDotRef = useRef<HTMLDivElement | null>(null);
-  const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
   const markerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const numeralRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const contentRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
-    const list = listRef.current;
-    if (!list) return;
-
-    const rows = rowRefs.current.filter((el): el is HTMLLIElement => Boolean(el));
     const markers = markerRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
     const numerals = numeralRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
     const contents = contentRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
-    if (rows.length === 0) return;
+    if (markers.length === 0) return;
 
-    const mm = gsap.matchMedia();
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
-    mm.add({ reduceMotion: "(prefers-reduced-motion: reduce)" }, (context) => {
-      const { reduceMotion } = context.conditions as { reduceMotion: boolean };
-      const triggers: ScrollTrigger[] = [];
+    const pulseTimeouts: number[] = [];
+    let tl: gsap.core.Timeline | null = null;
 
+    if (prefersReducedMotion) {
+      // Settled end-state, no motion at all.
+      gsap.set(markers, { scale: 1 });
+      markers.forEach((marker) => marker.classList.add("is-active"));
+      gsap.set(numerals, { opacity: 1, scale: 1 });
+      gsap.set(contents, { opacity: 1, y: 0 });
+      if (ruleFillRef.current) gsap.set(ruleFillRef.current, { width: `${RULE_SPAN_PCT}%` });
+      if (ruleDotRef.current) gsap.set(ruleDotRef.current, { opacity: 0 });
+    } else {
       // ---- Initial states
-      gsap.set(contents, {
-        opacity: reduceMotion ? 1 : 0,
-        y: reduceMotion ? 0 : 14,
-      });
+      gsap.set(markers, { scale: 0.72, transformOrigin: "50% 50%" });
+      gsap.set(numerals, { opacity: 0, scale: 0.6 });
+      gsap.set(contents, { opacity: 0, y: 14 });
+      if (ruleFillRef.current) gsap.set(ruleFillRef.current, { width: "0%" });
+      if (ruleDotRef.current) gsap.set(ruleDotRef.current, { left: `${RULE_INSET_PCT}%`, opacity: 0 });
 
-      gsap.set(markers, { scale: reduceMotion ? 1 : 0.72, transformOrigin: "50% 50%" });
-      gsap.set(numerals, { opacity: reduceMotion ? 1 : 0, scale: reduceMotion ? 1 : 0.6 });
-
-      if (reduceMotion) {
-        markers.forEach((marker) => marker.classList.add("is-active"));
-      }
+      // ---- The whole sequence plays once, on mount. A small brass
+      // "checkpoint" dot rides the leading edge of the rule as it fills
+      // (like a level moving across a job site); each marker checks in
+      // with a bouncy pop + single pulse-ring the instant the dot reaches
+      // it, its numeral clicks into place a beat later, and its text
+      // fades up — staggered per step.
+      tl = gsap.timeline({ delay: 0.15 });
 
       if (ruleFillRef.current) {
-        gsap.set(ruleFillRef.current, { width: reduceMotion ? `${RULE_SPAN_PCT}%` : "0%" });
-      }
-      if (ruleDotRef.current) {
-        gsap.set(ruleDotRef.current, {
-          left: `${RULE_INSET_PCT}%`,
-          opacity: reduceMotion ? 0 : 0,
-        });
-      }
-
-      // ---- ANIMATION 1: connecting rule fills in, scrubbed to how far the
-      // visitor has scrolled through the step list, with a small brass
-      // "checkpoint" dot riding its leading edge — the line reads as
-      // something moving across the strip, like a level on a job site.
-      // Desktop only (the rule itself is hidden below `lg` via CSS).
-      if (!reduceMotion && ruleFillRef.current) {
-        const ruleTrigger = ScrollTrigger.create({
-          trigger: list,
-          start: "top 68%",
-          end: "bottom 62%",
-          scrub: 0.6,
-          onUpdate: (self) => {
-            const fillPct = self.progress * RULE_SPAN_PCT;
-            gsap.set(ruleFillRef.current, { width: `${fillPct}%` });
-            if (ruleDotRef.current) {
-              gsap.set(ruleDotRef.current, {
-                left: `${RULE_INSET_PCT + fillPct}%`,
-                opacity: self.progress > 0.01 && self.progress < 0.999 ? 1 : self.progress >= 0.999 ? 1 : 0,
-              });
-            }
+        tl.to(
+          ruleFillRef.current,
+          {
+            width: `${RULE_SPAN_PCT}%`,
+            duration: 1.6,
+            ease: "power1.inOut",
+            onStart: () => {
+              if (ruleDotRef.current) gsap.set(ruleDotRef.current, { opacity: 1 });
+            },
+            onUpdate: function () {
+              if (!ruleDotRef.current) return;
+              const pct = this.progress() * RULE_SPAN_PCT;
+              gsap.set(ruleDotRef.current, { left: `${RULE_INSET_PCT + pct}%` });
+            },
+            onComplete: () => {
+              if (ruleDotRef.current) gsap.to(ruleDotRef.current, { opacity: 0, duration: 0.4 });
+            },
           },
-        });
-        triggers.push(ruleTrigger);
+          0
+        );
       }
 
-      // ---- ANIMATION 2 + 3: on scroll into view, each marker "checks in"
-      // with a quick back-ease overshoot pop and a single pulse-ring, its
-      // numeral clicks into place a beat later, and its text fades up —
-      // staggered per row so four steps read as one-by-one even when
-      // several enter the viewport together (the desktop 4-column strip).
-      const STEP_STAGGER = 0.16;
-      rows.forEach((row, i) => {
-        const t = ScrollTrigger.create({
-          trigger: row,
-          start: "top 80%",
-          once: true,
-          onEnter: () => {
-            const delay = reduceMotion ? 0 : i * STEP_STAGGER;
-            const marker = markers[i];
-            const numeral = numerals[i];
+      markers.forEach((marker, i) => {
+        const t = i * STEP_STAGGER + 0.1;
 
-            gsap.to(contents[i], {
-              opacity: 1,
-              y: 0,
-              duration: reduceMotion ? 0.01 : 0.7,
-              ease: "power2.out",
-              delay,
-            });
-
-            if (marker) {
-              gsap.to(marker, {
-                scale: 1,
-                duration: reduceMotion ? 0.01 : 0.55,
-                ease: "back.out(2.4)",
-                delay,
-                onStart: () => {
-                  marker.classList.add("is-active");
-                  if (!reduceMotion) {
-                    marker.classList.add("is-checking-in");
-                    window.setTimeout(() => marker.classList.remove("is-checking-in"), 900);
-                  }
-                },
-              });
-            }
-
-            if (numeral) {
-              gsap.to(numeral, {
-                opacity: 1,
-                scale: 1,
-                duration: reduceMotion ? 0.01 : 0.4,
-                ease: "back.out(2.8)",
-                delay: delay + (reduceMotion ? 0 : 0.12),
-              });
-            }
+        tl!.to(
+          marker,
+          {
+            scale: 1,
+            duration: 0.55,
+            ease: "back.out(2.4)",
+            onStart: () => {
+              marker.classList.add("is-active", "is-checking-in");
+              const id = window.setTimeout(() => marker.classList.remove("is-checking-in"), 900);
+              pulseTimeouts.push(id);
+            },
           },
-        });
-        triggers.push(t);
+          t
+        );
+
+        if (numerals[i]) {
+          tl!.to(
+            numerals[i],
+            { opacity: 1, scale: 1, duration: 0.4, ease: "back.out(2.8)" },
+            t + 0.12
+          );
+        }
+
+        if (contents[i]) {
+          tl!.to(contents[i], { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, t);
+        }
       });
+    }
 
-      return () => {
-        triggers.forEach((trigger) => trigger.kill());
-      };
-    });
-
-    return () => mm.revert();
+    return () => {
+      tl?.kill();
+      pulseTimeouts.forEach((id) => window.clearTimeout(id));
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -308,8 +261,8 @@ export default function OurProcess() {
         /* Traveling checkpoint dot — a soft, breathing brass halo so it
            reads as something in motion rather than a static marker. */
         @keyframes bsl-dot-breathe {
-          0%, 100% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 0 4px #fbf9f6, 0 0 10px 2px rgba(162, 96, 40, 0.55); }
-          50% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 0 4px #fbf9f6, 0 0 15px 4px rgba(162, 96, 40, 0.75); }
+          0%, 100% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 10px 2px rgba(162, 96, 40, 0.55); }
+          50% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 15px 4px rgba(162, 96, 40, 0.75); }
         }
         .bsl-rule-dot {
           animation: bsl-dot-breathe 1.6s ease-in-out infinite;
@@ -321,8 +274,6 @@ export default function OurProcess() {
           }
           .bsl-step-row:hover .bsl-step-marker.is-active {
             box-shadow: 0 9px 20px -9px rgba(162, 96, 40, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.7);
-          }
-          .bsl-step-row:hover .bsl-step-marker.is-active {
             transform: translateY(-2px);
           }
         }
@@ -379,13 +330,10 @@ export default function OurProcess() {
             style={{ left: `${RULE_INSET_PCT}%`, opacity: 0 }}
           />
 
-          <ol ref={listRef} className="relative grid grid-cols-1 gap-14 lg:grid-cols-4 lg:gap-6">
+          <ol className="relative grid grid-cols-1 gap-14 lg:grid-cols-4 lg:gap-6">
             {STAGES.map((stage, i) => (
               <li
                 key={stage.id}
-                ref={(el) => {
-                  rowRefs.current[i] = el;
-                }}
                 className="bsl-step-row relative flex flex-col items-start text-left lg:items-center lg:text-center"
               >
                 <div
