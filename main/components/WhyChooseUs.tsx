@@ -8,6 +8,27 @@
  * warm ivory panels) with two signature moments: a set of mounted "brass
  * coin" medallions rendered in real 3D, and a count-up stat bar.
  *
+ * FIX IN THIS PASS — count-up not firing on mobile
+ * - Root cause: the stat bar's "has it scrolled into view yet" check used
+ *   `ScrollTrigger`. Mobile Safari (and some Chrome/Android builds) fire a
+ *   `resize` event when the address bar collapses/expands mid-scroll;
+ *   ScrollTrigger's default behaviour is to recalculate all trigger
+ *   start/end positions on resize, which can silently shift a trigger's
+ *   position after the user has already scrolled past it — so `onEnter`
+ *   never fires. This is a known, common mobile issue with
+ *   ScrollTrigger-based reveals, not specific to this markup.
+ * - Fix, two parts:
+ *   1. `ScrollTrigger.config({ ignoreMobileResize: true })` is now set
+ *      once, globally, right after the plugin registers. This stops the
+ *      address-bar resize from re-triggering recalculation for every
+ *      ScrollTrigger in this file (cards + medallions + parallax too).
+ *   2. The stat bar's visibility check no longer uses ScrollTrigger at
+ *      all — it uses a plain `IntersectionObserver` instead, which is the
+ *      standard reliable way to detect "has this element been seen once"
+ *      and doesn't depend on pixel-accurate scroll math the way
+ *      ScrollTrigger does. GSAP still does the actual opacity/count tween;
+ *      only the "when do I start" detection changed.
+ *
  * SPACING
  * - This section is designed to sit directly beneath a section that
  *   already carries generous bottom padding (e.g. Projects.tsx). Its own
@@ -41,10 +62,10 @@
  *
  * STAT BAR
  * - A quiet, editorial "by the numbers" strip between the header and the
- *   card wall. Numbers count up once, on first scroll into view, using a
- *   tweened proxy value rather than a CSS animation, so the count can
- *   ease naturally. Figures are placeholder — replace with the client's
- *   real trading history / completed-project counts before launch.
+ *   card wall. Numbers count up once, on first view, using a tweened
+ *   proxy value rather than a CSS animation, so the count can ease
+ *   naturally. Figures are placeholder — replace with the client's real
+ *   trading history / completed-project counts before launch.
  *
  * CONTENT — four pillars, West London focus
  * - Reduced from six reasons to four, matching the client's own service
@@ -89,6 +110,10 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger);
+  // Prevents mobile browsers' address-bar show/hide from firing a resize
+  // event that makes ScrollTrigger recalculate (and potentially shift)
+  // every trigger's start/end position mid-scroll. Set once, globally.
+  ScrollTrigger.config({ ignoreMobileResize: true });
 }
 
 type IconType = "layers" | "hardhat" | "square" | "shield";
@@ -228,6 +253,75 @@ export default function WhyChooseUs() {
   const shineRefs = useRef<(HTMLDivElement | null)[]>([]);
   const shadowRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // ---- Stat bar count-up: its own effect, independent of the card/coin
+  // ScrollTrigger setup below. Uses IntersectionObserver rather than
+  // ScrollTrigger to detect "has this been seen yet" — IntersectionObserver
+  // doesn't depend on pixel-accurate scroll offsets the way ScrollTrigger
+  // does, so it isn't affected by mobile browsers resizing their address
+  // bar mid-scroll, which is what was breaking this on mobile before.
+  useEffect(() => {
+    const statBar = statBarRef.current;
+    const statEls = statRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
+    if (!statBar || statEls.length === 0) return;
+
+    const prefersReducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    if (prefersReducedMotion) {
+      statEls.forEach((el, i) => {
+        el.textContent = `${STATS[i].value}${STATS[i].suffix}`;
+      });
+      return;
+    }
+
+    gsap.set(statEls, { opacity: 0, y: 8 });
+
+    let hasRun = false;
+    const runCountUp = () => {
+      if (hasRun) return;
+      hasRun = true;
+      gsap.to(statEls, { opacity: 1, y: 0, duration: 0.6, stagger: 0.08, ease: "power2.out" });
+      statEls.forEach((el, i) => {
+        const proxy = { val: 0 };
+        gsap.to(proxy, {
+          val: STATS[i].value,
+          duration: 1.3,
+          ease: "power2.out",
+          delay: 0.1,
+          onUpdate: () => {
+            el.textContent = `${Math.round(proxy.val)}${STATS[i].suffix}`;
+          },
+        });
+      });
+    };
+
+    // If the stat bar is already on screen at mount (e.g. a short mobile
+    // viewport where this section starts near the top), fire right away
+    // instead of waiting on an observer callback that may never come.
+    const rect = statBar.getBoundingClientRect();
+    const alreadyVisible = rect.top < window.innerHeight * 0.9 && rect.bottom > 0;
+    if (alreadyVisible) {
+      runCountUp();
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            runCountUp();
+            observer.disconnect();
+          }
+        });
+      },
+      { threshold: 0.2, rootMargin: "0px 0px -10% 0px" }
+    );
+    observer.observe(statBar);
+
+    return () => observer.disconnect();
+  }, []);
+
   useEffect(() => {
     const section = sectionRef.current;
     const grid = gridRef.current;
@@ -235,7 +329,6 @@ export default function WhyChooseUs() {
 
     const cards = cardRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
     const medallions = medallionRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
-    const statEls = statRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
     if (cards.length === 0) return;
 
     const mm = gsap.matchMedia();
@@ -255,38 +348,6 @@ export default function WhyChooseUs() {
 
         const triggers: ScrollTrigger[] = [];
         const cleanups: Array<() => void> = [];
-
-        // ---- Stat bar: count up once, on first view.
-        if (statEls.length) {
-          if (reduceMotion) {
-            statEls.forEach((el, i) => {
-              el.textContent = `${STATS[i].value}${STATS[i].suffix}`;
-            });
-          } else {
-            gsap.set(statEls, { opacity: 0, y: 8 });
-            const statTrigger = ScrollTrigger.create({
-              trigger: statBarRef.current,
-              start: "top 88%",
-              once: true,
-              onEnter: () => {
-                gsap.to(statEls, { opacity: 1, y: 0, duration: 0.6, stagger: 0.08, ease: "power2.out" });
-                statEls.forEach((el, i) => {
-                  const proxy = { val: 0 };
-                  gsap.to(proxy, {
-                    val: STATS[i].value,
-                    duration: 1.3,
-                    ease: "power2.out",
-                    delay: 0.1,
-                    onUpdate: () => {
-                      el.textContent = `${Math.round(proxy.val)}${STATS[i].suffix}`;
-                    },
-                  });
-                });
-              },
-            });
-            triggers.push(statTrigger);
-          }
-        }
 
         // ---- Initial state — cards
         gsap.set(cards, {
@@ -308,7 +369,7 @@ export default function WhyChooseUs() {
         const tl = gsap.timeline({
           scrollTrigger: {
             trigger: grid,
-            start: "top 82%",
+            start: "top 85%",
             once: true,
           },
           onComplete: () => {
@@ -345,6 +406,8 @@ export default function WhyChooseUs() {
 
         // ---- Ambient parallax: the wall of coins settles from a slight
         // upward tilt to dead-level as the section scrolls through.
+        // Desktop only — this is a large, continuous scrub effect that
+        // isn't worth the extra scroll-listener cost on mobile.
         if (isDesktop && !reduceMotion) {
           const parallax = ScrollTrigger.create({
             trigger: section,
