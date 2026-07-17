@@ -6,6 +6,7 @@ import Projects from "@/components/Projects";
 import WhyChooseUs from "@/components/WhyChooseUs";
 import OurProcess from "@/components/OurProcess";
 import Gallery from "@/components/Gallery";
+import Cta from "@/components/Cta";
 
 export default function Home() {
   return (
@@ -18,6 +19,8 @@ export default function Home() {
     <WhyChooseUs />
     <OurProcess />
     <Gallery />
+    <Cta />
+
       </main>
   );
 }

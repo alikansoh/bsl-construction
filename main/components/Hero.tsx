@@ -3,69 +3,101 @@
 /**
  * Hero.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Scroll-scrubbed video hero with mobile-first responsive sizing.
- * - Video begins at the start of the clip.
- * - On phones the sticky hero is a full-bleed 100dvh viewport (no side
- *   "letterboxing" feel), with a top-loading progress bar (like a stories
- *   UI) instead of the desktop's thin vertical side rail — a vertical bar
- *   reads as clutter on a narrow screen, a top bar reads as native.
- * - The SEO strip becomes a horizontally scrollable, snap-aligned row on
- *   mobile with soft edge fades, instead of wrapping pills into a ragged
- *   multi-line block.
- * - Scroll runway length is a CSS custom property, overridden per
- *   breakpoint, so the scrub distance itself is responsive (not just the
- *   viewport size).
- * - Mobile-safe priming play-then-pause to force iOS/Android to decode.
- * - Poster + static fallback for Low Power Mode / Data Saver.
- * - Respects prefers-reduced-motion and safe-area insets (notches/home
- *   indicators), and has a dedicated short-landscape treatment.
+ * Scroll-scrubbed hero, rebuilt around a canvas + pre-extracted frame
+ * sequence instead of <video> + currentTime seeking.
  *
- * Perf notes (scroll-scrub smoothness):
- * - Scroll-space geometry (top offset, runway height) is cached instead of
- *   calling getBoundingClientRect() every rAF frame — that call forces a
- *   synchronous layout, which is a big cause of scrub jank. Geometry is
- *   recomputed only on resize/orientation change.
- * - preload="auto" so the browser buffers actual frame data up front
- *   instead of just metadata, avoiding stalls on early scrub.
- * - Seeks are no longer gated behind an in-flight "seeking" check — if the
- *   target has moved on, we let a newer seek interrupt the previous one.
- *   Gating on isSeekingRef caused the video to visibly "catch up" in jumps
- *   whenever a seek was slow, which read as laggy/stuttery.
- * - Smoothing factor increased so the video position tracks scroll more
- *   tightly (less perceived delay), while still taking the edge off raw
- *   scroll jitter.
- * - For genuinely smooth results the source video should ALSO be encoded
- *   with a short GOP (frequent keyframes) and +faststart — see note near
- *   VIDEO_SRC. No amount of JS tuning fully compensates for a video that
- *   must decode long stretches of frames on every seek.
+ * WHY THE REWRITE
+ * ----------------------------------------------------------------------
+ * The previous version drove scrub by setting video.currentTime on every
+ * rAF tick. That works, but every seek forces the browser's video decoder
+ * to hunt for the nearest keyframe and decode forward to the target frame
+ * — real, unavoidable async work, most expensive exactly where it hurts
+ * most (mobile Chrome/Safari). No amount of threshold tuning, smoothing,
+ * or seek-gating removes that cost; it can only redistribute it, which is
+ * why the old version could still stutter on a fast flick-scroll.
+ *
+ * This version instead:
+ *   1. Extracts the clip to a numbered sequence of still images at build
+ *      time (ffmpeg command below).
+ *   2. Loads those images with the browser's normal image pipeline.
+ *   3. On scroll, picks the frame whose index matches progress and draws
+ *      it onto a <canvas> with drawImage().
+ *
+ * A frame "seek" is now just an array index + a synchronous canvas draw —
+ * no decode, no async seek, nothing to stall. This is the same technique
+ * behind most award-winning scroll-hero sites (Apple product pages,
+ * Stripe, etc). It also removes the iOS/Android autoplay "priming" hack
+ * entirely, since there's no <video> element to fight with.
+ *
+ * BUILD STEP — generate the frames before shipping
+ * ----------------------------------------------------------------------
+ *   # duration of your source clip, in seconds
+ *   DURATION=$(ffprobe -v error -show_entries format=duration -of csv=p=0 video1.mp4)
+ *
+ *   # Desktop set — 96 frames, 1920px wide, JPEG
+ *   mkdir -p public/hero-frames/desktop
+ *   ffmpeg -i video1.mp4 -vf "fps=$(echo "96/$DURATION" | bc -l),scale=1920:-2" \
+ *     -q:v 4 public/hero-frames/desktop/frame-%04d.jpg
+ *
+ *   # Mobile set — fewer frames, smaller width, saves mobile data
+ *   mkdir -p public/hero-frames/mobile
+ *   ffmpeg -i video1.mp4 -vf "fps=$(echo "60/$DURATION" | bc -l),scale=900:-2" \
+ *     -q:v 5 public/hero-frames/mobile/frame-%04d.jpg
+ *
+ * (Using JPEG here because it's always available in every ffmpeg build —
+ * some ffmpeg installs, notably some Homebrew setups, don't ship with the
+ * WebP encoder compiled in.)
+ *
+ * Tune the frame counts to your clip length / motion: more frames =
+ * smoother but bigger download. 60-100 frames is a good starting point
+ * for a 4-10s clip; each JPEG typically lands ~20-45KB at these settings,
+ * so a 96-frame desktop set is usually ~2.5-4MB total — loaded in the
+ * background, not blocking first paint (see PRIORITY_FRAMES below).
+ *
+ * IF YOU CAN'T PRE-EXTRACT FRAMES
+ * ----------------------------------------------------------------------
+ * If frame extraction isn't feasible in your pipeline, the video-seeking
+ * approach can still be improved somewhat: raise SEEK_THRESHOLD to
+ * roughly 1/(2*targetFPS) so you're never seeking finer than a frame
+ * boundary, gate new seeks behind the video's `requestVideoFrameCallback`
+ * instead of firing on every rAF tick, and fully pre-buffer the source as
+ * a blob (fetch + URL.createObjectURL) so seeks resolve against local
+ * data rather than a network stream. That will reduce jank but won't
+ * eliminate it the way frame-sequence scrubbing does.
  * -------------------------------------------------------------------------
  */
 
 import { useEffect, useRef, useState } from "react";
 
-const VIDEO_SRC = "/video1.mp4";
-const POSTER_SRC = "/hero-poster.jpg"; // Add this to /public
+const POSTER_SRC = "/hero-poster.jpg"; // shown until first frame batch is ready
 
-// NOTE: For smooth scroll-scrubbing, re-encode this file with a short GOP
-// (frequent keyframes) and faststart so seeks don't stall, e.g.:
-//   ffmpeg -i input.mp4 -vf "scale=1920:-2" \
-//     -c:v libx264 -preset slow -crf 22 -g 15 -keyint_min 15 \
-//     -sc_threshold 0 -movflags +faststart -an video1.mp4
+// Frame sets — one per breakpoint, generated by the ffmpeg commands above.
+const MOBILE_BREAKPOINT = 768;
+const FRAME_SETS = {
+  desktop: {
+    count: 96,
+    path: (i: number) => `/hero-frames/desktop/frame-${String(i + 1).padStart(4, "0")}.jpg`,
+  },
+  mobile: {
+    count: 60,
+    path: (i: number) => `/hero-frames/mobile/frame-${String(i + 1).padStart(4, "0")}.jpg`,
+  },
+} as const;
 
-// Start playback at the beginning of the clip
-const START_TIME_SECONDS = 0;
+// How many frames to block on before revealing the canvas. Keeps first
+// paint fast; the rest load in the background with limited concurrency.
+const PRIORITY_FRAMES = 14;
+const BACKGROUND_LOAD_CONCURRENCY = 4;
 
-// How close the video's currentTime needs to be to the smoothed target
-// before we bother re-seeking. Slightly higher than the original default
-// on purpose — issuing a seek for a sub-frame-imperceptible delta just
-// adds decode overhead without any visible benefit.
-const SEEK_THRESHOLD = 0.035;
-// Exponential smoothing factor for the scroll -> video-time follow.
-// Higher = tighter to scroll / less perceived lag, lower = smoother but
-// more trailing. Raised from 0.2 to reduce the "always behind" feeling.
-const SMOOTHING = 0.45;
+// Exponential smoothing factor for scroll -> frame-progress follow. Safe
+// to run tighter than the old video version (0.2-0.45) because there's no
+// seek latency to "catch up" from — frame draws are effectively instant.
+const SMOOTHING = 0.6;
 const MAX_DT = 1 / 24;
 const OBSERVER_MARGIN = "200px 0px 200px 0px";
+// Cap device pixel ratio for the canvas backing store — 3x on a phone is
+// wasted fill-rate for a full-bleed hero image.
+const MAX_DPR = 2;
 
 const SEO_PHRASES = ["New Builds", "Renovations", "Home Maintenance", "General Contracting"];
 
@@ -91,9 +123,31 @@ function frameFactor(smoothing: number, dt: number) {
   return 1 - Math.pow(1 - smoothing, dt * 60);
 }
 
+function loadImage(src: string) {
+  return new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.decoding = "async";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// The Network Information API isn't in TypeScript's built-in DOM types
+// (it's still non-standard / Chromium-only), so it's typed manually here
+// instead of reaching for `any`. Every field is optional since support
+// is inconsistent across browsers.
+interface NetworkInformation {
+  saveData?: boolean;
+  effectiveType?: "slow-2g" | "2g" | "3g" | "4g";
+}
+interface NavigatorWithConnection extends Navigator {
+  connection?: NetworkInformation;
+}
+
 export default function Hero() {
   const scrollSpaceRef = useRef<HTMLDivElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
   const textLayerARef = useRef<HTMLHeadingElement>(null);
   const textLayerBRef = useRef<HTMLHeadingElement>(null);
@@ -102,78 +156,151 @@ export default function Hero() {
   const inViewRef = useRef(true);
   const lastTextRef = useRef(STAGES[0].text);
   const lastFrameTimeRef = useRef<number | null>(null);
-  const displayedTimeRef = useRef(START_TIME_SECONDS);
-  // Cached scroll-space geometry — recomputed only on mount/resize, not
-  // on every rAF tick, to avoid forcing layout during scroll.
+  const displayedProgressRef = useRef(0);
   const geometryRef = useRef({ top: 0, total: 0 });
+  const framesRef = useRef<(HTMLImageElement | null)[]>([]);
+  const desiredFrameIndexRef = useRef(0);
+  const paintedFrameIndexRef = useRef(-1);
+  const canvasSizeRef = useRef({ w: 0, h: 0 });
+  const useFallbackRef = useRef(false);
+
   const [isReady, setIsReady] = useState(false);
   const [useFallback, setUseFallback] = useState(false);
 
-  // Runs once on mount. Previously this effect re-ran whenever isReady or
-  // useFallback changed, which tore down and rebuilt the rAF loop and the
-  // IntersectionObserver right as the video became ready — causing a visible
-  // hitch. Readiness/fallback are now tracked with local closures instead of
-  // being effect dependencies, so the loop stays uninterrupted.
   useEffect(() => {
-    const video = videoRef.current;
-    const scrollSpace = scrollSpaceRef.current;
-    if (!video || !scrollSpace) return;
+    useFallbackRef.current = useFallback;
+  }, [useFallback]);
 
-    let fullDuration = 0;
-    let playableDuration = 0;
-    let primed = false;
+  // Runs once on mount — readiness/fallback are tracked via refs/closures
+  // rather than effect deps so the rAF loop and IntersectionObserver never
+  // get torn down and rebuilt mid-scroll.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const scrollSpace = scrollSpaceRef.current;
+    if (!canvas || !scrollSpace) return;
+
+    const ctx = canvas.getContext("2d", { alpha: false });
+    if (!ctx) {
+      setUseFallback(true);
+      return;
+    }
 
     const reduceMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+    const variant: keyof typeof FRAME_SETS =
+      window.innerWidth <= MOBILE_BREAKPOINT ? "mobile" : "desktop";
+    const { count: FRAME_COUNT, path: framePath } = FRAME_SETS[variant];
+    framesRef.current = new Array(FRAME_COUNT).fill(null);
+
     const measureGeometry = () => {
-      // getBoundingClientRect().top is relative to the viewport, so add
-      // the current scroll position to get an absolute document offset
-      // we can diff against window.scrollY cheaply on every frame without
-      // touching layout again until the next resize.
       const rect = scrollSpace.getBoundingClientRect();
       const top = rect.top + window.scrollY;
       const total = scrollSpace.offsetHeight - window.innerHeight;
       geometryRef.current = { top, total: Math.max(total, 0) };
     };
 
-    const primeVideo = async () => {
-      if (primed || playableDuration <= 0) return;
-      primed = true;
+    const getNearestFrame = (index: number) => {
+      const frames = framesRef.current;
+      if (frames[index]) return frames[index];
+      for (let d = 1; d < frames.length; d++) {
+        if (frames[index - d]) return frames[index - d];
+        if (frames[index + d]) return frames[index + d];
+      }
+      return null;
+    };
+
+    const drawFrame = (index: number, force = false) => {
+      if (!force && index === paintedFrameIndexRef.current) return;
+      const img = getNearestFrame(index);
+      const { w, h } = canvasSizeRef.current;
+      if (!img || w === 0 || h === 0) return;
+
+      const canvasRatio = w / h;
+      const imgRatio = img.naturalWidth / img.naturalHeight;
+      let sx: number, sy: number, sw: number, sh: number;
+      if (imgRatio > canvasRatio) {
+        sh = img.naturalHeight;
+        sw = sh * canvasRatio;
+        sx = (img.naturalWidth - sw) / 2;
+        sy = 0;
+      } else {
+        sw = img.naturalWidth;
+        sh = sw / canvasRatio;
+        sx = 0;
+        sy = (img.naturalHeight - sh) / 2;
+      }
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, w, h);
+      paintedFrameIndexRef.current = index;
+    };
+
+    const resizeCanvas = () => {
+      const dpr = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+      const rect = canvas.getBoundingClientRect();
+      const w = Math.round(rect.width * dpr);
+      const h = Math.round(rect.height * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      canvasSizeRef.current = { w, h };
+      // Canvas size changed, so the previous paint no longer matches —
+      // force a redraw at the desired frame even if the index is unchanged.
+      drawFrame(desiredFrameIndexRef.current, true);
+    };
+
+    let cancelled = false;
+
+    const loadFrames = async () => {
+      const conn = (navigator as NavigatorWithConnection).connection;
+      const dataSaver = Boolean(conn?.saveData);
+      const slowConn = conn?.effectiveType && ["slow-2g", "2g"].includes(conn.effectiveType);
+      if (dataSaver || slowConn) {
+        // Skip the frame sequence entirely — poster image stays as the
+        // hero. Scroll-linked text/progress bar still work (cheap, no
+        // network cost), only the frame scrub is disabled.
+        setUseFallback(true);
+        return;
+      }
 
       try {
-        video.muted = true;
-        video.currentTime = START_TIME_SECONDS;
-        await video.play();
-        video.pause();
+        const priorityCount = Math.min(PRIORITY_FRAMES, FRAME_COUNT);
+        const priorityIdx = Array.from({ length: priorityCount }, (_, i) => i);
+        const priorityImgs = await Promise.all(priorityIdx.map((i) => loadImage(framePath(i))));
+        if (cancelled) return;
+        priorityIdx.forEach((i, idx) => {
+          framesRef.current[i] = priorityImgs[idx];
+        });
+
+        drawFrame(desiredFrameIndexRef.current, true);
         setIsReady(true);
+
+        const rest = Array.from({ length: FRAME_COUNT }, (_, i) => i).filter(
+          (i) => !framesRef.current[i]
+        );
+        let cursor = 0;
+        const workers = Array.from({ length: BACKGROUND_LOAD_CONCURRENCY }, async () => {
+          while (cursor < rest.length) {
+            const i = rest[cursor++];
+            try {
+              const img = await loadImage(framePath(i));
+              if (cancelled) return;
+              framesRef.current[i] = img;
+            } catch {
+              // Leave as null — getNearestFrame() falls back to the
+              // closest loaded neighbor, so a missed frame never shows
+              // as blank.
+            }
+          }
+        });
+        await Promise.all(workers);
       } catch {
-        setUseFallback(true);
+        if (!cancelled) setUseFallback(true);
       }
     };
 
-    const handleLoadedMetadata = () => {
-      fullDuration = video.duration || 0;
-      playableDuration = Math.max(fullDuration - START_TIME_SECONDS, 0);
-      video.currentTime = START_TIME_SECONDS;
-      displayedTimeRef.current = START_TIME_SECONDS;
-      primeVideo();
-    };
-
-    const handleCanPlay = () => {
-      if (!primed) primeVideo();
-    };
-
-    const handleError = () => {
-      setUseFallback(true);
-    };
-
-    video.addEventListener("loadedmetadata", handleLoadedMetadata);
-    video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("error", handleError);
-
-    if (video.readyState >= 1) handleLoadedMetadata();
-
     measureGeometry();
+    resizeCanvas();
+    loadFrames();
 
     const textLayers = [textLayerARef, textLayerBRef];
 
@@ -208,33 +335,18 @@ export default function Hero() {
       const dt = clamp((now - last) / 1000, 0, MAX_DT);
       lastFrameTimeRef.current = now;
 
-      // Cheap arithmetic only — no getBoundingClientRect() here. window.scrollY
-      // is effectively free (no forced layout), unlike rect measurement.
       const { top, total } = geometryRef.current;
       const scrolled = clamp(window.scrollY - top, 0, total);
       const progress = total > 0 ? scrolled / total : 0;
 
-      if (playableDuration > 0) {
-        const targetTime = START_TIME_SECONDS + progress * playableDuration;
-        // With reduced motion, snap straight to the target instead of
-        // easing toward it — no scroll-linked animation, just the value.
-        const factor = reduceMotionQuery.matches ? 1 : frameFactor(SMOOTHING, dt);
-        displayedTimeRef.current += (targetTime - displayedTimeRef.current) * factor;
+      const factor = reduceMotionQuery.matches ? 1 : frameFactor(SMOOTHING, dt);
+      displayedProgressRef.current += (progress - displayedProgressRef.current) * factor;
 
-        // Always issue the seek if the delta is meaningful — do NOT gate
-        // this on an "isSeeking" flag. Skipping seeks while a previous one
-        // is still resolving causes the video to visibly "catch up" in
-        // jumps once it finally seeks, which reads as laggy/stuttery.
-        // Letting the browser interrupt its own in-flight seek with a
-        // newer one tracks scroll much more closely.
-        if (Math.abs(video.currentTime - displayedTimeRef.current) > SEEK_THRESHOLD) {
-          // Plain currentTime assignment (not fastSeek) on purpose: fastSeek
-          // is unsupported in Chromium entirely, and where it does exist
-          // (Safari) it snaps to the nearest keyframe rather than the exact
-          // requested time, which reads as jumpy during a slow scroll-scrub.
-          video.currentTime = displayedTimeRef.current;
-        }
-      }
+      const frameIndex = Math.round(
+        clamp(displayedProgressRef.current, 0, 1) * (FRAME_COUNT - 1)
+      );
+      desiredFrameIndexRef.current = frameIndex;
+      if (!useFallbackRef.current) drawFrame(frameIndex);
 
       const nextText = getStageText(progress);
       if (nextText !== lastTextRef.current) {
@@ -242,10 +354,6 @@ export default function Hero() {
         swapText(nextText);
       }
 
-      // Drive both the desktop (vertical, height-based) and mobile
-      // (horizontal, width-based) progress bar from a single CSS custom
-      // property, so no JS branching on breakpoint is needed — each
-      // layout just reads the property differently.
       if (progressFillRef.current) {
         progressFillRef.current.style.setProperty("--hero-progress", `${progress * 100}%`);
       }
@@ -267,12 +375,12 @@ export default function Hero() {
     );
     observer.observe(scrollSpace);
 
-    // Recompute geometry on resize/orientation change only — not on scroll.
     let resizeRaf: number | null = null;
     const handleResize = () => {
       if (resizeRaf !== null) return;
       resizeRaf = requestAnimationFrame(() => {
         measureGeometry();
+        resizeCanvas();
         resizeRaf = null;
       });
     };
@@ -280,9 +388,7 @@ export default function Hero() {
     window.addEventListener("orientationchange", handleResize, { passive: true });
 
     return () => {
-      video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-      video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("error", handleError);
+      cancelled = true;
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("orientationchange", handleResize);
       if (resizeRaf !== null) cancelAnimationFrame(resizeRaf);
@@ -295,23 +401,12 @@ export default function Hero() {
   return (
     <div ref={scrollSpaceRef} data-hero-root className="hero-scroll-space">
       <div className="hero-sticky">
-        <video
-          ref={videoRef}
-          src={VIDEO_SRC}
-          poster={POSTER_SRC}
-          muted
-          playsInline
-          webkit-playsinline="true"
-          preload="auto"
-          disablePictureInPicture
-          className={`hero-video ${isReady ? "hero-video-ready" : ""}`}
+        <img src={POSTER_SRC} alt="" aria-hidden="true" className="hero-poster" />
+        <canvas
+          ref={canvasRef}
+          aria-hidden="true"
+          className={`hero-canvas ${isReady && !useFallback ? "hero-canvas-ready" : ""}`}
         />
-
-        {useFallback && (
-          <div className="hero-fallback">
-            <img src={POSTER_SRC} alt="BSL Construction project" />
-          </div>
-        )}
 
         <div className="hero-overlay" />
 
@@ -375,8 +470,8 @@ export default function Hero() {
           justify-content: center;
         }
 
-        .hero-video,
-        .hero-fallback {
+        .hero-poster,
+        .hero-canvas {
           position: absolute;
           inset: 0;
           width: 100%;
@@ -384,21 +479,19 @@ export default function Hero() {
           z-index: 0;
         }
 
-        .hero-video {
+        .hero-poster {
           object-fit: cover;
+        }
+
+        .hero-canvas {
+          display: block;
           opacity: 0;
           transition: opacity 0.5s ease;
           will-change: opacity;
           transform: translateZ(0);
         }
-        .hero-video-ready {
+        .hero-canvas-ready {
           opacity: 1;
-        }
-
-        .hero-fallback img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
         }
 
         .hero-overlay {
@@ -582,12 +675,8 @@ export default function Hero() {
         }
 
         /* ----------------------------------------------------------------
-           Phones / small screens — the big overhaul:
-           - full-bleed 100dvh sticky viewport, no rounded clipping
-           - top-loading progress bar instead of a side rail
-           - horizontally scrollable, snap-aligned SEO strip
-           - caption sits with guaranteed clearance above the SEO strip
-           - shorter, calmer scroll hint
+           Phones / small screens — full-bleed 100dvh sticky viewport,
+           top-loading progress bar, horizontally scrollable SEO strip.
            ---------------------------------------------------------------- */
         @media (max-width: 768px) {
           .hero-scroll-space {
@@ -773,7 +862,7 @@ export default function Hero() {
           .hero-heading {
             transition: opacity 0.15s linear, transform 0.15s linear;
           }
-          .hero-video {
+          .hero-canvas {
             transition: opacity 0.15s linear;
           }
           .hero-scroll-line {
