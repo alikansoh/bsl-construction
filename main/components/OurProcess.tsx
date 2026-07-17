@@ -7,21 +7,41 @@
  * rest of the site (#1C1712 / #6E6259 / #A26028 / #E8C599, Fraunces serif,
  * warm ivory background).
  *
- * ANIMATION TRIGGER — CHANGED IN THIS PASS
- * - The whole sequence now plays once, automatically, the moment the
- *   component mounts — it no longer waits on ScrollTrigger visibility
- *   thresholds. If this section is likely to render near the top of the
- *   page (or inside a tab/modal/route that doesn't get scrolled past a
- *   viewport %), a scroll trigger can silently never fire; a mount-driven
- *   timeline can't have that problem.
- * - Signature element unchanged: a small brass "checkpoint" dot rides the
- *   leading edge of the connecting rule as it fills, like a level moving
- *   across a job site. Each marker then "checks in" with a bouncy
- *   overshoot pop and a single pulse-ring the instant the dot reaches it,
- *   its numeral clicking into place a beat later, and its text fading up
- *   — staggered per step so the four read as one-by-one, not simultaneous.
- * - Everything else — layout, copy, SEO markup, no icons — is unchanged
- *   from the previous pass.
+ * PERFORMANCE PASS — CHANGED IN THIS FILE (per the Lighthouse report)
+ * 1. FONT: removed the in-component `@import url(fonts.googleapis.com...)`
+ *    for Fraunces — that was the still-unfixed 4th component the network
+ *    dependency tree was pointing at. Now loaded via `next/font/google`,
+ *    self-hosted at build time, no extra render-blocking round trip to
+ *    fonts.googleapis.com / fonts.gstatic.com.
+ * 2. NON-COMPOSITED ANIMATIONS: the checkpoint pulse-ring and the
+ *    traveling dot's "breathing" halo used to animate `box-shadow`
+ *    directly (paint on every frame). The step marker's activated state
+ *    animated `border-color` / `background` / `box-shadow` via a CSS
+ *    transition (also paint-triggering). All of these are now built from
+ *    static, pre-painted layers whose *visibility* is driven purely by
+ *    `opacity` and `transform` (scale), which the compositor can run on
+ *    its own thread:
+ *      - `.bsl-step-marker::after` — pre-styled "active" layer (gradient
+ *        bg, brass border, drop shadow) that's simply opacity-faded in/out.
+ *      - `.bsl-step-marker::before` — the checkpoint pulse ring, animated
+ *        via `transform: scale()` + `opacity` instead of `box-shadow`.
+ *      - `.bsl-rule-dot::after` — a blurred halo behind the dot, animated
+ *        via `transform: scale()` + `opacity` instead of `box-shadow`.
+ *    The numeral's color swap (grey → brass) no longer transitions
+ *    `color` — it's an instant class-driven swap that lands right as the
+ *    numeral itself fades in via opacity, so there's no visible loss of
+ *    smoothness.
+ * 3. FORCED REFLOW: the connecting rule's fill and the traveling dot used
+ *    to be driven by GSAP animating `width` and `left` every tick — both
+ *    are layout properties, so the browser was recalculating layout on
+ *    every frame of a ~1.6s timeline (this is almost certainly the
+ *    147ms/112ms×2 "Forced reflow" entries in the report). Replaced with:
+ *      - the fill bar is rendered at its final width up front and animated
+ *        with `scaleX` (transform-origin: left) instead of `width`.
+ *      - the dot's track width is measured once (a single, non-interleaved
+ *        read) and the dot is moved every tick with `transform: translateX`
+ *        computed in JS, instead of writing `left` every tick.
+ *    Both are now compositor-only — no layout, no paint, per frame.
  *
  * ACCESSIBILITY / PERFORMANCE
  * - `prefers-reduced-motion: reduce` skips the animated sequence entirely:
@@ -42,6 +62,15 @@
 
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
+import { Fraunces } from "next/font/google";
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-fraunces",
+});
 
 type Stage = {
   id: string;
@@ -100,12 +129,16 @@ const STRUCTURED_DATA = {
 
 const STAGE_COUNT = STAGES.length;
 // First/last marker sit at the center of their grid column; on a 4-column
-// grid that's 12.5% / 87.5%, so the connecting rule spans the 75% between.
+// grid that's 12.5% / 87.5%, so the connecting rule/track spans the 75%
+// between. These stay percentage-based only for *layout* (set once, never
+// animated) — the animated pieces inside the track move via transform.
 const RULE_INSET_PCT = 100 / (STAGE_COUNT * 2);
 const RULE_SPAN_PCT = 100 - RULE_INSET_PCT * 2;
 const STEP_STAGGER = 0.35;
+const DOT_SIZE = 10; // px, matches h-2.5 w-2.5
 
 export default function OurProcess() {
+  const trackRef = useRef<HTMLDivElement | null>(null);
   const ruleFillRef = useRef<HTMLDivElement | null>(null);
   const ruleDotRef = useRef<HTMLDivElement | null>(null);
   const markerRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -122,6 +155,12 @@ export default function OurProcess() {
       typeof window !== "undefined" &&
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+    // Single, one-off read of the track's width (not interleaved with any
+    // writes), used to convert the dot's progress fraction into a pixel
+    // offset for `transform: translateX`, instead of writing `left` every
+    // tick (which would force layout on every frame).
+    const trackWidthPx = trackRef.current?.getBoundingClientRect().width ?? 0;
+
     const pulseTimeouts: number[] = [];
     let tl: gsap.core.Timeline | null = null;
 
@@ -131,15 +170,19 @@ export default function OurProcess() {
       markers.forEach((marker) => marker.classList.add("is-active"));
       gsap.set(numerals, { opacity: 1, scale: 1 });
       gsap.set(contents, { opacity: 1, y: 0 });
-      if (ruleFillRef.current) gsap.set(ruleFillRef.current, { width: `${RULE_SPAN_PCT}%` });
+      if (ruleFillRef.current) gsap.set(ruleFillRef.current, { scaleX: 1 });
       if (ruleDotRef.current) gsap.set(ruleDotRef.current, { opacity: 0 });
     } else {
       // ---- Initial states
       gsap.set(markers, { scale: 0.72, transformOrigin: "50% 50%" });
       gsap.set(numerals, { opacity: 0, scale: 0.6 });
       gsap.set(contents, { opacity: 0, y: 14 });
-      if (ruleFillRef.current) gsap.set(ruleFillRef.current, { width: "0%" });
-      if (ruleDotRef.current) gsap.set(ruleDotRef.current, { left: `${RULE_INSET_PCT}%`, opacity: 0 });
+      if (ruleFillRef.current) {
+        gsap.set(ruleFillRef.current, { scaleX: 0, transformOrigin: "0% 50%" });
+      }
+      if (ruleDotRef.current) {
+        gsap.set(ruleDotRef.current, { x: -DOT_SIZE / 2, y: -DOT_SIZE / 2, opacity: 0 });
+      }
 
       // ---- The whole sequence plays once, on mount. A small brass
       // "checkpoint" dot rides the leading edge of the rule as it fills
@@ -153,16 +196,16 @@ export default function OurProcess() {
         tl.to(
           ruleFillRef.current,
           {
-            width: `${RULE_SPAN_PCT}%`,
+            scaleX: 1,
             duration: 1.6,
             ease: "power1.inOut",
             onStart: () => {
               if (ruleDotRef.current) gsap.set(ruleDotRef.current, { opacity: 1 });
             },
             onUpdate: function () {
-              if (!ruleDotRef.current) return;
-              const pct = this.progress() * RULE_SPAN_PCT;
-              gsap.set(ruleDotRef.current, { left: `${RULE_INSET_PCT + pct}%` });
+              if (!ruleDotRef.current || !trackWidthPx) return;
+              const px = this.progress() * trackWidthPx;
+              gsap.set(ruleDotRef.current, { x: px - DOT_SIZE / 2 });
             },
             onComplete: () => {
               if (ruleDotRef.current) gsap.to(ruleDotRef.current, { opacity: 0, duration: 0.4 });
@@ -212,24 +255,42 @@ export default function OurProcess() {
   }, []);
 
   return (
-    <section aria-labelledby="our-process-heading" className="bg-[#FBF9F6] px-5 py-16 lg:px-8 lg:py-24">
+    <section
+      aria-labelledby="our-process-heading"
+      className={`${fraunces.variable} bg-[#FBF9F6] px-5 py-16 lg:px-8 lg:py-24`}
+    >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,500;0,600;1,400&display=swap');
-        .bsl-serif { font-family: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
+        .bsl-serif { font-family: var(--font-fraunces), 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
 
         .bsl-step-marker {
+          position: relative;
           border: 1.5px solid rgba(28, 23, 18, 0.16);
           background: #ffffff;
-          transition: border-color 0.5s ease, background 0.5s ease, box-shadow 0.5s ease;
         }
-        .bsl-step-marker.is-active {
-          border-color: #a26028;
+
+        /* Activated state — pre-painted layer, only ever opacity-faded.
+           No border-color/background/box-shadow animation, so nothing
+           forces paint per frame; the compositor handles the fade alone. */
+        .bsl-step-marker::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 9999px;
+          border: 1.5px solid #a26028;
           background: linear-gradient(160deg, #fbf3e3, #f3e0bc);
           box-shadow: 0 6px 16px -9px rgba(162, 96, 40, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.7);
+          opacity: 0;
+          transition: opacity 0.5s ease;
+          pointer-events: none;
         }
+        .bsl-step-marker.is-active::after {
+          opacity: 1;
+        }
+
         .bsl-step-num {
+          position: relative;
+          z-index: 1; /* stay above the ::after activation layer */
           color: #6e6259;
-          transition: color 0.5s ease;
         }
         .bsl-step-marker.is-active .bsl-step-num {
           color: #7c4a1e;
@@ -238,34 +299,52 @@ export default function OurProcess() {
           transition: color 0.3s ease;
         }
 
-        /* Checkpoint pulse-ring — plays once, the instant a marker activates.
-           A single soft ripple, not a loop: the "level hitting its mark". */
-        @keyframes bsl-pulse-ring {
-          0% {
-            box-shadow: 0 0 0 0 rgba(162, 96, 40, 0.42), 0 6px 16px -9px rgba(162, 96, 40, 0.5),
-              inset 0 1px 1px rgba(255, 255, 255, 0.7);
-          }
-          70% {
-            box-shadow: 0 0 0 13px rgba(162, 96, 40, 0), 0 6px 16px -9px rgba(162, 96, 40, 0.5),
-              inset 0 1px 1px rgba(255, 255, 255, 0.7);
-          }
-          100% {
-            box-shadow: 0 0 0 0 rgba(162, 96, 40, 0), 0 6px 16px -9px rgba(162, 96, 40, 0.5),
-              inset 0 1px 1px rgba(255, 255, 255, 0.7);
-          }
+        /* Checkpoint pulse-ring — plays once, the instant a marker
+           activates. Built as a ring that scales up while fading out
+           (transform + opacity only), rather than animating box-shadow. */
+        .bsl-step-marker::before {
+          content: "";
+          position: absolute;
+          inset: 0;
+          border-radius: 9999px;
+          border: 2px solid rgba(162, 96, 40, 0.45);
+          opacity: 0;
+          transform: scale(1);
+          pointer-events: none;
         }
-        .bsl-step-marker.is-checking-in {
+        @keyframes bsl-pulse-ring {
+          0% { opacity: 0.45; transform: scale(1); }
+          70% { opacity: 0; transform: scale(1.85); }
+          100% { opacity: 0; transform: scale(1.85); }
+        }
+        .bsl-step-marker.is-checking-in::before {
           animation: bsl-pulse-ring 0.85s ease-out;
         }
 
-        /* Traveling checkpoint dot — a soft, breathing brass halo so it
-           reads as something in motion rather than a static marker. */
-        @keyframes bsl-dot-breathe {
-          0%, 100% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 10px 2px rgba(162, 96, 40, 0.55); }
-          50% { box-shadow: 0 0 0 4px #fbf9f6, 0 0 15px 4px rgba(162, 96, 40, 0.75); }
-        }
+        /* Traveling checkpoint dot — solid brass dot with a fixed ivory
+           ring border (static, so it's never repainted); the "breathing"
+           glow behind it is a separate blurred layer animated purely via
+           transform: scale + opacity, instead of animating box-shadow. */
         .bsl-rule-dot {
+          position: relative;
+          border: 4px solid #fbf9f6;
+          box-sizing: content-box;
+        }
+        .bsl-rule-dot::after {
+          content: "";
+          position: absolute;
+          inset: -6px;
+          border-radius: 9999px;
+          background: rgba(162, 96, 40, 0.55);
+          filter: blur(4px);
+          opacity: 0.4;
+          transform: scale(1);
           animation: bsl-dot-breathe 1.6s ease-in-out infinite;
+          pointer-events: none;
+        }
+        @keyframes bsl-dot-breathe {
+          0%, 100% { transform: scale(1); opacity: 0.4; }
+          50% { transform: scale(1.5); opacity: 0.75; }
         }
 
         @media (hover: hover) and (pointer: fine) {
@@ -273,13 +352,12 @@ export default function OurProcess() {
             color: #8a5121;
           }
           .bsl-step-row:hover .bsl-step-marker.is-active {
-            box-shadow: 0 9px 20px -9px rgba(162, 96, 40, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.7);
             transform: translateY(-2px);
           }
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .bsl-rule-dot { animation: none; }
+          .bsl-rule-dot::after { animation: none; }
         }
       `}</style>
 
@@ -309,26 +387,27 @@ export default function OurProcess() {
         </header>
 
         <div className="relative">
-          {/* Base rule + brass fill overlay + traveling checkpoint dot —
-              desktop only. Insets match the center of the first/last
-              marker in the 4-column grid below. */}
+          {/* Track: width/position set once (layout), never animated.
+              Everything that moves inside it (fill, dot) does so purely
+              via `transform`, so no layout or paint work happens per
+              frame — desktop only. */}
           <div
+            ref={trackRef}
             aria-hidden="true"
-            className="pointer-events-none absolute top-7 hidden h-px bg-[#1C1712]/10 lg:block"
-            style={{ left: `${RULE_INSET_PCT}%`, right: `${RULE_INSET_PCT}%` }}
-          />
-          <div
-            ref={ruleFillRef}
-            aria-hidden="true"
-            className="pointer-events-none absolute top-7 hidden h-px bg-[#A26028] lg:block"
-            style={{ left: `${RULE_INSET_PCT}%`, width: 0 }}
-          />
-          <div
-            ref={ruleDotRef}
-            aria-hidden="true"
-            className="bsl-rule-dot pointer-events-none absolute top-7 hidden h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#A26028] lg:block"
-            style={{ left: `${RULE_INSET_PCT}%`, opacity: 0 }}
-          />
+            className="pointer-events-none absolute top-7 hidden h-px lg:block"
+            style={{ left: `${RULE_INSET_PCT}%`, width: `${RULE_SPAN_PCT}%` }}
+          >
+            <div className="absolute inset-0 bg-[#1C1712]/10" />
+            <div
+              ref={ruleFillRef}
+              className="absolute inset-0 bg-[#A26028]"
+            />
+            <div
+              ref={ruleDotRef}
+              className="bsl-rule-dot absolute left-0 top-0 h-2.5 w-2.5 rounded-full bg-[#A26028]"
+              style={{ opacity: 0 }}
+            />
+          </div>
 
           <ol className="relative grid grid-cols-1 gap-14 lg:grid-cols-4 lg:gap-6">
             {STAGES.map((stage, i) => (

@@ -38,35 +38,60 @@
  *   `/public/cta.webp` — swap the filename/path below if it lives
  *   somewhere else.
  *
+ * FIX PASS
+ * - The "Areas Covered" stat pill was removed. It duplicated coverage
+ *   info that already lives in FAQ.tsx and needed a manually-synced
+ *   SERVICE_AREAS array in this file just to feed one number. Replaced
+ *   with a "5/5" client-rating stat instead — reuses the same count-up
+ *   pill mechanics (target 5, suffix "/5") — and the now-unused
+ *   SERVICE_AREAS array was removed.
+ * - Stat-strip responsiveness: the row layout used to switch on at the
+ *   `sm` (640px) breakpoint, too narrow to fit four icon+label pills
+ *   without squeezing — combined with a forced `whitespace-nowrap` on
+ *   the label, that overflowed rather than wrapped. Moved the row
+ *   layout to `md` (768px), let labels wrap instead of forcing nowrap,
+ *   and added `min-w-0` on each pill so flex children can actually
+ *   shrink instead of forcing the row wider than its container.
+ * - Fraunces now loads via `next/font/google` instead of a runtime
+ *   `@import` inside a <style> tag — same CLS fix applied to
+ *   WhoWeAre.tsx (the old @import fetched the font from Google's CDN
+ *   after first paint, and the fallback→Fraunces metric change shifted
+ *   the stat-pill row once it swapped in).
+ * - `usePrefersReducedMotion` rebuilt on `useSyncExternalStore` instead
+ *   of a `useState` initializer that read `window.matchMedia` directly
+ *   (server/client mismatch) plus a `useEffect` `setState` call (which
+ *   also trips the `react-hooks/set-state-in-effect` lint rule).
+ *
  * NOTE: brand accent #A26028 isn't a default Tailwind color, so it's
  * used via arbitrary-value utilities (e.g. bg-[#A26028]), matching the
  * convention in WhoWeAre.tsx.
  * -------------------------------------------------------------------------
  */
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
+import { Fraunces } from "next/font/google";
+
+// Loaded once at module scope and self-hosted at build time — no runtime
+// network fetch, no font-swap reflow.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-fraunces",
+});
 
 const HERO_IMAGE_SRC = "/cta.webp";
 
 const PHONE_DISPLAY = "020 1234 5678";
 const PHONE_HREF = "tel:+442012345678";
 
-const SERVICE_AREAS = [
-  "Ealing",
-  "Fulham",
-  "Wembley",
-  "Chiswick",
-  "Acton",
-  "Hammersmith",
-  "Richmond",
-];
-
 const STATS = [
   { label: "Projects Completed", target: 150, suffix: "+" },
   { label: "Years of Experience", target: 15, suffix: "+" },
   { label: "Client Satisfaction", target: 100, suffix: "%" },
-  { label: "Areas Covered", target: SERVICE_AREAS.length, suffix: "" },
+  { label: "Client Rating", target: 5, suffix: "/5" },
 ];
 
 const COUNT_DURATION_MS = 1600;
@@ -81,21 +106,24 @@ function easeOutQuint(t: number) {
 // this pattern is used a third time on the site).
 // ---------------------------------------------------------------------
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeToReducedMotion(callback: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
 function usePrefersReducedMotion() {
-  const [reduced, setReduced] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false
+  return useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    () => false
   );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  return reduced;
 }
 
 function useCountUp(target: number, shouldStart: boolean, duration = COUNT_DURATION_MS) {
@@ -169,8 +197,8 @@ function StatPill({
 
   return (
     <div
-      className={`relative flex flex-1 items-center gap-3 px-5 py-1.5 sm:px-7 ${
-        showDivider ? "sm:border-l sm:border-[#A26028]/15" : ""
+      className={`relative flex min-w-0 flex-1 items-center gap-3 px-5 py-1.5 md:px-6 ${
+        showDivider ? "md:border-l md:border-[#A26028]/15" : ""
       }`}
       style={{
         opacity: isVisible ? 1 : 0,
@@ -213,7 +241,7 @@ function StatPill({
           {count}
           {stat.suffix}
         </span>
-        <span className="whitespace-nowrap text-[0.76rem] font-medium text-[#6B6B64]">
+        <span className="text-[0.76rem] font-medium leading-snug text-[#6B6B64]">
           {stat.label}
         </span>
       </span>
@@ -240,11 +268,10 @@ export default function ContactCTA() {
   return (
     <section
       aria-labelledby="contact-cta-heading"
-      className="relative overflow-hidden bg-[#0B0B0D] px-5 pb-24 pt-20 sm:px-8 sm:pb-28 sm:pt-28"
+      className={`relative overflow-hidden bg-[#0B0B0D] px-5 pb-24 pt-20 sm:px-8 sm:pb-28 sm:pt-28 ${fraunces.variable}`}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,400&display=swap');
-        .cta-serif { font-family: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
+        .cta-serif { font-family: var(--font-fraunces), 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
 
         .cta-stat-number {
           display: inline-block;
@@ -345,7 +372,7 @@ export default function ContactCTA() {
       <div className="relative z-10 mx-auto mt-14 max-w-[1040px] sm:mt-16">
         <div
           ref={statsRef}
-          className="flex flex-col divide-y divide-[#A26028]/15 rounded-3xl border border-[#A26028]/15 bg-[#FDF8F2]/95 px-3 py-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:flex-row sm:divide-y-0 sm:px-2 sm:py-3"
+          className="flex flex-col divide-y divide-[#A26028]/15 rounded-3xl border border-[#A26028]/15 bg-[#FDF8F2]/95 px-3 py-4 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.45)] backdrop-blur-sm md:flex-row md:divide-y-0 md:px-2 md:py-3"
         >
           {STATS.map((stat, index) => (
             <StatPill
