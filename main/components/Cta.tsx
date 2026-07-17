@@ -18,9 +18,9 @@
  * - Background photo does a slow, one-time "Ken Burns" settle (scale
  *   1.08 → 1) the first time the section scrolls into view, then holds
  *   still — restraint over a looping effect.
- * - Eyebrow / heading / copy / CTAs stagger in as the section enters
- *   view; the stat strip staggers in slightly after, so the eye lands
- *   on the message first and the numbers second.
+ * - Heading / copy / CTAs stagger in as the section enters view; the stat
+ *   strip staggers in slightly after, so the eye lands on the message
+ *   first and the numbers second.
  * - Copy is SEO-oriented for West London renovation/construction
  *   searches: naturally mentions the service area names and core
  *   service lines without keyword-stuffing.
@@ -29,10 +29,14 @@
  *   transforms are all skipped in favour of immediate final states;
  *   only simple opacity fades remain.
  *
- * IMAGE: sourced from Unsplash (free license, no attribution required).
- * Swap `HERO_IMAGE_URL` for a real BSL project photo when one's ready —
- * a genuine completed job will always outperform a stock photo for
- * both trust and on-page SEO (unique image, descriptive alt text).
+ * IMAGE
+ * - Background photo is now served locally via `next/image` from
+ *   `/public/cta.webp` (previously an external Unsplash URL). Rendered
+ *   with `fill` + `sizes="100vw"` since it's a full-bleed section
+ *   background, and `priority` since this section is typically visible
+ *   without scrolling on many pages. Drop your file at
+ *   `/public/cta.webp` — swap the filename/path below if it lives
+ *   somewhere else.
  *
  * NOTE: brand accent #A26028 isn't a default Tailwind color, so it's
  * used via arbitrary-value utilities (e.g. bg-[#A26028]), matching the
@@ -41,9 +45,9 @@
  */
 "use client";
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 
-const HERO_IMAGE_URL =
-  "https://images.unsplash.com/photo-1762135881724-fdbd00d2f3b3?q=80&w=1920&auto=format&fit=crop";
+const HERO_IMAGE_SRC = "/cta.webp";
 
 const PHONE_DISPLAY = "020 1234 5678";
 const PHONE_HREF = "tel:+442012345678";
@@ -274,10 +278,13 @@ export default function ContactCTA() {
 
       {/* Background photo + overlay */}
       <div aria-hidden="true" className="absolute inset-0 overflow-hidden">
-        <img
-          src={HERO_IMAGE_URL}
+        <Image
+          src={HERO_IMAGE_SRC}
           alt=""
-          className="h-full w-full object-cover object-center"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
           style={{
             animation: reducedMotion ? "none" : "ctaKenBurns 7s ease-out both",
           }}
@@ -291,19 +298,9 @@ export default function ContactCTA() {
       />
 
       <div ref={contentRef} className="relative mx-auto max-w-[880px] text-center">
-        <span
-          style={fadeUp(0)}
-          className="mb-5 inline-flex items-center gap-2 rounded-full border border-[#E8C599]/30 bg-white/5 px-4 py-1.5 text-[0.78rem] font-bold uppercase tracking-[0.14em] text-[#E8C599] backdrop-blur-sm"
-        >
-          <svg viewBox="0 0 24 24" className="h-3 w-3 flex-none" aria-hidden="true">
-            <path d="M4 6l8 6-8 6M12 6l8 6-8 6" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-          Free Consultation — West London Construction Specialists
-        </span>
-
         <h2
           id="contact-cta-heading"
-          style={fadeUp(90)}
+          style={fadeUp(0)}
           className="mb-5 text-[clamp(2rem,5vw,3.1rem)] font-extrabold leading-[1.15] tracking-[-0.01em] text-white"
         >
           Let&apos;s Build Your <span className="text-[#E8C599]">Dream Renovation</span>,
@@ -311,7 +308,7 @@ export default function ContactCTA() {
         </h2>
 
         <p
-          style={fadeUp(160)}
+          style={fadeUp(90)}
           className="mx-auto mb-9 max-w-[620px] text-[clamp(1rem,1.6vw,1.1rem)] leading-[1.75] text-white/75"
         >
           Whether it&apos;s a full house renovation, a home extension, or general
@@ -324,7 +321,7 @@ export default function ContactCTA() {
           to you with a free, no-obligation quote.
         </p>
 
-        <div style={fadeUp(230)} className="flex flex-wrap items-center justify-center gap-4">
+        <div style={fadeUp(160)} className="flex flex-wrap items-center justify-center gap-4">
           <a
             href="/contact#quote"
             className="inline-flex items-center gap-2 rounded-full bg-[#A26028] px-8 py-4 text-[0.95rem] font-bold text-white shadow-[0_10px_30px_-8px_rgba(162,96,40,0.6)] transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#8A5121]"

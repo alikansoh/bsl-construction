@@ -80,7 +80,7 @@ const FRAME_SETS = {
     path: (i: number) => `/hero-frames/desktop/frame-${String(i + 1).padStart(4, "0")}.jpg`,
   },
   mobile: {
-    count: 60,
+    count: 36,
     path: (i: number) => `/hero-frames/mobile/frame-${String(i + 1).padStart(4, "0")}.jpg`,
   },
 } as const;
@@ -157,6 +157,7 @@ interface NavigatorWithConnection extends Navigator {
 
 export default function Hero() {
   const scrollSpaceRef = useRef<HTMLDivElement>(null);
+  const heroStickyRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressFillRef = useRef<HTMLDivElement>(null);
   const textLayerARef = useRef<HTMLHeadingElement>(null);
@@ -205,7 +206,14 @@ export default function Hero() {
     const measureGeometry = () => {
       const rect = scrollSpace.getBoundingClientRect();
       const top = rect.top + window.scrollY;
-      const total = scrollSpace.offsetHeight - window.innerHeight;
+      // Position: sticky unpins once scroll has advanced past
+      // (scrollSpace height - sticky element's own height) — NOT
+      // necessarily the full viewport height, since the sticky element
+      // can be shorter than 100dvh (e.g. the reduced mobile height
+      // below). Measuring the sticky element directly keeps the scrub
+      // perfectly synced to when it actually unpins.
+      const stickyHeight = heroStickyRef.current?.offsetHeight ?? window.innerHeight;
+      const total = scrollSpace.offsetHeight - stickyHeight;
       geometryRef.current = { top, total: Math.max(total, 0) };
     };
 
@@ -429,7 +437,7 @@ export default function Hero() {
 
   return (
     <div ref={scrollSpaceRef} data-hero-root className="hero-scroll-space">
-      <div className="hero-sticky">
+      <div ref={heroStickyRef} className="hero-sticky">
         <picture className="hero-poster-picture">
           <source media="(max-width: 768px)" srcSet={POSTER_SRC_MOBILE} type="image/webp" />
           <img
@@ -717,15 +725,17 @@ export default function Hero() {
         }
 
         /* ----------------------------------------------------------------
-           Phones / small screens — full-bleed 100dvh sticky viewport,
-           top-loading progress bar, horizontally scrollable SEO strip.
+           Phones / small screens — slightly shorter than full-bleed
+           (92dvh instead of 100dvh) so a hint of the next section peeks
+           in, top-loading progress bar, horizontally scrollable SEO strip.
            ---------------------------------------------------------------- */
         @media (max-width: 768px) {
           .hero-scroll-space {
             --hero-scroll-length: 130vh;
           }
           .hero-sticky {
-            height: 100dvh;
+            height: 92vh;
+            height: 92dvh;
           }
 
           .hero-overlay {
