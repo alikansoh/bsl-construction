@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Fraunces } from "next/font/google";
 import Link from "next/link";
 
@@ -47,6 +47,30 @@ function useScrolled(threshold = 60) {
 export default function Hero() {
   const mounted = useMounted(100);
   const scrolled = useScrolled(60);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Force autoplay on mobile — some mobile browsers (iOS Safari, some Android
+  // webviews) ignore the `autoPlay` attribute unless play() is triggered via JS.
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const tryPlay = () => {
+      video.play().catch(() => {
+        // Autoplay was blocked; will retry on user interaction.
+      });
+    };
+
+    tryPlay();
+
+    document.addEventListener("touchstart", tryPlay, { once: true });
+    document.addEventListener("visibilitychange", tryPlay);
+
+    return () => {
+      document.removeEventListener("touchstart", tryPlay);
+      document.removeEventListener("visibilitychange", tryPlay);
+    };
+  }, []);
 
   return (
     <section
@@ -55,10 +79,13 @@ export default function Hero() {
       {/* Background video */}
       <div className="absolute inset-0 z-0">
         <video
+          ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
+          // eslint-disable-next-line react/no-unknown-property
+          webkit-playsinline="true"
           poster="/hero-poster.jpg"
           preload="auto"
           className="h-full w-full object-cover"
@@ -70,19 +97,11 @@ export default function Hero() {
       {/* Lighter luxury gradient overlay */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-[1] bg-gradient-to-b from-[#0B0B0D]/35 via-[#0B0B0D]/20 to-[#0B0B0D]/65"
+        className="absolute inset-0 z-[1] bg-gradient-to-b from-[#0B0B0D]/20 via-[#0B0B0D]/10 to-[#0B0B0D]/45"
       />
       <div
         aria-hidden="true"
-        className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0B0B0D]/50 via-transparent to-[#0B0B0D]/15"
-      />
-
-      {/* Decorative gold vertical line */}
-      <div
-        aria-hidden="true"
-        className={`absolute left-1/2 top-28 z-[2] h-16 w-[1px] bg-gradient-to-b from-transparent via-[#A26028] to-transparent transition-all duration-1000 md:left-[10%] md:top-1/2 md:h-24 md:-translate-y-1/2 ${
-          mounted ? "opacity-100 md:scale-y-100" : "opacity-0 md:scale-y-0"
-        }`}
+        className="absolute inset-0 z-[1] bg-gradient-to-r from-[#0B0B0D]/30 via-transparent to-[#0B0B0D]/10"
       />
 
       {/* Content */}
@@ -215,21 +234,21 @@ export default function Hero() {
         </div>
       </div>
 
-      {/* Scroll down indicator */}
+      {/* Scroll down indicator — mouse style */}
       <div
         aria-hidden="true"
-        className={`absolute bottom-24 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 transition-all duration-700 md:bottom-28 ${
+        className={`absolute bottom-24 left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 transition-all duration-700 md:bottom-28 ${
           mounted && !scrolled
             ? "translate-y-0 opacity-100 delay-500"
             : "translate-y-3 opacity-0"
         }`}
       >
+        <div className="flex h-10 w-6 items-start justify-center rounded-full border-2 border-white/50 p-1.5">
+          <span className="h-2 w-1 animate-[bsl-scroll-wheel_1.6s_ease-in-out_infinite] rounded-full bg-[#E8C599]" />
+        </div>
         <span className="text-[0.65rem] font-medium uppercase tracking-[0.3em] text-white/60">
           Scroll
         </span>
-        <div className="relative h-10 w-[1px] overflow-hidden bg-white/20">
-          <span className="absolute inset-x-0 top-0 h-1/2 w-full animate-[bsl-scroll-line_2s_ease-in-out_infinite] bg-gradient-to-b from-transparent via-[#E8C599] to-transparent" />
-        </div>
       </div>
 
       <style>{`
@@ -240,9 +259,10 @@ export default function Hero() {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-33.3333%); }
         }
-        @keyframes bsl-scroll-line {
-          0% { transform: translateY(-100%); }
-          100% { transform: translateY(200%); }
+        @keyframes bsl-scroll-wheel {
+          0% { transform: translateY(0); opacity: 1; }
+          70% { transform: translateY(10px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 0; }
         }
       `}</style>
     </section>
