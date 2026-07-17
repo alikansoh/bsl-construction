@@ -7,6 +7,7 @@ import WhyChooseUs from "@/components/WhyChooseUs";
 import OurProcess from "@/components/OurProcess";
 import Gallery from "@/components/Gallery";
 import Cta from "@/components/Cta";
+import FAQ from "@/components/Faqs";
 
 export default function Home() {
   return (
@@ -20,6 +21,7 @@ export default function Home() {
     <OurProcess />
     <Gallery />
     <Cta />
+    <FAQ />
 
       </main>
   );

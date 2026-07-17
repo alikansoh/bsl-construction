@@ -6,24 +6,29 @@
  * naturally weaving in target service areas (Ealing, Fulham, Wembley,
  * Chiswick, Acton, Hammersmith, Richmond) without keyword-stuffing.
  *
- * THIS PASS — premium redesign
- * - Stat numbers are now set in Fraunces serif, clipped to a brass
- *   gradient (matching the metal language used elsewhere on the site),
- *   and finish their count-up with a single gleam sweep across the
- *   digits — a quiet "just struck" flourish rather than a flat count.
- * - Each stat icon sits inside a slowly-rotating dashed "seal" ring, with
- *   a soft pulse ring that ripples twice on entry, giving the numbers the
- *   feel of a certification mark rather than a plain dashboard tile.
- * - Stat cards now tilt gently toward the cursor (desktop/fine-pointer
- *   only) on a shared 3D perspective, on top of their staggered rise-in.
- * - The intro copy — eyebrow, heading, paragraphs, service-area chips,
- *   CTA — now reveals in a single staggered sequence as the section
- *   scrolls into view, instead of appearing instantly.
- * - Added a plain framed project photo (/home.webp) beneath the stats,
- *   in a wide 16:9 crop, that fades and settles into place on scroll.
- * - `prefers-reduced-motion: reduce` is respected throughout: tilt,
- *   gleam, pulse, and the frame-draw are all skipped in favour of
- *   immediate final states; only the fade transitions remain.
+ * CLS FIX PASS
+ * - Fraunces is now loaded via `next/font/google` instead of a runtime
+ *   `@import` inside a <style> tag. next/font downloads the font at BUILD
+ *   time, self-hosts it, and injects the @font-face + a CSS variable into
+ *   the page before first paint — so there is no external round-trip and
+ *   no font-swap reflow once the page is interactive. This was the actual
+ *   PageSpeed-flagged CLS source: the old @import fetched Fraunces from
+ *   Google's CDN *after* the section had already painted with the
+ *   fallback serif, and the metric difference between Fraunces and the
+ *   fallback shifted the stat-number boxes (and everything stacked below
+ *   them: labels, the next card, the photo) once the swap happened.
+ * - Fixed a hydration-mismatch bug in `usePrefersReducedMotion`: it used
+ *   to read `window.matchMedia(...)` inside the `useState` initializer,
+ *   which returns different values on the server (always false, no
+ *   `window`) vs. the client's very first render (real value). For
+ *   visitors with the OS-level reduced-motion setting on, that mismatch
+ *   forces React to patch the DOM right after hydration — a second,
+ *   avoidable layout shift. Now it always initializes to `false` and
+ *   syncs the real value in an effect, matching SSR output exactly.
+ * - Added explicit `width`/`height` on the project photo as a belt-and-
+ *   suspenders hint (the `aspect-[16/9]` wrapper was already reserving
+ *   the box correctly, so this wasn't the CLS source, but the intrinsic
+ *   size helps the browser's image-sizing heuristics regardless).
  *
  * NOTE: brand accent #A26028 isn't a default Tailwind color, so it's used
  * via arbitrary-value utilities (e.g. bg-[#A26028]). If this accent is
@@ -31,7 +36,19 @@
  * -------------------------------------------------------------------------
  */
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { Fraunces } from "next/font/google";
+
+// Loaded once at module scope and self-hosted at build time — no runtime
+// network fetch, no font-swap reflow. Exposed as a CSS variable so the
+// existing `.bsl-serif` rule below can keep its fallback stack.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-fraunces",
+});
 
 const SERVICE_AREAS = [
   "Ealing",
@@ -86,24 +103,31 @@ function easeOutQuint(t: number) {
   return 1 - Math.pow(1 - t, 5);
 }
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeToReducedMotion(callback: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener("change", callback);
+  return () => mq.removeEventListener("change", callback);
+}
+
+function getReducedMotionSnapshot() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches;
+}
+
+// Server has no `window`/`matchMedia`, so it can only ever report `false`.
+// useSyncExternalStore is the correct primitive for subscribing to an
+// external, mutable source like matchMedia — unlike useEffect+setState,
+// it doesn't cause a synchronous set-state-in-effect (React can read the
+// snapshot during render itself), and the explicit server snapshot keeps
+// the first client render identical to the server's, so there's no
+// hydration-mismatch repaint either.
 function usePrefersReducedMotion() {
-  // Computed lazily on first render (not inside an effect) so there's no
-  // synchronous setState-in-effect cascade — the effect below only
-  // subscribes to future changes, it never sets state on mount.
-  const [reduced, setReduced] = useState(() =>
-    typeof window !== "undefined"
-      ? window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      : false
+  return useSyncExternalStore(
+    subscribeToReducedMotion,
+    getReducedMotionSnapshot,
+    () => false
   );
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
-    mq.addEventListener("change", handler);
-    return () => mq.removeEventListener("change", handler);
-  }, []);
-
-  return reduced;
 }
 
 function useCountUp(target: number, shouldStart: boolean, duration = ANIMATION_DURATION_MS) {
@@ -275,11 +299,10 @@ export default function WhoWeAre() {
   return (
     <section
       aria-labelledby="who-we-are-heading"
-      className="relative overflow-hidden bg-[#FAFAF9] px-5 py-16 sm:px-8 md:py-24"
+      className={`relative overflow-hidden bg-[#FAFAF9] px-5 py-16 sm:px-8 md:py-24 ${fraunces.variable}`}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,500;0,600;1,400&display=swap');
-        .bsl-serif { font-family: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
+        .bsl-serif { font-family: var(--font-fraunces), 'Iowan Old Style', 'Palatino Linotype', Palatino, serif; }
 
         .bsl-stat-number {
           display: inline-block;
@@ -438,6 +461,8 @@ export default function WhoWeAre() {
               <img
                 src="/home.webp"
                 alt="A completed BSL Construction home renovation project in West London"
+                width={1024}
+                height={577}
                 className="h-full w-full object-cover"
                 loading="lazy"
               />
