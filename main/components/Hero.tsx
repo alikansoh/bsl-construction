@@ -49,25 +49,50 @@ export default function Hero() {
   const scrolled = useScrolled(60);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Force autoplay on mobile — some mobile browsers (iOS Safari, some Android
-  // webviews) ignore the `autoPlay` attribute unless play() is triggered via JS.
+  // Robust autoplay handling for mobile browsers.
+  // Many mobile browsers (iOS Safari, some Android webviews) require:
+  //  - `muted` set as a real attribute (not just a prop)
+  //  - play() called only once metadata is loaded
+  //  - a retry on user interaction / visibility change, since autoplay
+  //    can be silently blocked by Low Power Mode, Reduce Motion, or
+  //    Low Data Mode with no error thrown.
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
+    // Force the muted attribute explicitly — required by some browsers
+    // for autoplay to be permitted at all.
+    video.muted = true;
+    video.setAttribute("muted", "");
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
+
     const tryPlay = () => {
-      video.play().catch(() => {
-        // Autoplay was blocked; will retry on user interaction.
-      });
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          // Autoplay blocked; will retry on next interaction/visibility event.
+        });
+      }
     };
 
-    tryPlay();
+    if (video.readyState >= 1) {
+      // Metadata already loaded.
+      tryPlay();
+    } else {
+      video.addEventListener("loadedmetadata", tryPlay, { once: true });
+    }
 
+    // Retry triggers — covers cases where the browser silently blocked
+    // the initial attempt (common on iOS with certain power/data settings).
     document.addEventListener("touchstart", tryPlay, { once: true });
+    document.addEventListener("click", tryPlay, { once: true });
     document.addEventListener("visibilitychange", tryPlay);
 
     return () => {
+      video.removeEventListener("loadedmetadata", tryPlay);
       document.removeEventListener("touchstart", tryPlay);
+      document.removeEventListener("click", tryPlay);
       document.removeEventListener("visibilitychange", tryPlay);
     };
   }, []);
@@ -84,10 +109,8 @@ export default function Hero() {
           muted
           loop
           playsInline
-          // eslint-disable-next-line react/no-unknown-property
-          webkit-playsinline="true"
           poster="/hero-poster.jpg"
-          preload="auto"
+          preload="metadata"
           className="h-full w-full object-cover"
         >
           <source src="/hero-video.mp4" type="video/mp4" />
