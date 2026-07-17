@@ -49,32 +49,52 @@ export default function Hero() {
   const scrolled = useScrolled(60);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Robust autoplay handling for mobile browsers.
-  // Many mobile browsers (iOS Safari, some Android webviews) require:
-  //  - `muted` set as a real attribute (not just a prop)
-  //  - play() called only once metadata is loaded
-  //  - a retry on user interaction / visibility change, since autoplay
-  //    can be silently blocked by Low Power Mode, Reduce Motion, or
-  //    Low Data Mode with no error thrown.
+  // Tracks whether the browser is actually playing the video.
+  // If autoplay gets silently blocked (Low Power Mode, Data Saver,
+  // in-app browsers like Instagram/TikTok, etc.), this stays false
+  // and we show a manual play button instead of a dead poster frame.
+  const [isPlaying, setIsPlaying] = useState(false);
+
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
 
     // Force the muted attribute explicitly — required by some browsers
-    // for autoplay to be permitted at all.
+    // for autoplay to be permitted at all. Setting both the property
+    // and the DOM attribute covers browsers that check either.
     video.muted = true;
+    video.defaultMuted = true;
     video.setAttribute("muted", "");
     video.setAttribute("playsinline", "");
     video.setAttribute("webkit-playsinline", "");
 
+    let cancelled = false;
+
     const tryPlay = () => {
       const playPromise = video.play();
       if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          // Autoplay blocked; will retry on next interaction/visibility event.
-        });
+        playPromise
+          .then(() => {
+            if (!cancelled) setIsPlaying(true);
+          })
+          .catch(() => {
+            // Autoplay blocked (Low Power Mode, Data Saver, in-app
+            // browser policy, etc). No error UI needed here — the
+            // fallback play button below handles it.
+            if (!cancelled) setIsPlaying(false);
+          });
       }
     };
+
+    const handlePlaying = () => {
+      if (!cancelled) setIsPlaying(true);
+    };
+    const handlePause = () => {
+      if (!cancelled) setIsPlaying(false);
+    };
+
+    video.addEventListener("playing", handlePlaying);
+    video.addEventListener("pause", handlePause);
 
     if (video.readyState >= 1) {
       // Metadata already loaded.
@@ -90,12 +110,25 @@ export default function Hero() {
     document.addEventListener("visibilitychange", tryPlay);
 
     return () => {
+      cancelled = true;
       video.removeEventListener("loadedmetadata", tryPlay);
+      video.removeEventListener("playing", handlePlaying);
+      video.removeEventListener("pause", handlePause);
       document.removeEventListener("touchstart", tryPlay);
       document.removeEventListener("click", tryPlay);
       document.removeEventListener("visibilitychange", tryPlay);
     };
   }, []);
+
+  const handleManualPlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = true;
+    video.play().catch(() => {
+      // If it still fails here it's a real playback/encoding issue,
+      // not a policy block — poster image remains as the fallback.
+    });
+  };
 
   return (
     <section
@@ -110,11 +143,33 @@ export default function Hero() {
           loop
           playsInline
           poster="/hero-poster.jpg"
-          preload="metadata"
+          preload="auto"
           className="h-full w-full object-cover"
         >
           <source src="/hero-video.mp4" type="video/mp4" />
         </video>
+
+        {/* Fallback tap-to-play — only shows if autoplay was actually
+            blocked by the browser/OS. Keeps the hero from looking dead
+            on Data Saver / Low Power Mode / in-app browsers. */}
+        {mounted && !isPlaying && (
+          <button
+            type="button"
+            onClick={handleManualPlay}
+            aria-label="Play background video"
+            className="group absolute inset-0 z-[2] flex items-center justify-center bg-[#0B0B0D]/20 transition-colors duration-300 hover:bg-[#0B0B0D]/30"
+          >
+            <span className="flex h-16 w-16 items-center justify-center rounded-full border border-white/40 bg-white/10 backdrop-blur-md transition-transform duration-300 group-hover:scale-110">
+              <svg
+                className="ml-1 h-6 w-6 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          </button>
+        )}
       </div>
 
       {/* Lighter luxury gradient overlay */}
