@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ElementType, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ElementType, type ReactNode, type Ref } from "react";
 
 type RevealProps = {
   children: ReactNode;
@@ -22,6 +22,9 @@ type RevealProps = {
  * in page.tsx), so content is never permanently hidden.
  */
 export default function Reveal({ children, delay = 0, className = "", id, as = "div" }: RevealProps) {
+  // Typed as the common base (HTMLElement) since this ref is only ever used
+  // for IntersectionObserver.observe(), which doesn't care whether the node
+  // is a div or an li. Kept un-narrowed on purpose — see the cast below.
   const ref = useRef<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
 
@@ -49,7 +52,13 @@ export default function Reveal({ children, delay = 0, className = "", id, as = "
 
   return (
     <Comp
-      ref={ref}
+      // `Comp` can render as either <div> or <li>, so JSX expects a ref that
+      // satisfies BOTH element types at once (an intersection), which a
+      // plain HTMLElement ref can never structurally match. The node is only
+      // ever passed to IntersectionObserver.observe() (which just wants an
+      // Element), so this cast is safe — it doesn't change what gets
+      // attached at runtime, only what TypeScript is asked to verify.
+      ref={ref as Ref<HTMLDivElement & HTMLLIElement>}
       id={id}
       className={`bsl-reveal ${visible ? "bsl-reveal-visible" : ""} ${className}`}
       style={{ transitionDelay: visible ? `${delay}ms` : "0ms" }}
