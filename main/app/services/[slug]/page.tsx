@@ -364,7 +364,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
           <h1 className="bsl-display mb-6 max-w-2xl text-[clamp(2.3rem,5.6vw,3.9rem)] font-semibold leading-[1.06] tracking-[-0.02em] text-[var(--bsl-ink)]">
             {service.title}
           </h1>
-          <p className="max-w-lg text-[clamp(1rem,1.4vw,1.1rem)] leading-[1.7] text-[var(--bsl-ink-soft)]">
+          <p className="max-w-lg text-[clamp(1rem,1.4vw,1.1rem)] leading-[1.7] text-black">
             {service.shortDescription}
           </p>
 
