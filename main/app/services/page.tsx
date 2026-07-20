@@ -178,8 +178,8 @@ export default function ServicesPage() {
                   }`}
                 >
                   <Image
-                    src={service.image}
-                    alt={service.imageAlt}
+                    src={service.image.url}
+                    alt={service.image.alt}
                     fill
                     sizes={
                       idx === 0

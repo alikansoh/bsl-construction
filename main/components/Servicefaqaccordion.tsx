@@ -1,111 +1,56 @@
-"use client";
-
 /**
- * ServiceFaqAccordion.tsx — BSL Construction
+ * components/ServiceFaqAccordion.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Per-service FAQ accordion for /services/[slug]. Fully data-driven: it
- * renders whatever `faqs` array the current service provides in
- * data/services.json, so a new service picks up a working FAQ section
- * automatically as long as it has a `faqs` field (see lib/services.ts).
- *
- * DESIGN
- * - The expand/collapse control is a small brass ring badge — the same
- *   motif used for the checklist icons and the coin medallions elsewhere
- *   on the site (WhyChooseUs.tsx) — so this reads as part of the same
- *   family rather than a bolted-on FAQ widget.
- * - Rows open independently, not one-at-a-time: these are short,
- *   standalone answers a reader may want to compare, not a guided
- *   sequence, so there's no reason to force one closed to read another.
- * - Expand/collapse animates via `grid-template-rows: 0fr -> 1fr` on a
- *   wrapping grid, not `height: auto` or a JS-measured height — this
- *   transitions smoothly on the compositor without ever reading layout
- *   from JS. `prefers-reduced-motion: reduce` removes the transition
- *   entirely; panels still open/close, just instantly.
- * - Semantics: each question is a real <h3> containing the toggle
- *   <button>, with aria-expanded/aria-controls wiring the button to its
- *   panel — standard accessible accordion pattern, keyboard operable with
- *   no extra handling needed.
+ * Accessible FAQ accordion used on /services/[slug]. Single-open behavior,
+ * keyboard/focus-visible support, reduced-motion friendly (no layout-shifting
+ * animation beyond a short height/opacity transition).
  * -------------------------------------------------------------------------
  */
+"use client";
 
-import { useId, useState } from "react";
-
-export type ServiceFaq = {
-  question: string;
-  answer: string;
-};
+import { useState } from "react";
+import type { ServiceFaq } from "@/lib/services";
 
 export default function ServiceFaqAccordion({ faqs }: { faqs: ServiceFaq[] }) {
-  const baseId = useId();
-  // First question open by default so the section never lands looking
-  // empty; everything else starts collapsed.
-  const [open, setOpen] = useState<Set<number>>(() => new Set([0]));
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
-  if (!faqs || faqs.length === 0) return null;
-
-  const toggle = (i: number) => {
-    setOpen((prev) => {
-      const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
-      return next;
-    });
-  };
+  if (!faqs?.length) return null;
 
   return (
     <div className="divide-y divide-[#1C1712]/10 border-y border-[#1C1712]/10">
-      <style>{`
-        @media (prefers-reduced-motion: reduce) {
-          .bsl-faq-panel,
-          .bsl-faq-badge,
-          .bsl-faq-badge svg path {
-            transition: none !important;
-          }
-        }
-      `}</style>
+      {faqs.map((faq, idx) => {
+        const isOpen = openIndex === idx;
+        const panelId = `faq-panel-${idx}`;
+        const buttonId = `faq-button-${idx}`;
 
-      {faqs.map((faq, i) => {
-        const isOpen = open.has(i);
-        const panelId = `${baseId}-panel-${i}`;
-        const buttonId = `${baseId}-button-${i}`;
         return (
-          <div key={faq.question}>
+          <div key={buttonId}>
             <h3 className="m-0">
               <button
                 id={buttonId}
                 type="button"
                 aria-expanded={isOpen}
                 aria-controls={panelId}
-                onClick={() => toggle(i)}
-                className="flex w-full items-center gap-4 py-5 text-left sm:gap-5 sm:py-6"
+                onClick={() => setOpenIndex(isOpen ? null : idx)}
+                className="bsl-focus group flex w-full items-center justify-between gap-6 py-5 text-left"
               >
+                <span className="bsl-serif text-[1.02rem] font-semibold leading-snug text-[#1C1712]">
+                  {faq.question}
+                </span>
                 <span
                   aria-hidden="true"
-                  className="bsl-faq-badge flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition-colors duration-300"
-                  style={{
-                    borderColor: isOpen ? "#A26028" : "rgba(28,23,18,0.2)",
-                    background: isOpen ? "#A26028" : "transparent",
-                  }}
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#A26028]/30 text-[#A26028] transition-transform duration-200 ease-out ${
+                    isOpen ? "rotate-45 bg-[#A26028] text-white" : "bg-transparent"
+                  }`}
                 >
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
                     <path
-                      d="M6 1.5V10.5"
-                      stroke={isOpen ? "#FBF9F6" : "#A26028"}
-                      strokeWidth="1.4"
-                      strokeLinecap="round"
-                      className="transition-opacity duration-200"
-                      style={{ opacity: isOpen ? 0 : 1 }}
-                    />
-                    <path
-                      d="M1.5 6H10.5"
-                      stroke={isOpen ? "#FBF9F6" : "#A26028"}
+                      d="M6 1V11M1 6H11"
+                      stroke="currentColor"
                       strokeWidth="1.4"
                       strokeLinecap="round"
                     />
                   </svg>
-                </span>
-                <span className="bsl-serif flex-1 text-[1rem] font-medium leading-snug text-[#1C1712] sm:text-[1.08rem]">
-                  {faq.question}
                 </span>
               </button>
             </h3>
@@ -113,11 +58,12 @@ export default function ServiceFaqAccordion({ faqs }: { faqs: ServiceFaq[] }) {
               id={panelId}
               role="region"
               aria-labelledby={buttonId}
-              className="bsl-faq-panel grid transition-[grid-template-rows] duration-300 ease-out"
-              style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+              className={`grid overflow-hidden transition-all duration-300 ease-out ${
+                isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+              }`}
             >
-              <div className="overflow-hidden">
-                <p className="max-w-[62ch] pb-6 pl-11 pr-2 text-[0.94rem] leading-[1.7] text-[#6E6259] sm:pl-12">
+              <div className="min-h-0">
+                <p className="max-w-2xl pb-6 text-[0.92rem] leading-[1.7] text-[#6E6259]">
                   {faq.answer}
                 </p>
               </div>

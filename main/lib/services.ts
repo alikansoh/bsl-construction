@@ -4,10 +4,13 @@
 // /services/[slug] read from data/services.json through this file —
 // add or edit a service by editing the JSON, not the page components.
 //
-// CHANGED: added `faqs` to the Service type. Every service in
-// data/services.json now carries its own FAQ set, rendered by
-// <ServiceFaqAccordion /> on the detail page — add a 14th service with a
-// `faqs` array and its FAQ section (and FAQPage schema) work automatically.
+// CHANGED: added an optional `gallery: ServiceImage[]` field, mirroring
+// the admin panel's "Gallery" tab — a service can carry an ordered list
+// of extra photos shown in a slider on the detail page. `gallery` is
+// optional in the JSON; services that omit it simply don't render a
+// gallery section (see `hasGallery` in the page component). Normalization
+// happens once here, in `publishedServices()`, so every consumer of this
+// module always gets a real array back, never `undefined`.
 // -----------------------------------------------------------------------
 
 import servicesData from "@/data/services.json";
@@ -17,42 +20,99 @@ export type ServiceFaq = {
   answer: string;
 };
 
+export type ServiceImage = {
+  url: string;
+  alt: string;
+};
+
+export type ServiceSection = {
+  id: string;
+  heading: string;
+  body: string;
+  image: ServiceImage | null;
+};
+
+export type ServiceProcessStep = {
+  step: number;
+  title: string;
+  description: string;
+};
+
+export type ServiceSeo = {
+  metaTitle: string;
+  metaDescription: string;
+  keywords: string[];
+};
+
 export type Service = {
   slug: string;
-  featured: boolean;
   title: string;
   category: string;
   shortDescription: string;
-  description: string[];
-  image: string;
-  imageAlt: string;
+
+  status: "published" | "draft";
+  featured: boolean;
+  displayOrder: number;
+
+  image: ServiceImage;
+  gallery: ServiceImage[];
+  sections: ServiceSection[];
   highlights: string[];
+  process: ServiceProcessStep[];
   faqs: ServiceFaq[];
+  areas: string[];
+  seo: ServiceSeo;
 };
 
-const services = servicesData.services as Service[];
+// The shape actually on disk — `gallery` (and a few list fields) may be
+// omitted for services that don't use them, so we type the raw JSON as
+// partial on those fields and fill in defaults in `publishedServices()`.
+type RawService = Omit<Service, "gallery" | "highlights" | "process" | "faqs" | "areas"> & {
+  gallery?: ServiceImage[];
+  highlights?: string[];
+  process?: ServiceProcessStep[];
+  faqs?: ServiceFaq[];
+  areas?: string[];
+};
+
+const rawServices = servicesData.services as unknown as RawService[];
+
+/** Published services only, normalized and sorted for display. */
+function publishedServices(): Service[] {
+  return rawServices
+    .filter((s) => s.status === "published")
+    .map((s) => ({
+      ...s,
+      gallery: s.gallery ?? [],
+      highlights: s.highlights ?? [],
+      process: s.process ?? [],
+      faqs: s.faqs ?? [],
+      areas: s.areas ?? [],
+    }))
+    .sort((a, b) => a.displayOrder - b.displayOrder);
+}
 
 /** The single pinned/featured service shown at the top of /services. */
 export function getFeaturedService(): Service {
-  const featured = services.find((s) => s.featured);
+  const featured = publishedServices().find((s) => s.featured);
   if (!featured) {
     throw new Error(
-      "No service in data/services.json has \"featured\": true — exactly one is required."
+      "No published service in data/services.json has \"featured\": true — exactly one is required."
     );
   }
   return featured;
 }
 
-/** Every other service, in JSON order, for the dynamic grid below the featured one. */
+/** Every other service, in displayOrder, for the dynamic grid below the featured one. */
 export function getOtherServices(): Service[] {
-  return services.filter((s) => !s.featured);
+  return publishedServices().filter((s) => !s.featured);
 }
 
-/** All services, featured included — used for generateStaticParams. */
+/** All published services, featured included — used for generateStaticParams. */
 export function getAllServices(): Service[] {
-  return services;
+  return publishedServices();
 }
 
 export function getServiceBySlug(slug: string): Service | undefined {
-  return services.find((s) => s.slug === slug);
+  return publishedServices().find((s) => s.slug === slug);
 }
