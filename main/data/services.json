@@ -1,0 +1,498 @@
+{
+  "services": [
+    {
+      "slug": "new-builds",
+      "featured": true,
+      "title": "New Builds",
+      "category": "Design & Build",
+      "shortDescription": "Ground-up homes engineered for the site they stand on, not just the plan they started as.",
+      "description": [
+        "A new build is the one project where nothing inherited constrains the outcome — no old wall to work around, no previous owner's compromise to undo. That freedom is also the risk: every decision, from the depth of the foundation to the pitch of the roof, is a choice someone has to get right the first time.",
+        "We manage the full sequence ourselves — groundworks and foundations, structural build, first fix, and fit-out — with one team accountable for the whole project instead of a chain of separate contractors handing off to each other. That's what keeps a new build on programme and on budget.",
+        "Every home is designed around its actual plot: orientation, drainage, soil conditions, and the streetscape it sits in, not a template dropped onto a site. We handle planning and building-regulations support as part of the job, so you're not managing that separately."
+      ],
+      "image": "https://images.unsplash.com/photo-1778164909438-c27c813cb480?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A new house under construction with a dark roof",
+      "highlights": [
+        "Full planning & building regulations support",
+        "Groundworks through to final fit-out, one team throughout",
+        "Designed around the specific site, not a standard template",
+        "Fixed-price staged payments tied to build milestones"
+      ],
+      "faqs": [
+        {
+          "question": "Do I need planning permission for a new build?",
+          "answer": "Almost always, yes — a new dwelling isn't covered by permitted development rights the way an extension might be. We handle the application on your behalf, working with an architect or planning consultant where needed, and build typical approval timelines into your programme from day one."
+        },
+        {
+          "question": "How long does a new build take from groundworks to handover?",
+          "answer": "Most single-dwelling new builds in West London run 9–14 months once permission is granted, depending on size, ground conditions, and how quickly design decisions are finalised. You get a stage-by-stage programme at quotation, not just a single end date."
+        },
+        {
+          "question": "Do you manage building control and inspections?",
+          "answer": "Yes — building regulations sign-off is part of the job, not an extra you have to arrange. We book inspections at each required stage, from foundations through to completion, so the build stays compliant throughout, not just at the final check."
+        },
+        {
+          "question": "What warranty do I get on a new build?",
+          "answer": "New builds are covered by our workmanship guarantee, and we can arrange structural warranty cover where a mortgage lender or future buyer will require it — worth raising with us at quotation stage if you already know you'll need one."
+        }
+      ]
+    },
+    {
+      "slug": "extensions",
+      "featured": false,
+      "title": "Extensions",
+      "category": "Design & Build",
+      "shortDescription": "More space without losing the character of the original house.",
+      "description": [
+        "Most extensions fail in one of two ways: they either fight the existing house for attention, or they're so timid they barely add anything worth having. We aim for neither — the addition should read as though the house always needed it.",
+        "That starts with how the new structure meets the old one. Roofline, brick coursing, window proportions, floor levels — getting these to align is what makes an extension feel built-in rather than bolted-on.",
+        "We handle the structural calculations, party wall matters where relevant, and the full build through to a finished, decorated space — so the extension is genuinely ready to use, not just structurally complete."
+      ],
+      "image": "https://images.unsplash.com/photo-1693639767415-27ff64ce4da2?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A house under construction with scaffolding around it",
+      "highlights": [
+        "Structural design that matches the existing roofline and brickwork",
+        "Party wall agreements handled where they apply",
+        "Single and double-storey extensions, side and rear returns",
+        "Finished and decorated, not just structurally complete"
+      ],
+      "faqs": [
+        {
+          "question": "Do I need planning permission for my extension?",
+          "answer": "Many single-storey rear extensions fall under permitted development, but it depends on your property, its planning history, and whether it sits in a conservation area. We check this at the site visit and tell you honestly whether you need full planning or can proceed under permitted development."
+        },
+        {
+          "question": "What is a party wall agreement, and will I need one?",
+          "answer": "If your extension involves work on or near a shared wall or boundary with a neighbour, the Party Wall Act usually applies. We identify this early and guide you through serving notice — most agreements are straightforward when handled properly and in good time."
+        },
+        {
+          "question": "How disruptive is an extension to live through?",
+          "answer": "It depends on scope, but most rear and side-return extensions let you stay in the house throughout, with disruption concentrated around the connection point between old and new. We sequence work to keep at least one working kitchen or bathroom available wherever the layout allows."
+        },
+        {
+          "question": "What's the cost difference between single and double-storey extensions?",
+          "answer": "A double-storey extension costs more in total but is often better value per square metre, since you're sharing one foundation and one roof structure across two floors of extra space. We'll walk you through the real trade-offs for your specific plot at quotation."
+        }
+      ]
+    },
+    {
+      "slug": "full-refurbishments",
+      "featured": false,
+      "title": "Full Refurbishments",
+      "category": "Design & Build",
+      "shortDescription": "Whole-home renovations, coordinated from first fix through to the final coat.",
+      "description": [
+        "A full refurbishment touches nearly every trade on a project at once — structural, electrical, plumbing, plastering, joinery, decoration — usually inside a house someone is trying to keep living near, if not living in.",
+        "The sequencing matters as much as the individual trades. We plan the order of works so that nothing gets covered up before it's inspected, nothing gets fitted before the room behind it is ready, and the disruption stays as contained as the scope allows.",
+        "You get one point of contact for the whole project and a clear programme up front, so you know roughly what's happening and when, rather than discovering the schedule one trade at a time."
+      ],
+      "image": "https://images.unsplash.com/photo-1753977725475-41b221add2c0?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "House renovation in progress, showing a new extension being built",
+      "highlights": [
+        "One project manager, one point of contact throughout",
+        "Structural, electrical, and plumbing work fully coordinated",
+        "Clear sequencing so trades don't undo each other's work",
+        "Suitable for occupied or vacant properties"
+      ],
+      "faqs": [
+        {
+          "question": "Can I stay living in the house during a full refurbishment?",
+          "answer": "Sometimes, though it depends on scope — a refurbishment that touches structural work, first-fix electrics, and plumbing throughout is genuinely disruptive to live in. We'll tell you honestly at the site visit whether staying put is realistic or whether temporary alternative accommodation makes more sense for part of the programme."
+        },
+        {
+          "question": "How long does a full refurbishment typically take?",
+          "answer": "A whole-house refurbishment usually runs 3–6 months depending on size and how much structural change is involved. You'll get a realistic programme at quotation stage, broken down by phase, not a single headline figure."
+        },
+        {
+          "question": "Do you handle building control approval on refurbishments?",
+          "answer": "Yes, wherever the work triggers it — structural alterations, new bathrooms, rewires, and heating changes typically all need sign-off, and we manage the inspections as part of the project rather than leaving it for you to arrange separately."
+        },
+        {
+          "question": "Can you work around specific rooms I need to keep usable?",
+          "answer": "Yes — this is exactly the kind of sequencing question we go through at the planning stage. Tell us which rooms matter most and we'll build the trade order around keeping them functional for as long as possible."
+        }
+      ]
+    },
+    {
+      "slug": "kitchens-bathrooms",
+      "featured": false,
+      "title": "Kitchens & Bathrooms",
+      "category": "Fit & Finish",
+      "shortDescription": "The two rooms that get used the most, fitted properly and built to last.",
+      "description": [
+        "Kitchens and bathrooms carry more services per square metre than almost any other room — water, waste, gas, and electrics all converging in a small space that still has to look considered when it's finished.",
+        "We handle the full fit-out: first-fix plumbing and electrics, tiling, cabinetry installation, and worktops, coordinated so the trades don't collide with each other on site.",
+        "Layouts are planned around how the room is actually used, not just how it looks in a brochure — worktop runs, storage, and sightlines are worked out before anything is fitted."
+      ],
+      "image": "https://images.unsplash.com/photo-1764526624453-db32c24eca55?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A modern kitchen with wooden cabinets and a central island",
+      "highlights": [
+        "First-fix plumbing and electrics through to final fit",
+        "Tiling, cabinetry, and worktop installation",
+        "Layouts planned around use, not just appearance",
+        "Waterproofing and ventilation done to current regulations"
+      ],
+      "faqs": [
+        {
+          "question": "How long does a kitchen or bathroom refit take?",
+          "answer": "A typical bathroom takes 1–2 weeks; a kitchen usually 2–4 weeks, depending on layout changes and whether services are being moved. Refits that relocate plumbing or knock through walls take longer — we'll give you a specific timeline once we've seen the room."
+        },
+        {
+          "question": "Do you handle the plumbing and electrics, or do I arrange that separately?",
+          "answer": "It's all included — first-fix plumbing and electrics, tiling, cabinetry, and final fit are handled by our own coordinated trades, so you're not managing separate contractors or working out who's responsible when something needs adjusting."
+        },
+        {
+          "question": "What happens to my old kitchen or bathroom — do you handle removal?",
+          "answer": "Yes, strip-out and waste removal are part of the job. Old units, tiles, and sanitaryware are removed and disposed of responsibly before the new fit-out begins."
+        },
+        {
+          "question": "Can you work to a layout I've already designed, or do you help with that too?",
+          "answer": "Both — bring a layout you're set on and we'll build to it, or we'll help you plan one around how the room is actually used, worktop runs, storage, and sightlines included."
+        }
+      ]
+    },
+    {
+      "slug": "brickworks",
+      "featured": false,
+      "title": "Brickworks",
+      "category": "Structure & Exterior",
+      "shortDescription": "Brick and blockwork built to last, matched to the existing house.",
+      "description": [
+        "Brickwork is one of the few trades where a mismatch is visible from the street for the next fifty years. Matching an existing wall means getting the brick type, mortar colour, and pointing style right, not just the general shade.",
+        "We handle structural blockwork, garden and boundary walls, and repair or repointing of existing brickwork, working to the same standard whether the wall is load-bearing or decorative.",
+        "For extensions and new openings, brickwork is coordinated with the structural design so lintels, movement joints, and damp-proofing are all accounted for before the first course goes down."
+      ],
+      "image": "https://images.unsplash.com/photo-1761986757577-140af8859587?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A tradesperson plastering a wall with a trowel",
+      "highlights": [
+        "Brick and mortar matched to the existing property",
+        "Structural and boundary walls, repairs and repointing",
+        "Damp-proofing and movement joints built in correctly",
+        "Coordinated with structural design on extensions"
+      ],
+      "faqs": [
+        {
+          "question": "Can you match new brickwork to my existing house?",
+          "answer": "Matching is the part of this trade we take most seriously — brick type, mortar colour, and pointing style all have to align, not just the general shade. We source samples and get sign-off from you before any new brick goes in."
+        },
+        {
+          "question": "Do you do repointing without a full rebuild?",
+          "answer": "Yes — repointing and repair of existing brickwork is a standalone service, not something that only comes bundled with a bigger project. We assess the wall first and recommend repair over rebuild wherever the structure allows it."
+        },
+        {
+          "question": "What's the difference between structural and decorative blockwork?",
+          "answer": "Structural blockwork carries load — foundations, load-bearing walls, retaining structures — and is built to engineering specification. Decorative or boundary walls carry less risk but still need proper footings and damp-proofing to last. We build both to the same standard."
+        },
+        {
+          "question": "Does weather affect when brickwork can be done?",
+          "answer": "Yes — mortar needs the right conditions to cure properly, so we avoid laying brick in frost and take precautions in heavy rain. This is factored into your programme up front rather than becoming a surprise delay."
+        }
+      ]
+    },
+    {
+      "slug": "concreting",
+      "featured": false,
+      "title": "Concreting",
+      "category": "Structure & Exterior",
+      "shortDescription": "Foundations, slabs, and driveways poured and finished properly.",
+      "description": [
+        "Concrete work sits underneath almost everything else on a build, which is exactly why it's worth getting right the first time — a poor pour is expensive and disruptive to correct once anything is built on top of it.",
+        "We handle foundations, floor slabs, and external concrete such as driveways and paths, with reinforcement and curing done to the specification the structure actually needs.",
+        "Levels and drainage falls are set out before any concrete is poured, so water moves away from the building rather than pooling against it."
+      ],
+      "image": "https://images.unsplash.com/photo-1774931363306-5a896cd4dd02?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "Construction workers pouring concrete on site",
+      "highlights": [
+        "Foundations and structural floor slabs",
+        "Driveways, paths, and external concrete work",
+        "Reinforcement and curing to specification",
+        "Levels and drainage falls set out correctly"
+      ],
+      "faqs": [
+        {
+          "question": "How long does concrete need to cure before it can be built on?",
+          "answer": "Concrete reaches enough strength to build on safely within about 7 days, though full cure takes closer to 28 days. We sequence the programme around the correct curing time for what's being built on top, rather than rushing the next trade in."
+        },
+        {
+          "question": "Do you handle groundworks as well as the concrete pour itself?",
+          "answer": "Yes — excavation, levels, and drainage falls are set out before we pour, so the finished slab or driveway sheds water correctly instead of pooling against the building."
+        },
+        {
+          "question": "What reinforcement do you use, and how is that decided?",
+          "answer": "Reinforcement — mesh or rebar — is specified to what the structure actually needs, whether that's a garden path or a load-bearing floor slab. For structural work this follows an engineer's specification, not a standard default."
+        },
+        {
+          "question": "Can you pour a driveway alongside other building work, or is it standalone?",
+          "answer": "Both — driveways and external concrete are often done as the finishing stage of a larger project, or booked as a standalone job on their own."
+        }
+      ]
+    },
+    {
+      "slug": "windows",
+      "featured": false,
+      "title": "Windows",
+      "category": "Structure & Exterior",
+      "shortDescription": "Supply and fit, from single replacements to a full re-glaze.",
+      "description": [
+        "A window replacement affects a building's insulation, ventilation, and appearance all at once — which means the decision is rarely as simple as picking a frame colour.",
+        "We supply and fit windows across a range of materials and styles, matching proportions and glazing bars to the character of the property where that matters, particularly on period homes.",
+        "Installation includes making good the surrounding brickwork and plaster, so the finished opening looks intentional rather than patched."
+      ],
+      "image": "https://images.unsplash.com/photo-1695928668952-c3c01a638e1d?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A window with a white frame and black trim",
+      "highlights": [
+        "Supply and fit across timber, uPVC, and aluminium",
+        "Proportions and glazing bars matched on period properties",
+        "Making good to surrounding brick and plaster included",
+        "Single replacements through to full-house re-glazing"
+      ],
+      "faqs": [
+        {
+          "question": "What window materials do you offer?",
+          "answer": "We supply and fit timber, uPVC, and aluminium windows, and can talk you through the trade-offs — maintenance, thermal performance, and appearance — for your specific property before you commit to one."
+        },
+        {
+          "question": "I have a period property — can you match the original glazing bars?",
+          "answer": "Yes, matching character is a specific focus on period homes — glazing bar layout, sightlines, and frame proportions are matched to the existing property rather than defaulting to a standard modern profile."
+        },
+        {
+          "question": "How long does a full-house window replacement take?",
+          "answer": "A single window is typically a day; a full-house re-glaze usually runs 3–5 days depending on the number of openings and whether any structural making good is needed around the frames."
+        },
+        {
+          "question": "Will replacing my windows leave a mess around the frames?",
+          "answer": "No — making good the surrounding brickwork and plaster is included as standard, so the finished opening looks intentional rather than patched once the new window is in."
+        }
+      ]
+    },
+    {
+      "slug": "doors",
+      "featured": false,
+      "title": "Doors",
+      "category": "Structure & Exterior",
+      "shortDescription": "Internal and external doors, hung true and finished to match.",
+      "description": [
+        "A door that doesn't hang square shows immediately — in the gap around the frame, in how it swings, in how it sounds when it closes. Getting it right is mostly about the frame and the fixings, not the door itself.",
+        "We fit internal and external doors, including front doors, fire doors where required, and bi-fold or sliding doors for extensions and open-plan spaces.",
+        "Ironmongery, thresholds, and finishing are handled as part of the job, so a new door arrives ready to use rather than needing a second visit to finish it off."
+      ],
+      "image": "https://images.unsplash.com/photo-1691517534830-6d2e34e0b374?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A front door in London with a window beside it",
+      "highlights": [
+        "Internal, external, and fire-rated doors",
+        "Bi-fold and sliding doors for extensions",
+        "Ironmongery and thresholds fitted and finished",
+        "Frames set true so doors hang and close correctly"
+      ],
+      "faqs": [
+        {
+          "question": "Do I need a fire door, and where are they required?",
+          "answer": "Fire doors are typically required on escape routes in houses with more than two storeys, and in some converted or multi-occupancy properties. We'll tell you at the site visit whether your project needs them and fit them to the correct standard where it does."
+        },
+        {
+          "question": "What's the difference between bi-fold and sliding doors for an extension?",
+          "answer": "Bi-fold doors fold back to fully open a wide opening — good where you want the whole wall to disappear. Sliding doors keep a slimmer, uninterrupted view when closed and suit openings where you don't need the full width open at once. We'll help you weigh it against your actual layout."
+        },
+        {
+          "question": "Do you supply door hardware, or do I need to source that myself?",
+          "answer": "Ironmongery — handles, hinges, locks, thresholds — is handled as part of the job. You can choose from options we recommend or bring your own; either way it's fitted and finished in the same visit."
+        },
+        {
+          "question": "How long does a single door installation take?",
+          "answer": "Most internal or external single-door installations are completed in a day, including hanging, hardware, and finishing — bi-fold and sliding doors for larger openings typically take a day or two longer."
+        }
+      ]
+    },
+    {
+      "slug": "flooring",
+      "featured": false,
+      "title": "Flooring",
+      "category": "Fit & Finish",
+      "shortDescription": "Timber, tile, and stone flooring, laid flat and finished clean.",
+      "description": [
+        "Flooring is one of the last trades on site, which means it's also the one with the least room for error — a subfloor that isn't flat or dry enough will show up in the finished floor no matter how good the material is.",
+        "We prepare subfloors properly before laying anything, checking for level and moisture, and lay timber, engineered wood, tile, and stone flooring across kitchens, bathrooms, and living spaces.",
+        "Underfloor heating compatibility and expansion gaps are accounted for at the planning stage, not worked around after the fact."
+      ],
+      "image": "https://images.unsplash.com/photo-1598718544285-7180f670198b?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A living room with brown wooden parquet flooring",
+      "highlights": [
+        "Subfloor preparation checked for level and moisture",
+        "Timber, engineered wood, tile, and stone flooring",
+        "Underfloor heating compatibility planned in",
+        "Correct expansion gaps and finishing trims"
+      ],
+      "faqs": [
+        {
+          "question": "Is underfloor heating compatible with the flooring I want?",
+          "answer": "Most materials we lay — timber, engineered wood, tile, and stone — are compatible with underfloor heating, but the specification changes depending on which one you choose, including thickness, expansion allowance, and adhesive type. We plan this in before laying, not after."
+        },
+        {
+          "question": "Why does subfloor preparation matter so much?",
+          "answer": "Because it's the one thing that determines whether the finished floor stays flat and sound. A subfloor that's uneven or holding moisture will telegraph through even the best flooring material, so we check level and moisture before laying anything."
+        },
+        {
+          "question": "Which flooring material suits which room?",
+          "answer": "It depends on moisture exposure and footfall — timber and engineered wood suit living spaces, while tile and stone handle kitchens and bathrooms better. We'll talk through the right fit for each room rather than applying one material throughout by default."
+        },
+        {
+          "question": "How long does a flooring installation take?",
+          "answer": "A single room typically takes 1–3 days depending on material and subfloor condition; whole-house flooring is usually scheduled across a week or more so each room can be sequenced properly."
+        }
+      ]
+    },
+    {
+      "slug": "carpentry",
+      "featured": false,
+      "title": "Carpentry",
+      "category": "Fit & Finish",
+      "shortDescription": "Bespoke joinery, staircases, and fitted units, made on site.",
+      "description": [
+        "Carpentry covers the details most people only notice when they're missing — skirting that actually meets flush at the corners, a staircase that doesn't creak, built-in storage that fits the room instead of leaving an awkward gap.",
+        "We handle bespoke joinery, staircases, fitted wardrobes and storage, and structural carpentry such as roof timbers and floor joists.",
+        "Work is measured and made to fit the specific space, which matters most in older houses where very few walls or floors are perfectly square."
+      ],
+      "image": "https://images.unsplash.com/photo-1779031242515-205111711b23?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A carpenter working on wood with tools in a workshop",
+      "highlights": [
+        "Bespoke fitted wardrobes and storage",
+        "Staircases, balustrades, and structural timberwork",
+        "Skirting, architrave, and finishing joinery",
+        "Made to fit rooms that are rarely perfectly square"
+      ],
+      "faqs": [
+        {
+          "question": "How do you measure for bespoke fitted storage?",
+          "answer": "We measure the room in person, not from a plan — very few walls or floors in older houses are perfectly square, so fitted wardrobes and storage are built to the actual space, not a standard flat-pack size."
+        },
+        {
+          "question": "Are staircases built to a specific regulation?",
+          "answer": "Yes — staircases and balustrades have to meet current building regulations for rise, going, and handrail height, and we build to that standard as a matter of course, not just where it's inspected."
+        },
+        {
+          "question": "What counts as structural carpentry versus finishing carpentry?",
+          "answer": "Structural carpentry is roof timbers, floor joists, and load-bearing elements — work that affects the building's integrity. Finishing carpentry is skirting, architrave, and joinery — visible detail that affects how a room reads. We do both, often on the same project."
+        },
+        {
+          "question": "How long does bespoke joinery take, from measure to fit?",
+          "answer": "Simple fitted storage is usually measured, made, and fitted within 1–2 weeks. More complex staircases or structural carpentry take longer and are scheduled into the wider project programme."
+        }
+      ]
+    },
+    {
+      "slug": "painting-decorating",
+      "featured": false,
+      "title": "Painting & Decorating",
+      "category": "Fit & Finish",
+      "shortDescription": "The last coat that makes every other trade's work look finished.",
+      "description": [
+        "Decoration is the trade every other trade's mistakes end up resting on — poor plastering, filled cracks, and uneven surfaces all show through paint eventually. Good prep is most of the job.",
+        "We prepare surfaces properly before painting, including filling, sanding, and priming, and cover internal and external decoration, wallpapering, and specialist finishes where a project calls for them.",
+        "Colour and finish choices are discussed up front, but the work itself is judged on how flat and even the final coat looks under normal daylight, not just under site lighting."
+      ],
+      "image": "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "A tradesperson painting a wall with a paint roller",
+      "highlights": [
+        "Full surface preparation — filling, sanding, priming",
+        "Internal and external decoration",
+        "Wallpapering and specialist finishes",
+        "Finished to look right under normal daylight"
+      ],
+      "faqs": [
+        {
+          "question": "How much preparation work is included before painting?",
+          "answer": "All of it — filling, sanding, and priming are included as standard, not an optional extra. Most of what makes a paint job look right happens before any paint goes on."
+        },
+        {
+          "question": "How many coats do you apply?",
+          "answer": "It depends on the surface and colour, but two coats is standard for most walls and woodwork, with a third where a strong colour change needs it to look even under daylight."
+        },
+        {
+          "question": "Do you do wallpaper as well as paint?",
+          "answer": "Yes — wallpapering and specialist finishes are part of the service, alongside standard internal and external decoration."
+        },
+        {
+          "question": "Does weather affect external decorating?",
+          "answer": "Yes — external paint needs the right temperature and dry conditions to cure properly, so we schedule exterior work around the forecast rather than risking a finish that won't last."
+        }
+      ]
+    },
+    {
+      "slug": "electricals",
+      "featured": false,
+      "title": "Electricals",
+      "category": "Systems & Maintenance",
+      "shortDescription": "Rewires, consumer units, and certified electrical work, done to code.",
+      "description": [
+        "Electrical work is the one trade on a project where getting it wrong isn't just inconvenient — it's a safety issue, which is why every job is certified against current wiring regulations rather than just switched on and left.",
+        "We handle full and partial rewires, consumer unit upgrades, lighting design and installation, and additional circuits for kitchens, home offices, and extensions.",
+        "All work is tested and certified on completion, with documentation provided so there's a clear record of what was done and to what standard."
+      ],
+      "image": "https://images.unsplash.com/photo-1596480330945-12a5380b9c59?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "Close-up of electrical wiring and a consumer unit",
+      "highlights": [
+        "Full and partial rewires",
+        "Consumer unit upgrades and additional circuits",
+        "Lighting design and installation",
+        "All work tested, certified, and documented"
+      ],
+      "faqs": [
+        {
+          "question": "Is all your electrical work certified?",
+          "answer": "Yes — every job is tested and certified against current wiring regulations on completion, with documentation provided so there's a clear record of what was done and to what standard."
+        },
+        {
+          "question": "How do I know if I need a full rewire or just a partial one?",
+          "answer": "It depends on the age and condition of the existing wiring — we assess this at the site visit and give you an honest recommendation rather than defaulting to the larger job. Many older properties only need specific circuits addressed, not a full rewire."
+        },
+        {
+          "question": "When does a consumer unit need upgrading?",
+          "answer": "Usually when it's an old fuse-box style unit without modern RCD protection, or when it can't safely handle the additional circuits a renovation is adding — we'll flag this if it applies to your property."
+        },
+        {
+          "question": "Can you add circuits for a home office, EV charger, or extension?",
+          "answer": "Yes — additional circuits for kitchens, home offices, extensions, and EV charging points are a normal part of the job, planned in alongside whatever else is happening on the project."
+        }
+      ]
+    },
+    {
+      "slug": "plumbing",
+      "featured": false,
+      "title": "Plumbing",
+      "category": "Systems & Maintenance",
+      "shortDescription": "Heating, water, and drainage — fitted, repaired, and maintained.",
+      "description": [
+        "Plumbing failures rarely announce themselves politely — a bad joint or an undersized pipe run tends to show up as a leak months later, usually somewhere inconvenient. Getting the first fix right avoids most of that.",
+        "We handle heating system installation and repair, water supply and drainage work, and the plumbing first-fix and second-fix for kitchens, bathrooms, and utility rooms.",
+        "Boiler and heating work is carried out by appropriately qualified engineers, with servicing and repairs available beyond the initial installation."
+      ],
+      "image": "https://images.unsplash.com/photo-1722411487131-23bb3ac91df3?auto=format&fit=crop&w=1600&q=80",
+      "imageAlt": "Black and white photo of plumbing pipes",
+      "highlights": [
+        "Heating system installation, servicing, and repair",
+        "Water supply and drainage work",
+        "First-fix and second-fix plumbing for wet rooms",
+        "Boiler work carried out by qualified engineers"
+      ],
+      "faqs": [
+        {
+          "question": "Are boiler and heating installations carried out by qualified engineers?",
+          "answer": "Yes — all boiler and heating work is carried out by appropriately qualified, Gas Safe registered engineers, not general trades, and servicing and repairs are available beyond the initial installation."
+        },
+        {
+          "question": "What's the difference between first-fix and second-fix plumbing?",
+          "answer": "First-fix is the pipework and drainage installed before walls and floors are closed up; second-fix is fitting the visible sanitaryware, taps, and fittings once the room is finished. Both are planned together so nothing gets sealed up before it's ready."
+        },
+        {
+          "question": "Can you fix a leak without a full re-plumb?",
+          "answer": "In most cases, yes — leaks usually trace back to a specific joint or pipe run rather than the whole system, and we repair at that level wherever it's safe and sensible to do so."
+        },
+        {
+          "question": "Do you handle drainage issues as well as supply plumbing?",
+          "answer": "Yes — water supply and drainage are both part of the service, whether that's a blocked or undersized run or drainage falls that need correcting."
+        }
+      ]
+    }
+  ]
+}
