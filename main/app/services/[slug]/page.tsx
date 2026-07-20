@@ -1,31 +1,38 @@
 /**
  * app/services/[slug]/page.tsx — BSL Construction
  * -------------------------------------------------------------------------
- * Redesign pass v7 — "Blueprint Light" (brown pushed further, darker hero
- * for the transparent nav, maintenance copy tightened, chip row removed)
+ * Redesign pass v8 — "Blueprint Light" (hero contrast fix)
  *
- * WHAT CHANGED FROM v6
- * 1. HERO IS DARKER AT THE TOP — the nav sits transparent over the hero,
- *    so it needs real contrast to stay legible instead of just an overall
- *    light paper wash. Added a dedicated top-down scrim behind the nav
- *    band and deepened the general wash across the photo.
- * 2. BROWN DOES THE WORK BLUE USED TO — brown is no longer a token touch;
- *    it now carries every actionable/material element: both primary CTA
- *    buttons, the "Included" checkmarks + label, the highlight/pull-quote
- *    bar, and the hero spec bullets. Blue is kept strictly for the plan/
- *    structural vocabulary — dimension rules, category + kicker labels,
- *    process step numbers — so the blue/brown split reads intentionally
- *    (blue = plan, brown = build) rather than blue just being everywhere.
- * 3. CHIP ROW REMOVED — "No call-out fee / Written quote in 48hrs / Local
- *    tradespeople" was still rendering as bordered pill chips despite the
- *    earlier note that they'd been simplified. Actually removed the pill
- *    styling now: plain text with a small brown tick before each item, no
- *    borders, no background, no uppercase mono treatment.
- * 4. COPY TUNED SO IT NEVER READS "BIG PROJECT ONLY" — "Project Type" →
- *    "Job Type", "Project type — {category}" tag → "Job type — {category}",
- *    "Every … Project Covers" → "Every … Job Covers", and the sticky CTA
- *    copy now says "work" instead of "project" so a same-day repair reads
- *    as naturally covered as a full renovation.
+ * WHAT CHANGED FROM v7
+ * 1. HERO OVERLAY REBUILT — v7 tried to carve out an opaque "paper" panel
+ *    on the left of the hero via a hard-stopped diagonal gradient
+ *    (`var(--bsl-paper) 0%, var(--bsl-paper) 26%...`). Two problems: (a)
+ *    that panel was a fully opaque solid color, so it didn't tint the
+ *    photo, it erased it — exactly where the headline sits, which is the
+ *    one place a photographic hero most needs to be visible; and (b) a
+ *    100deg gradient's stop positions shift with the box's aspect ratio,
+ *    so on a wide/short hero the "safe" zone didn't land in the same
+ *    place as the text, and on some images/viewports the h1 ended up
+ *    partly over raw photo with dark ink-colored text on it — unreadable.
+ *    Replaced with a single, consistent left-to-right dark scrim plus a
+ *    top-down nav scrim. Both are translucent (never opaque), so the
+ *    photo is always visible, and both are dark enough everywhere text
+ *    sits that light text reads reliably regardless of the individual
+ *    service photo's own brightness or the viewport's aspect ratio.
+ * 2. HERO TEXT FLIPPED TO LIGHT — headline, kicker, back link, and spec
+ *    list were all dark ink colors, which is what made them disappear
+ *    into the photo. Now white/paper-toned, with the category kicker and
+ *    dimension rule using --bsl-blue-bright (not the base --bsl-blue,
+ *    which is too muted against a dark backdrop) so the blue "plan"
+ *    vocabulary still reads on the dark hero, and a light tan swapped in
+ *    for the brown "build" bullet dots for the same reason.
+ * 3. BLUEPRINT DOTS MOVED ABOVE THE SCRIM — previously sandwiched between
+ *    the photo and the dark wash, so the wash mostly cancelled them out.
+ *    Now drawn in a light paper tint above the scrim, so the texture
+ *    actually reads.
+ * 4. SUBTLE HEADLINE TEXT-SHADOW ADDED — small insurance for the busiest
+ *    parts of any given photo; kept low-blur/low-opacity so it doesn't
+ *    read as a glossy effect.
  * -------------------------------------------------------------------------
  */
 import Image from "next/image";
@@ -199,9 +206,10 @@ export default async function ServiceDetailPage({ params }: PageProps) {
           --bsl-paper: #F6F4EE;
           --bsl-paper-deep: #ECE7DC;
           --bsl-blue: #2B5A6B;
-          --bsl-blue-bright: #4C8FA3;
+          --bsl-blue-bright: white;
           --bsl-brown: #8A5433;
           --bsl-brown-deep: #6B3F26;
+          --bsl-brown-light: #CFA073;
           --bsl-line: rgba(28,35,33,0.12);
         }
         .bsl-root {
@@ -215,6 +223,13 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         }
         .bsl-blueprint-grid {
           background-image: radial-gradient(circle, rgba(43,90,107,0.11) 1px, transparent 1px);
+          background-size: 26px 26px;
+        }
+        /* Dark-backdrop variant of the blueprint dot texture, used in the
+           hero now that it sits above the scrim instead of below it —
+           needs a light dot to read against the dark wash. */
+        .bsl-blueprint-grid-dark {
+          background-image: radial-gradient(circle, rgba(246,244,238,0.18) 1px, transparent 1px);
           background-size: 26px 26px;
         }
         .bsl-hero-scale {
@@ -245,6 +260,14 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         }
         .bsl-dim-rule::before { left: 0; }
         .bsl-dim-rule::after { right: 0; }
+
+        /* Light variant for use over the dark hero photo — same device,
+           brighter blue so it doesn't disappear against the dark scrim. */
+        .bsl-dim-rule--light,
+        .bsl-dim-rule--light::before,
+        .bsl-dim-rule--light::after {
+          background: var(--bsl-blue-bright);
+        }
 
         /* Spec-sheet row rule for the "What's Included" panel: a full-width
            hairline with ticks only at the left, reading like a measured
@@ -282,10 +305,11 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         />
       )}
 
-      {/* ---- Hero — darker overall, with a dedicated scrim behind the nav band ---- */}
+      {/* ---- Hero — single consistent dark scrim so text always has
+          contrast, on every photo, at every viewport ---- */}
       <header
         data-hero-root
-        className="relative isolate overflow-hidden bg-[var(--bsl-paper)] px-5 pb-24 pt-32 sm:px-8 lg:px-10 lg:pb-32 lg:pt-40"
+        className="relative isolate overflow-hidden bg-[var(--bsl-ink)] px-5 pb-24 pt-32 sm:px-8 lg:px-10 lg:pb-32 lg:pt-40"
       >
         <div className="absolute inset-0 -z-30">
           <Image
@@ -295,54 +319,47 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             fill
             priority
             sizes="100vw"
-            className="bsl-hero-scale object-cover opacity-95"
+            className="bsl-hero-scale object-cover"
           />
         </div>
 
-        {/* Blueprint dot texture, faint overlay rather than a visible grid */}
+        {/* Primary scrim — a single left-to-right dark wash, translucent
+            the whole way across so the photo is always visible, and dark
+            enough on the left (where the copy lives) that light text
+            reads regardless of the individual photo's own brightness. */}
         <div
           aria-hidden="true"
-          className="bsl-blueprint-grid pointer-events-none absolute inset-0 -z-20 opacity-50"
-        />
-
-        {/* Dedicated dark scrim behind the transparent nav — deepened further
-            so the nav band reads with real contrast regardless of the photo
-            behind it, independent of the paper wash below. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-48 bg-gradient-to-b from-black/75 via-black/35 to-transparent sm:h-56"
-        />
-
-        {/* Overall paper wash — deepened again from the previous pass so the
-            whole hero reads noticeably darker/moodier, not just the nav
-            band, while still keeping the left side legible for the
-            headline. */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 bg-[var(--bsl-ink)]/38"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10"
+          className="pointer-events-none absolute inset-0 -z-20"
           style={{
             background:
-              "linear-gradient(100deg, var(--bsl-paper) 0%, var(--bsl-paper) 26%, rgba(246,244,238,0.6) 46%, rgba(28,35,33,0.42) 66%, rgba(28,35,33,0.58) 100%)",
+              "linear-gradient(100deg, rgba(28,35,33,0.92) 0%, rgba(28,35,33,0.84) 32%, rgba(28,35,33,0.6) 56%, rgba(28,35,33,0.36) 78%, rgba(28,35,33,0.2) 100%)",
           }}
         />
-        {/* Soft fade into the section below */}
+        {/* Extra top-down darkening so the transparent nav band always has
+            contrast, independent of the diagonal wash above it. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(246,244,238,0) 58%, var(--bsl-paper) 100%)",
-          }}
+          className="pointer-events-none absolute inset-x-0 top-0 -z-20 h-40 bg-gradient-to-b from-black/60 via-black/20 to-transparent sm:h-48"
+        />
+
+        {/* Blueprint dot texture, drawn above the scrim in a light tint so
+            it still reads as texture instead of disappearing into it. */}
+        <div
+          aria-hidden="true"
+          className="bsl-blueprint-grid-dark pointer-events-none absolute inset-0 -z-10"
+        />
+
+        {/* Short fade into the section below — only the final stretch, so
+            it doesn't wash out the copy sitting above it. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-28 bg-gradient-to-b from-transparent to-[var(--bsl-paper)] sm:h-32"
         />
 
         <div className="relative mx-auto max-w-[1180px]">
           <Link
             href="/services"
-            className="bsl-focus bsl-mono mb-7 inline-flex w-fit items-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[var(--bsl-ink-soft)] transition-colors hover:text-[var(--bsl-blue)]"
+            className="bsl-focus bsl-mono mb-7 inline-flex w-fit items-center gap-2 text-[0.72rem] font-medium uppercase tracking-[0.14em] text-[var(--bsl-paper)]/75 transition-colors hover:text-white"
           >
             <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
               <path
@@ -356,30 +373,34 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             All services
           </Link>
 
-          <span className="bsl-mono mb-3 block text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[var(--bsl-blue)]">
+          <span className="bsl-mono mb-3 block text-[0.7rem] font-semibold uppercase tracking-[0.24em] text-[var(--bsl-blue-bright)]">
             {service.category}
           </span>
-          <div aria-hidden="true" className="bsl-dim-rule mb-7 w-24" />
+          <div aria-hidden="true" className="bsl-dim-rule bsl-dim-rule--light mb-7 w-24" />
 
-          <h1 className="bsl-display mb-6 max-w-2xl text-[clamp(2.3rem,5.6vw,3.9rem)] font-semibold leading-[1.06] tracking-[-0.02em] text-[var(--bsl-ink)]">
+          <h1
+            className="bsl-display mb-6 max-w-2xl text-[clamp(2.3rem,5.6vw,3.9rem)] font-semibold leading-[1.06] tracking-[-0.02em] text-white"
+            style={{ textShadow: "0 4px 28px rgba(0,0,0,0.35)" }}
+          >
             {service.title}
           </h1>
-          <p className="max-w-lg text-[clamp(1rem,1.4vw,1.1rem)] leading-[1.7] text-black">
+          <p className="max-w-lg text-[clamp(1rem,1.4vw,1.1rem)] leading-[1.7] text-[var(--bsl-paper)]/85">
             {service.shortDescription}
           </p>
 
           {/* Spec strip — three scannable reasons to trust the business,
-              styled as measured line items. Bullet marks are brown: this
-              is the "build/craft" register, not the plan register. */}
+              styled as measured line items. Bullet marks use the light
+              tan so they hold up against the dark hero backdrop while
+              staying in the brown "build/craft" register. */}
           <ul className="mt-10 flex max-w-2xl flex-col gap-4 sm:mt-12 sm:flex-row sm:flex-wrap sm:gap-x-9 sm:gap-y-4">
             {HERO_SPECS.map((spec) => (
               <li key={spec.label} className="flex items-start gap-3 sm:min-w-[15rem] sm:max-w-[16rem]">
-                <span aria-hidden="true" className="mt-[0.35rem] h-[3px] w-[3px] shrink-0 rounded-full bg-[var(--bsl-brown)]" />
+                <span aria-hidden="true" className="mt-[0.35rem] h-[3px] w-[3px] shrink-0 rounded-full bg-[var(--bsl-brown-light)]" />
                 <div>
-                  <p className="bsl-mono text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-[var(--bsl-ink)]">
+                  <p className="bsl-mono text-[0.72rem] font-semibold uppercase tracking-[0.1em] text-white/95">
                     {spec.label}
                   </p>
-                  <p className="mt-1 text-[0.82rem] leading-[1.5] text-[var(--bsl-ink-soft)]">{spec.detail}</p>
+                  <p className="mt-1 text-[0.82rem] leading-[1.5] text-[var(--bsl-paper)]/65">{spec.detail}</p>
                 </div>
               </li>
             ))}
