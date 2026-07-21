@@ -513,7 +513,7 @@ export default function Projects() {
             id="projects-heading"
             className="bsl-serif mb-3 text-[clamp(2rem,4.2vw,3rem)] font-medium leading-[1.1] tracking-[-0.01em] text-[#1C1712]"
           >
-            Recent Work Across West London
+            Recent Work Across London
           </h2>
           <p
             ref={subtitleRef}

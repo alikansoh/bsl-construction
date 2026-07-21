@@ -1,1398 +1,646 @@
 {
+  "trustBar": [
+    { "id": "team", "label": "Professional Team" },
+    { "id": "service", "label": "Exceptional Service" },
+    { "id": "guarantee", "label": "All Work Guaranteed" },
+    { "id": "insured", "label": "Fully Insured" },
+    { "id": "recommended", "label": "Highly Recommended" }
+  ],
+
   "services": [
     {
-      "title": "New Builds",
+      "id": "new-builds",
       "slug": "new-builds",
-      "category": "Design & Build",
-      "shortDescription": "Ground-up homes engineered for the site they stand on, not just the plan they started as.",
+      "title": "New Builds",
+      "categorySlug": "construction",
+      "categoryName": "Construction",
       "status": "published",
       "featured": true,
       "displayOrder": 1,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1778164909438-c27c813cb480",
-        "alt": "A new house under construction with a dark roof"
+
+      "hero": {
+        "eyebrow": "Construction",
+        "title": "New Build Construction",
+        "subtitle": "Exceptional homes, built from the ground up by one accountable team.",
+        "description": "From groundworks and structural build to first and second fix, finishes and handover, BSL Construction manages every stage of your new build under a single experienced team — so nothing falls between trades and nothing gets lost in translation.",
+        "image": {
+          "url": "/building.jpg",
+          "alt": "Modern new build home constructed by BSL Construction"
+        },
+        "primaryCta": { "label": "Get a Quote", "href": "/contact#quote" },
+        "secondaryCta": { "label": "View Our Projects", "href": "/projects" }
       },
-      "highlights": [
-        "Full planning & building regulations support",
-        "Groundworks through to final fit-out, one team throughout",
-        "Designed around the specific site, not a standard template",
-        "Fixed-price staged payments tied to build milestones"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Site Survey",
-          "description": "We visit the plot, assess ground conditions and orientation, and understand what you want from the finished home."
-        },
-        {
-          "step": 2,
-          "title": "Design & Approval",
-          "description": "Architectural drawings, planning permission, and building regulations submissions are prepared and managed on your behalf."
-        },
-        {
-          "step": 3,
-          "title": "Construction",
-          "description": "Groundworks and foundations, structural build, first fix, and fit-out, carried out in sequence by one accountable team."
-        },
-        {
-          "step": 4,
-          "title": "Handover",
-          "description": "Final building control sign-off, snagging, and handover of your completed home."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Do I need planning permission for a new build?",
-          "answer": "Almost always, yes — a new dwelling isn't covered by permitted development rights the way an extension might be. We handle the application on your behalf, working with an architect or planning consultant where needed, and build typical approval timelines into your programme from day one."
-        },
-        {
-          "question": "How long does a new build take from groundworks to handover?",
-          "answer": "Most single-dwelling new builds in West London run 9–14 months once permission is granted, depending on size, ground conditions, and how quickly design decisions are finalised. You get a stage-by-stage programme at quotation, not just a single end date."
-        },
-        {
-          "question": "Do you manage building control and inspections?",
-          "answer": "Yes — building regulations sign-off is part of the job, not an extra you have to arrange. We book inspections at each required stage, from foundations through to completion, so the build stays compliant throughout, not just at the final check."
-        },
-        {
-          "question": "What warranty do I get on a new build?",
-          "answer": "New builds are covered by our workmanship guarantee, and we can arrange structural warranty cover where a mortgage lender or future buyer will require it — worth raising with us at quotation stage if you already know you'll need one."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "New Builds London | Design & Build Services",
-        "metaDescription": "Ground-up new home construction in London, managed from groundworks to final fit-out by one accountable team.",
-        "keywords": [
-          "new builds London",
-          "house builders London",
-          "design and build"
-        ]
-      },
+
       "sections": [
         {
-          "id": "new-builds-section-1",
-          "heading": "Freedom, and the risk that comes with it",
-          "body": "A new build is the one project where nothing inherited constrains the outcome — no old wall to work around, no previous owner's compromise to undo. That freedom is also the risk: every decision, from the depth of the foundation to the pitch of the roof, is a choice someone has to get right the first time.",
-          "image": null
-        },
-        {
-          "id": "new-builds-section-2",
-          "heading": "One team, start to finish",
-          "body": "We manage the full sequence ourselves — groundworks and foundations, structural build, first fix, and fit-out — with one team accountable for the whole project instead of a chain of separate contractors handing off to each other. That's what keeps a new build on programme and on budget.",
+          "id": "new-builds-vision",
+          "layout": "image-left",
+          "title": "Built Around Your Vision",
+          "content": "Every new build starts with a clear brief: your goals, your plot, and how the finished home needs to work day to day. We turn that brief into a buildable programme and hold the whole project — design coordination, building control, trades and materials — under one roof, so decisions get made once and stick.",
           "image": {
-            "url": "https://images.unsplash.com/photo-1778164909438-c27c813cb480",
-            "alt": "A new house under construction with a dark roof"
-          }
+            "url": "/extension.jpg",
+            "alt": "New build construction exterior"
+          },
+          "cta": { "label": "Discuss Your Plot", "href": "/contact#quote" }
         },
         {
-          "id": "new-builds-section-3",
-          "heading": "Designed around your plot",
-          "body": "Every home is designed around its actual plot: orientation, drainage, soil conditions, and the streetscape it sits in, not a template dropped onto a site. We handle planning and building-regulations support as part of the job, so you're not managing that separately.",
-          "image": null
+          "id": "new-builds-management",
+          "layout": "image-right",
+          "title": "One Team, Start to Finish",
+          "content": "Groundworks, structural shell, roofing, first fix M&E, insulation and airtightness, plastering, and final finishes — we sequence and supervise every stage ourselves. You get one point of contact who knows the build inside out, not a rotating cast of subcontractors reporting to no one.",
+          "image": {
+            "url": "/kitchen.jpg",
+            "alt": "New build construction interior"
+          },
+          "cta": { "label": "See How We Work", "href": "/contact#quote" }
         }
       ],
+
+      "whatsIncluded": {
+        "title": "What's Included",
+        "intro": "Every new build project is scoped to your specification, but as standard our management includes:",
+        "items": [
+          "Pre-construction planning and buildability review",
+          "Site setup, groundworks and drainage",
+          "Structural build, roofing and building envelope",
+          "Coordination of all first and second fix trades",
+          "Building control liaison and sign-off",
+          "Snagging, final clean and handover pack"
+        ]
+      },
+
+      "process": {
+        "title": "Our New Build Process",
+        "description": "A clear, structured approach designed to keep your project moving from first conversation to completion.",
+        "steps": [
+          { "step": 1, "title": "Consultation & Planning", "content": "We review the drawings, understand your requirements and agree the scope, programme and budget before anything starts on site." },
+          { "step": 2, "title": "Construction", "content": "Our team runs the build day to day, coordinating every trade through groundworks, structure and finishes." },
+          { "step": 3, "title": "Final Handover", "content": "We complete finishing details, carry out a full snag check, and hand over a property that's genuinely ready to live in." }
+        ]
+      },
+
       "gallery": [
-        {
-          "url": "https://images.unsplash.com/photo-1778164909438-c27c813cb480",
-          "alt": "New build under construction, dark roof and scaffolding"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1774931363306-5a896cd4dd02",
-          "alt": "Foundations poured ahead of a new build's structural frame"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1761986757577-140af8859587",
-          "alt": "Brickwork being laid on a new build's external walls"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1695928668952-c3c01a638e1d",
-          "alt": "Windows fitted into a completed new build opening"
-        }
-      ]
+        { "url": "/images/services/new-builds/gallery-1.jpg", "alt": "New build construction exterior" },
+        { "url": "/images/services/new-builds/gallery-2.jpg", "alt": "New build construction interior" }
+      ],
+
+      "faqs": [
+        { "question": "How long does a new build take?", "answer": "Timelines depend on the size, specification and complexity of the project. We provide a realistic programme before construction begins, and update it as the build progresses." },
+        { "question": "Do you manage the whole project, or just the build?", "answer": "We manage the full construction process — coordinating trades, materials and building control — so you have one accountable team throughout, not a list of separate contractors to chase." },
+        { "question": "Can you work alongside our architect?", "answer": "Yes. We regularly work from third-party drawings and coordinate directly with your architect or designer to keep the build on spec." }
+      ],
+
+      "areasCovered": {
+        "title": "Areas We Cover",
+        "description": "We deliver new build projects across most of London and the surrounding home counties, from period-heavy inner boroughs to outer London plots.",
+        "areas": [
+          "Kensington & Chelsea", "Westminster", "Camden", "Islington", "Hackney",
+          "Wandsworth", "Richmond upon Thames", "Hammersmith & Fulham", "Greenwich",
+          "Barnet", "Ealing", "Croydon", "and surrounding areas"
+        ]
+      },
+
+      "cta": {
+        "title": "Ready to Build Your New Home?",
+        "content": "Tell us about your plot and plans, and our team will talk you through scope, budget and next steps — no obligation.",
+        "buttonLabel": "Discuss Your Project",
+        "buttonHref": "/contact"
+      },
+
+      "seo": {
+        "metaTitle": "New Build Construction London | BSL Construction",
+        "metaDescription": "BSL Construction delivers high-quality new build construction across London, managing every stage from planning to final handover.",
+        "keywords": ["new build construction London", "new build contractors London", "new build construction company", "house builders London"]
+      }
     },
+
     {
-      "title": "Extensions",
+      "id": "extensions",
       "slug": "extensions",
-      "category": "Design & Build",
-      "shortDescription": "More space without losing the character of the original house.",
+      "title": "Extensions",
+      "categorySlug": "construction",
+      "categoryName": "Construction",
       "status": "published",
-      "featured": false,
+      "featured": true,
       "displayOrder": 2,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1693639767415-27ff64ce4da2",
-        "alt": "A house under construction with scaffolding around it"
+
+      "hero": {
+        "eyebrow": "Construction",
+        "title": "House Extensions",
+        "subtitle": "More space, built properly, without the guesswork.",
+        "description": "We design-manage and build extensions that add genuine value and connect seamlessly with your existing home — from single-storey rear extensions to full wrap-arounds — with one team responsible for the whole job.",
+        "image": {
+          "url": "/images/services/extensions/hero.jpg",
+          "alt": "Modern house extension construction project in London"
+        },
+        "primaryCta": { "label": "Get a Quote", "href": "/contact#quote" },
+        "secondaryCta": { "label": "View Our Projects", "href": "/projects" }
       },
-      "highlights": [
-        "Structural design that matches the existing roofline and brickwork",
-        "Party wall agreements handled where they apply",
-        "Single and double-storey extensions, side and rear returns",
-        "Finished and decorated, not just structurally complete"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Planning",
-          "description": "Site visit to assess planning route, structural feasibility, and how the new space should connect to the existing house."
-        },
-        {
-          "step": 2,
-          "title": "Design & Approval",
-          "description": "Structural calculations, party wall notices, and planning permission or permitted development sign-off."
-        },
-        {
-          "step": 3,
-          "title": "Construction",
-          "description": "Foundations, structural build, roofline and brickwork matching, then full fit-out."
-        },
-        {
-          "step": 4,
-          "title": "Handover",
-          "description": "Finished, decorated space ready to use, with building control sign-off complete."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Do I need planning permission for my extension?",
-          "answer": "Many single-storey rear extensions fall under permitted development, but it depends on your property, its planning history, and whether it sits in a conservation area. We check this at the site visit and tell you honestly whether you need full planning or can proceed under permitted development."
-        },
-        {
-          "question": "What is a party wall agreement, and will I need one?",
-          "answer": "If your extension involves work on or near a shared wall or boundary with a neighbour, the Party Wall Act usually applies. We identify this early and guide you through serving notice — most agreements are straightforward when handled properly and in good time."
-        },
-        {
-          "question": "How disruptive is an extension to live through?",
-          "answer": "It depends on scope, but most rear and side-return extensions let you stay in the house throughout, with disruption concentrated around the connection point between old and new. We sequence work to keep at least one working kitchen or bathroom available wherever the layout allows."
-        },
-        {
-          "question": "What's the cost difference between single and double-storey extensions?",
-          "answer": "A double-storey extension costs more in total but is often better value per square metre, since you're sharing one foundation and one roof structure across two floors of extra space. We'll walk you through the real trade-offs for your specific plot at quotation."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "House Extensions London | Design & Build Services",
-        "metaDescription": "Single and double-storey house extensions in London, matched to the existing property and finished ready to use.",
-        "keywords": [
-          "house extensions London",
-          "rear extension builders",
-          "side return extension"
-        ]
-      },
+
       "sections": [
         {
-          "id": "extensions-section-1",
-          "heading": "Getting the balance right",
-          "body": "Most extensions fail in one of two ways: they either fight the existing house for attention, or they're so timid they barely add anything worth having. We aim for neither — the addition should read as though the house always needed it.",
-          "image": null
-        },
-        {
-          "id": "extensions-section-2",
-          "heading": "Where old meets new",
-          "body": "That starts with how the new structure meets the old one. Roofline, brick coursing, window proportions, floor levels — getting these to align is what makes an extension feel built-in rather than bolted-on.",
+          "id": "extensions-space",
+          "layout": "image-left",
+          "title": "More Space, Better Living",
+          "content": "Whether you need a bigger kitchen-diner, a second bathroom or a dedicated home office, we build extensions around how you actually use your home — not a generic template. Every layout is checked against light, flow and your existing floorplan before we break ground.",
           "image": {
-            "url": "https://images.unsplash.com/photo-1693639767415-27ff64ce4da2",
-            "alt": "A house under construction with scaffolding around it"
-          }
+            "url": "/images/services/extensions/section-1.jpg",
+            "alt": "Modern home extension"
+          },
+          "cta": { "label": "Talk Through Your Layout", "href": "/contact#quote" }
         },
         {
-          "id": "extensions-section-3",
-          "heading": "From structure to finished space",
-          "body": "We handle the structural calculations, party wall matters where relevant, and the full build through to a finished, decorated space — so the extension is genuinely ready to use, not just structurally complete.",
-          "image": null
+          "id": "extensions-construction",
+          "layout": "image-right",
+          "title": "Managed From Groundworks to Finish",
+          "content": "Foundations, structural steel, brick and blockwork, roofing, glazing, and internal finishes — we coordinate every trade so the extension ties into your existing structure cleanly, inside and out, with no loose ends left for you to manage.",
+          "image": {
+            "url": "/images/services/extensions/section-2.jpg",
+            "alt": "House extension construction detail"
+          },
+          "cta": { "label": "Get a Fixed Quote", "href": "/contact#quote" }
         }
       ],
+
+      "whatsIncluded": {
+        "title": "What's Included",
+        "intro": "As standard, our extension projects include:",
+        "items": [
+          "Foundation and groundworks",
+          "Structural build, roofing and weatherproofing",
+          "Glazing, doors and external finishes",
+          "First and second fix electrics and plumbing",
+          "Plastering, decoration-ready finishes",
+          "Full clean, snagging and handover"
+        ]
+      },
+
+      "process": {
+        "title": "Our Extension Process",
+        "description": "A straightforward approach to creating additional space, from first survey to final finish.",
+        "steps": [
+          { "step": 1, "title": "Planning", "content": "We review your requirements, survey the property and confirm the scope, programme and construction approach." },
+          { "step": 2, "title": "Build", "content": "Our team manages the construction and coordinates every trade involved, from groundworks through to roof." },
+          { "step": 3, "title": "Handover", "content": "We complete finishing work, final checks and a proper handover, with any snags closed out before we leave." }
+        ]
+      },
+
       "gallery": [
-        {
-          "url": "https://images.unsplash.com/photo-1693639767415-27ff64ce4da2",
-          "alt": "House extension under construction with scaffolding around it"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1761986757577-140af8859587",
-          "alt": "Brickwork matched to the existing house on an extension"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1695928668952-c3c01a638e1d",
-          "alt": "New window fitted into an extension wall"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1691517534830-6d2e34e0b374",
-          "alt": "Bi-fold doors fitted to the rear of a house extension"
-        }
-      ]
-    },
-    {
-      "title": "Full Refurbishments",
-      "slug": "full-refurbishments",
-      "category": "Design & Build",
-      "shortDescription": "Whole-home renovations, coordinated from first fix through to the final coat.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 3,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1753977725475-41b221add2c0",
-        "alt": "House renovation in progress, showing a new extension being built"
-      },
-      "highlights": [
-        "One project manager, one point of contact throughout",
-        "Structural, electrical, and plumbing work fully coordinated",
-        "Clear sequencing so trades don't undo each other's work",
-        "Suitable for occupied or vacant properties"
+        { "url": "/images/services/extensions/gallery-1.jpg", "alt": "Modern house extension" },
+        { "url": "/images/services/extensions/gallery-2.jpg", "alt": "Extension construction detail" }
       ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Survey",
-          "description": "Whole-house assessment of scope, structural condition, and which rooms need to stay usable."
-        },
-        {
-          "step": 2,
-          "title": "Design & Sequencing",
-          "description": "Trade order planned so nothing is covered up before inspection and disruption stays contained."
-        },
-        {
-          "step": 3,
-          "title": "Construction",
-          "description": "Structural, electrical, plumbing, plastering, and joinery work carried out in coordinated sequence."
-        },
-        {
-          "step": 4,
-          "title": "Handover",
-          "description": "Final decoration, snagging, and building control sign-off across the whole property."
-        }
-      ],
+
       "faqs": [
-        {
-          "question": "Can I stay living in the house during a full refurbishment?",
-          "answer": "Sometimes, though it depends on scope — a refurbishment that touches structural work, first-fix electrics, and plumbing throughout is genuinely disruptive to live in. We'll tell you honestly at the site visit whether staying put is realistic or whether temporary alternative accommodation makes more sense for part of the programme."
-        },
-        {
-          "question": "How long does a full refurbishment typically take?",
-          "answer": "A whole-house refurbishment usually runs 3–6 months depending on size and how much structural change is involved. You'll get a realistic programme at quotation stage, broken down by phase, not a single headline figure."
-        },
-        {
-          "question": "Do you handle building control approval on refurbishments?",
-          "answer": "Yes, wherever the work triggers it — structural alterations, new bathrooms, rewires, and heating changes typically all need sign-off, and we manage the inspections as part of the project rather than leaving it for you to arrange separately."
-        },
-        {
-          "question": "Can you work around specific rooms I need to keep usable?",
-          "answer": "Yes — this is exactly the kind of sequencing question we go through at the planning stage. Tell us which rooms matter most and we'll build the trade order around keeping them functional for as long as possible."
-        }
+        { "question": "Do you handle planning permission and building regulations?", "answer": "We can guide you through the process and coordinate with planning consultants where needed, and we manage all building control sign-off directly." },
+        { "question": "Can I stay in the house during the build?", "answer": "In most cases, yes. We sequence work to minimise disruption and agree a clear plan with you before starting." },
+        { "question": "How is the price agreed?", "answer": "We provide a fixed, itemised quote before work starts, so you know exactly what's included and what isn't." }
       ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Full House Refurbishments London | Design & Build Services",
-        "metaDescription": "Whole-home refurbishments in London, coordinated by one project manager from first fix through to the final coat.",
-        "keywords": [
-          "house refurbishment London",
-          "whole house renovation",
-          "home renovation contractors"
+
+      "areasCovered": {
+        "title": "Areas We Cover",
+        "description": "We build extensions across most of London, with particular experience in period properties and tight urban plots.",
+        "areas": [
+          "Wandsworth", "Merton", "Lambeth", "Southwark", "Lewisham", "Bromley",
+          "Richmond upon Thames", "Kingston upon Thames", "Hounslow", "Ealing",
+          "Barnet", "Enfield", "and surrounding areas"
         ]
       },
-      "sections": [
-        {
-          "id": "full-refurbishments-section-1",
-          "heading": "Every trade, one project",
-          "body": "A full refurbishment touches nearly every trade on a project at once — structural, electrical, plumbing, plastering, joinery, decoration — usually inside a house someone is trying to keep living near, if not living in.",
-          "image": null
-        },
-        {
-          "id": "full-refurbishments-section-2",
-          "heading": "Sequencing is everything",
-          "body": "The sequencing matters as much as the individual trades. We plan the order of works so that nothing gets covered up before it's inspected, nothing gets fitted before the room behind it is ready, and the disruption stays as contained as the scope allows.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1753977725475-41b221add2c0",
-            "alt": "House renovation in progress, showing a new extension being built"
-          }
-        },
-        {
-          "id": "full-refurbishments-section-3",
-          "heading": "One point of contact throughout",
-          "body": "You get one point of contact for the whole project and a clear programme up front, so you know roughly what's happening and when, rather than discovering the schedule one trade at a time.",
-          "image": null
-        }
-      ],
-      "gallery": [
-        {
-          "url": "https://images.unsplash.com/photo-1753977725475-41b221add2c0",
-          "alt": "Whole-house refurbishment in progress, extension being built"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1764526624453-db32c24eca55",
-          "alt": "Refurbished kitchen with wooden cabinets and central island"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1598718544285-7180f670198b",
-          "alt": "Newly laid parquet flooring in a refurbished living room"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1",
-          "alt": "Final decoration and painting during a whole-house refurbishment"
-        }
-      ]
-    },
-    {
-      "title": "Kitchens & Bathrooms",
-      "slug": "kitchens-bathrooms",
-      "category": "Fit & Finish",
-      "shortDescription": "The two rooms that get used the most, fitted properly and built to last.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 4,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1764526624453-db32c24eca55",
-        "alt": "A modern kitchen with wooden cabinets and a central island"
+
+      "cta": {
+        "title": "Ready to Create More Space?",
+        "content": "Let's discuss your extension project — the layout, the budget, and how we'd sequence the build.",
+        "buttonLabel": "Discuss Your Extension",
+        "buttonHref": "/contact"
       },
-      "highlights": [
-        "First-fix plumbing and electrics through to final fit",
-        "Tiling, cabinetry, and worktop installation",
-        "Layouts planned around use, not just appearance",
-        "Waterproofing and ventilation done to current regulations"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Design",
-          "description": "Room measured in person and layout planned around worktop runs, storage, and sightlines."
-        },
-        {
-          "step": 2,
-          "title": "Strip-Out & Preparation",
-          "description": "Removal and responsible disposal of the old kitchen or bathroom, ready for first fix."
-        },
-        {
-          "step": 3,
-          "title": "Installation",
-          "description": "First-fix plumbing and electrics, tiling, cabinetry, and worktop fitting, coordinated on site."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Handover",
-          "description": "Second-fix, final snagging, and a room ready to use."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "How long does a kitchen or bathroom refit take?",
-          "answer": "A typical bathroom takes 1–2 weeks; a kitchen usually 2–4 weeks, depending on layout changes and whether services are being moved. Refits that relocate plumbing or knock through walls take longer — we'll give you a specific timeline once we've seen the room."
-        },
-        {
-          "question": "Do you handle the plumbing and electrics, or do I arrange that separately?",
-          "answer": "It's all included — first-fix plumbing and electrics, tiling, cabinetry, and final fit are handled by our own coordinated trades, so you're not managing separate contractors or working out who's responsible when something needs adjusting."
-        },
-        {
-          "question": "What happens to my old kitchen or bathroom — do you handle removal?",
-          "answer": "Yes, strip-out and waste removal are part of the job. Old units, tiles, and sanitaryware are removed and disposed of responsibly before the new fit-out begins."
-        },
-        {
-          "question": "Can you work to a layout I've already designed, or do you help with that too?",
-          "answer": "Both — bring a layout you're set on and we'll build to it, or we'll help you plan one around how the room is actually used, worktop runs, storage, and sightlines included."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
+
       "seo": {
-        "metaTitle": "Kitchen & Bathroom Fitters London | Fit & Finish Services",
-        "metaDescription": "Kitchen and bathroom installations in London, from first-fix plumbing and electrics through to tiling and cabinetry.",
-        "keywords": [
-          "kitchen fitters London",
-          "bathroom fitters London",
-          "kitchen and bathroom installation"
-        ]
-      },
-      "sections": [
-        {
-          "id": "kitchens-bathrooms-section-1",
-          "heading": "The hardest-working rooms in the house",
-          "body": "Kitchens and bathrooms carry more services per square metre than almost any other room — water, waste, gas, and electrics all converging in a small space that still has to look considered when it's finished.",
-          "image": null
-        },
-        {
-          "id": "kitchens-bathrooms-section-2",
-          "heading": "The full fit-out, coordinated",
-          "body": "We handle the full fit-out: first-fix plumbing and electrics, tiling, cabinetry installation, and worktops, coordinated so the trades don't collide with each other on site.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1764526624453-db32c24eca55",
-            "alt": "A modern kitchen with wooden cabinets and a central island"
-          }
-        },
-        {
-          "id": "kitchens-bathrooms-section-3",
-          "heading": "Planned around how you live",
-          "body": "Layouts are planned around how the room is actually used, not just how it looks in a brochure — worktop runs, storage, and sightlines are worked out before anything is fitted.",
-          "image": null
-        }
-      ],
-      "gallery": [
-        {
-          "url": "https://images.unsplash.com/photo-1764526624453-db32c24eca55",
-          "alt": "A modern kitchen with wooden cabinets and a central island"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1598718544285-7180f670198b",
-          "alt": "Flooring laid as part of a kitchen fit-out"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1722411487131-23bb3ac91df3",
-          "alt": "First-fix plumbing pipework ahead of a kitchen or bathroom fit"
-        },
-        {
-          "url": "https://images.unsplash.com/photo-1596480330945-12a5380b9c59",
-          "alt": "Electrical wiring and consumer unit work during a fit-out"
-        }
-      ]
+        "metaTitle": "House Extensions London | BSL Construction",
+        "metaDescription": "Professional house extension construction across London, delivered by BSL Construction from planning through to completion.",
+        "keywords": ["house extensions London", "home extension builders London", "extension contractors London", "house extension company"]
+      }
     },
+
     {
-      "title": "Brickworks",
-      "slug": "brickworks",
-      "category": "Structure & Exterior",
-      "shortDescription": "Brick and blockwork built to last, matched to the existing house.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 5,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1761986757577-140af8859587",
-        "alt": "A tradesperson plastering a wall with a trowel"
-      },
-      "highlights": [
-        "Brick and mortar matched to the existing property",
-        "Structural and boundary walls, repairs and repointing",
-        "Damp-proofing and movement joints built in correctly",
-        "Coordinated with structural design on extensions"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Site Survey",
-          "description": "Assessment of the existing wall or structure, and brick and mortar sampling for a match."
-        },
-        {
-          "step": 2,
-          "title": "Specification",
-          "description": "Structural design coordination, including lintels, movement joints, and damp-proofing where relevant."
-        },
-        {
-          "step": 3,
-          "title": "Construction",
-          "description": "Blockwork, brick laying, or repair and repointing carried out to specification."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Sign-off",
-          "description": "Pointing finished and, where structural, sign-off against engineering specification."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Can you match new brickwork to my existing house?",
-          "answer": "Matching is the part of this trade we take most seriously — brick type, mortar colour, and pointing style all have to align, not just the general shade. We source samples and get sign-off from you before any new brick goes in."
-        },
-        {
-          "question": "Do you do repointing without a full rebuild?",
-          "answer": "Yes — repointing and repair of existing brickwork is a standalone service, not something that only comes bundled with a bigger project. We assess the wall first and recommend repair over rebuild wherever the structure allows it."
-        },
-        {
-          "question": "What's the difference between structural and decorative blockwork?",
-          "answer": "Structural blockwork carries load — foundations, load-bearing walls, retaining structures — and is built to engineering specification. Decorative or boundary walls carry less risk but still need proper footings and damp-proofing to last. We build both to the same standard."
-        },
-        {
-          "question": "Does weather affect when brickwork can be done?",
-          "answer": "Yes — mortar needs the right conditions to cure properly, so we avoid laying brick in frost and take precautions in heavy rain. This is factored into your programme up front rather than becoming a surprise delay."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Brickwork & Blockwork London | Structure & Exterior Services",
-        "metaDescription": "Brick and blockwork services in London, including structural walls, boundary walls, repair and repointing matched to your property.",
-        "keywords": [
-          "bricklayers London",
-          "brick repointing London",
-          "blockwork contractors"
-        ]
-      },
-      "sections": [
-        {
-          "id": "brickworks-section-1",
-          "heading": "A mismatch you'd see for fifty years",
-          "body": "Brickwork is one of the few trades where a mismatch is visible from the street for the next fifty years. Matching an existing wall means getting the brick type, mortar colour, and pointing style right, not just the general shade.",
-          "image": null
-        },
-        {
-          "id": "brickworks-section-2",
-          "heading": "Structural and decorative work, one standard",
-          "body": "We handle structural blockwork, garden and boundary walls, and repair or repointing of existing brickwork, working to the same standard whether the wall is load-bearing or decorative.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1761986757577-140af8859587",
-            "alt": "A tradesperson plastering a wall with a trowel"
-          }
-        },
-        {
-          "id": "brickworks-section-3",
-          "heading": "Coordinated with the wider build",
-          "body": "For extensions and new openings, brickwork is coordinated with the structural design so lintels, movement joints, and damp-proofing are all accounted for before the first course goes down.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Concreting",
-      "slug": "concreting",
-      "category": "Structure & Exterior",
-      "shortDescription": "Foundations, slabs, and driveways poured and finished properly.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 6,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1774931363306-5a896cd4dd02",
-        "alt": "Construction workers pouring concrete on site"
-      },
-      "highlights": [
-        "Foundations and structural floor slabs",
-        "Driveways, paths, and external concrete work",
-        "Reinforcement and curing to specification",
-        "Levels and drainage falls set out correctly"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Site Survey",
-          "description": "Levels and drainage falls set out before excavation begins."
-        },
-        {
-          "step": 2,
-          "title": "Groundworks",
-          "description": "Excavation and preparation of the area to receive foundations, slab, or driveway."
-        },
-        {
-          "step": 3,
-          "title": "Pour & Reinforcement",
-          "description": "Concrete poured with reinforcement specified to what the structure needs."
-        },
-        {
-          "step": 4,
-          "title": "Curing & Handover",
-          "description": "Correct curing time observed before the next trade or use begins."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "How long does concrete need to cure before it can be built on?",
-          "answer": "Concrete reaches enough strength to build on safely within about 7 days, though full cure takes closer to 28 days. We sequence the programme around the correct curing time for what's being built on top, rather than rushing the next trade in."
-        },
-        {
-          "question": "Do you handle groundworks as well as the concrete pour itself?",
-          "answer": "Yes — excavation, levels, and drainage falls are set out before we pour, so the finished slab or driveway sheds water correctly instead of pooling against the building."
-        },
-        {
-          "question": "What reinforcement do you use, and how is that decided?",
-          "answer": "Reinforcement — mesh or rebar — is specified to what the structure actually needs, whether that's a garden path or a load-bearing floor slab. For structural work this follows an engineer's specification, not a standard default."
-        },
-        {
-          "question": "Can you pour a driveway alongside other building work, or is it standalone?",
-          "answer": "Both — driveways and external concrete are often done as the finishing stage of a larger project, or booked as a standalone job on their own."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Concreting Services London | Structure & Exterior",
-        "metaDescription": "Foundations, floor slabs, and driveways poured and finished in London, with levels and drainage set out correctly.",
-        "keywords": [
-          "concreting contractors London",
-          "driveway concrete London",
-          "foundation contractors"
-        ]
-      },
-      "sections": [
-        {
-          "id": "concreting-section-1",
-          "heading": "What sits beneath everything else",
-          "body": "Concrete work sits underneath almost everything else on a build, which is exactly why it's worth getting right the first time — a poor pour is expensive and disruptive to correct once anything is built on top of it.",
-          "image": null
-        },
-        {
-          "id": "concreting-section-2",
-          "heading": "Foundations, slabs, and driveways",
-          "body": "We handle foundations, floor slabs, and external concrete such as driveways and paths, with reinforcement and curing done to the specification the structure actually needs.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1774931363306-5a896cd4dd02",
-            "alt": "Construction workers pouring concrete on site"
-          }
-        },
-        {
-          "id": "concreting-section-3",
-          "heading": "Levels and drainage, set out right",
-          "body": "Levels and drainage falls are set out before any concrete is poured, so water moves away from the building rather than pooling against it.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Windows",
-      "slug": "windows",
-      "category": "Structure & Exterior",
-      "shortDescription": "Supply and fit, from single replacements to a full re-glaze.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 7,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1695928668952-c3c01a638e1d",
-        "alt": "A window with a white frame and black trim"
-      },
-      "highlights": [
-        "Supply and fit across timber, uPVC, and aluminium",
-        "Proportions and glazing bars matched on period properties",
-        "Making good to surrounding brick and plaster included",
-        "Single replacements through to full-house re-glazing"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Survey",
-          "description": "Site measure and material discussion, with glazing bars matched on period properties where relevant."
-        },
-        {
-          "step": 2,
-          "title": "Supply",
-          "description": "Windows manufactured to the agreed specification and proportions."
-        },
-        {
-          "step": 3,
-          "title": "Installation",
-          "description": "Old windows removed and new frames fitted, with surrounding brick and plaster made good."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Handover",
-          "description": "Final check for fit, seal, and finish before handover."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "What window materials do you offer?",
-          "answer": "We supply and fit timber, uPVC, and aluminium windows, and can talk you through the trade-offs — maintenance, thermal performance, and appearance — for your specific property before you commit to one."
-        },
-        {
-          "question": "I have a period property — can you match the original glazing bars?",
-          "answer": "Yes, matching character is a specific focus on period homes — glazing bar layout, sightlines, and frame proportions are matched to the existing property rather than defaulting to a standard modern profile."
-        },
-        {
-          "question": "How long does a full-house window replacement take?",
-          "answer": "A single window is typically a day; a full-house re-glaze usually runs 3–5 days depending on the number of openings and whether any structural making good is needed around the frames."
-        },
-        {
-          "question": "Will replacing my windows leave a mess around the frames?",
-          "answer": "No — making good the surrounding brickwork and plaster is included as standard, so the finished opening looks intentional rather than patched once the new window is in."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Window Installation London | Structure & Exterior Services",
-        "metaDescription": "Timber, uPVC, and aluminium window supply and fit in London, including period property glazing bar matching.",
-        "keywords": [
-          "window installers London",
-          "sash window replacement",
-          "double glazing London"
-        ]
-      },
-      "sections": [
-        {
-          "id": "windows-section-1",
-          "heading": "More than a frame colour",
-          "body": "A window replacement affects a building's insulation, ventilation, and appearance all at once — which means the decision is rarely as simple as picking a frame colour.",
-          "image": null
-        },
-        {
-          "id": "windows-section-2",
-          "heading": "Supply and fit, matched to your home",
-          "body": "We supply and fit windows across a range of materials and styles, matching proportions and glazing bars to the character of the property where that matters, particularly on period homes.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1695928668952-c3c01a638e1d",
-            "alt": "A window with a white frame and black trim"
-          }
-        },
-        {
-          "id": "windows-section-3",
-          "heading": "Finished, not just installed",
-          "body": "Installation includes making good the surrounding brickwork and plaster, so the finished opening looks intentional rather than patched.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Doors",
-      "slug": "doors",
-      "category": "Structure & Exterior",
-      "shortDescription": "Internal and external doors, hung true and finished to match.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 8,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1691517534830-6d2e34e0b374",
-        "alt": "A front door in London with a window beside it"
-      },
-      "highlights": [
-        "Internal, external, and fire-rated doors",
-        "Bi-fold and sliding doors for extensions",
-        "Ironmongery and thresholds fitted and finished",
-        "Frames set true so doors hang and close correctly"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Survey",
-          "description": "Opening measured and door type discussed, including fire rating where required."
-        },
-        {
-          "step": 2,
-          "title": "Supply",
-          "description": "Doors and ironmongery sourced to the agreed specification."
-        },
-        {
-          "step": 3,
-          "title": "Installation",
-          "description": "Frame set true and door hung, with thresholds fitted."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Handover",
-          "description": "Ironmongery fitted and finished, door checked for swing and closure."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Do I need a fire door, and where are they required?",
-          "answer": "Fire doors are typically required on escape routes in houses with more than two storeys, and in some converted or multi-occupancy properties. We'll tell you at the site visit whether your project needs them and fit them to the correct standard where it does."
-        },
-        {
-          "question": "What's the difference between bi-fold and sliding doors for an extension?",
-          "answer": "Bi-fold doors fold back to fully open a wide opening — good where you want the whole wall to disappear. Sliding doors keep a slimmer, uninterrupted view when closed and suit openings where you don't need the full width open at once. We'll help you weigh it against your actual layout."
-        },
-        {
-          "question": "Do you supply door hardware, or do I need to source that myself?",
-          "answer": "Ironmongery — handles, hinges, locks, thresholds — is handled as part of the job. You can choose from options we recommend or bring your own; either way it's fitted and finished in the same visit."
-        },
-        {
-          "question": "How long does a single door installation take?",
-          "answer": "Most internal or external single-door installations are completed in a day, including hanging, hardware, and finishing — bi-fold and sliding doors for larger openings typically take a day or two longer."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Door Installation London | Structure & Exterior Services",
-        "metaDescription": "Internal, external, fire, and bi-fold door installation in London, hung true and fully finished.",
-        "keywords": [
-          "door fitters London",
-          "bi-fold doors London",
-          "front door installation"
-        ]
-      },
-      "sections": [
-        {
-          "id": "doors-section-1",
-          "heading": "The details that show immediately",
-          "body": "A door that doesn't hang square shows immediately — in the gap around the frame, in how it swings, in how it sounds when it closes. Getting it right is mostly about the frame and the fixings, not the door itself.",
-          "image": null
-        },
-        {
-          "id": "doors-section-2",
-          "heading": "Every type of door, properly hung",
-          "body": "We fit internal and external doors, including front doors, fire doors where required, and bi-fold or sliding doors for extensions and open-plan spaces.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1691517534830-6d2e34e0b374",
-            "alt": "A front door in London with a window beside it"
-          }
-        },
-        {
-          "id": "doors-section-3",
-          "heading": "Finished in one visit",
-          "body": "Ironmongery, thresholds, and finishing are handled as part of the job, so a new door arrives ready to use rather than needing a second visit to finish it off.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Flooring",
-      "slug": "flooring",
-      "category": "Fit & Finish",
-      "shortDescription": "Timber, tile, and stone flooring, laid flat and finished clean.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 9,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1598718544285-7180f670198b",
-        "alt": "A living room with brown wooden parquet flooring"
-      },
-      "highlights": [
-        "Subfloor preparation checked for level and moisture",
-        "Timber, engineered wood, tile, and stone flooring",
-        "Underfloor heating compatibility planned in",
-        "Correct expansion gaps and finishing trims"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Survey",
-          "description": "Room assessed for material choice, underfloor heating compatibility, and subfloor condition."
-        },
-        {
-          "step": 2,
-          "title": "Subfloor Preparation",
-          "description": "Level and moisture checked and corrected before any flooring is laid."
-        },
-        {
-          "step": 3,
-          "title": "Installation",
-          "description": "Timber, engineered wood, tile, or stone laid with correct expansion gaps."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Handover",
-          "description": "Trims fitted and floor finished ready for use."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Is underfloor heating compatible with the flooring I want?",
-          "answer": "Most materials we lay — timber, engineered wood, tile, and stone — are compatible with underfloor heating, but the specification changes depending on which one you choose, including thickness, expansion allowance, and adhesive type. We plan this in before laying, not after."
-        },
-        {
-          "question": "Why does subfloor preparation matter so much?",
-          "answer": "Because it's the one thing that determines whether the finished floor stays flat and sound. A subfloor that's uneven or holding moisture will telegraph through even the best flooring material, so we check level and moisture before laying anything."
-        },
-        {
-          "question": "Which flooring material suits which room?",
-          "answer": "It depends on moisture exposure and footfall — timber and engineered wood suit living spaces, while tile and stone handle kitchens and bathrooms better. We'll talk through the right fit for each room rather than applying one material throughout by default."
-        },
-        {
-          "question": "How long does a flooring installation take?",
-          "answer": "A single room typically takes 1–3 days depending on material and subfloor condition; whole-house flooring is usually scheduled across a week or more so each room can be sequenced properly."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Flooring Installation London | Fit & Finish Services",
-        "metaDescription": "Timber, tile, and stone flooring installation in London, with subfloor preparation and underfloor heating compatibility built in.",
-        "keywords": [
-          "flooring installers London",
-          "engineered wood flooring",
-          "tile flooring London"
-        ]
-      },
-      "sections": [
-        {
-          "id": "flooring-section-1",
-          "heading": "The trade with the least room for error",
-          "body": "Flooring is one of the last trades on site, which means it's also the one with the least room for error — a subfloor that isn't flat or dry enough will show up in the finished floor no matter how good the material is.",
-          "image": null
-        },
-        {
-          "id": "flooring-section-2",
-          "heading": "Subfloor first, material second",
-          "body": "We prepare subfloors properly before laying anything, checking for level and moisture, and lay timber, engineered wood, tile, and stone flooring across kitchens, bathrooms, and living spaces.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1598718544285-7180f670198b",
-            "alt": "A living room with brown wooden parquet flooring"
-          }
-        },
-        {
-          "id": "flooring-section-3",
-          "heading": "Planned for how the room is used",
-          "body": "Underfloor heating compatibility and expansion gaps are accounted for at the planning stage, not worked around after the fact.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Carpentry",
-      "slug": "carpentry",
-      "category": "Fit & Finish",
-      "shortDescription": "Bespoke joinery, staircases, and fitted units, made on site.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 10,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1779031242515-205111711b23",
-        "alt": "A carpenter working on wood with tools in a workshop"
-      },
-      "highlights": [
-        "Bespoke fitted wardrobes and storage",
-        "Staircases, balustrades, and structural timberwork",
-        "Skirting, architrave, and finishing joinery",
-        "Made to fit rooms that are rarely perfectly square"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation & Measure",
-          "description": "Room measured in person to account for walls and floors that are rarely perfectly square."
-        },
-        {
-          "step": 2,
-          "title": "Design",
-          "description": "Joinery designed and specified, whether fitted storage, staircase, or structural timberwork."
-        },
-        {
-          "step": 3,
-          "title": "Manufacture & Installation",
-          "description": "Pieces made and fitted on site to the exact space."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Handover",
-          "description": "Skirting, architrave, and final finishing completed ready for decoration."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "How do you measure for bespoke fitted storage?",
-          "answer": "We measure the room in person, not from a plan — very few walls or floors in older houses are perfectly square, so fitted wardrobes and storage are built to the actual space, not a standard flat-pack size."
-        },
-        {
-          "question": "Are staircases built to a specific regulation?",
-          "answer": "Yes — staircases and balustrades have to meet current building regulations for rise, going, and handrail height, and we build to that standard as a matter of course, not just where it's inspected."
-        },
-        {
-          "question": "What counts as structural carpentry versus finishing carpentry?",
-          "answer": "Structural carpentry is roof timbers, floor joists, and load-bearing elements — work that affects the building's integrity. Finishing carpentry is skirting, architrave, and joinery — visible detail that affects how a room reads. We do both, often on the same project."
-        },
-        {
-          "question": "How long does bespoke joinery take, from measure to fit?",
-          "answer": "Simple fitted storage is usually measured, made, and fitted within 1–2 weeks. More complex staircases or structural carpentry take longer and are scheduled into the wider project programme."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Bespoke Carpentry London | Fit & Finish Services",
-        "metaDescription": "Bespoke joinery, staircases, and fitted storage made and fitted on site across London.",
-        "keywords": [
-          "carpenters London",
-          "bespoke joinery London",
-          "fitted wardrobes London"
-        ]
-      },
-      "sections": [
-        {
-          "id": "carpentry-section-1",
-          "heading": "The details you only notice when they're missing",
-          "body": "Carpentry covers the details most people only notice when they're missing — skirting that actually meets flush at the corners, a staircase that doesn't creak, built-in storage that fits the room instead of leaving an awkward gap.",
-          "image": null
-        },
-        {
-          "id": "carpentry-section-2",
-          "heading": "Bespoke work, structural and decorative",
-          "body": "We handle bespoke joinery, staircases, fitted wardrobes and storage, and structural carpentry such as roof timbers and floor joists.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1779031242515-205111711b23",
-            "alt": "A carpenter working on wood with tools in a workshop"
-          }
-        },
-        {
-          "id": "carpentry-section-3",
-          "heading": "Made to fit rooms that rarely are",
-          "body": "Work is measured and made to fit the specific space, which matters most in older houses where very few walls or floors are perfectly square.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Painting & Decorating",
-      "slug": "painting-decorating",
-      "category": "Fit & Finish",
-      "shortDescription": "The last coat that makes every other trade's work look finished.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 11,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1",
-        "alt": "A tradesperson painting a wall with a paint roller"
-      },
-      "highlights": [
-        "Full surface preparation — filling, sanding, priming",
-        "Internal and external decoration",
-        "Wallpapering and specialist finishes",
-        "Finished to look right under normal daylight"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Consultation",
-          "description": "Colour, finish, and scope discussed, including any wallpapering or specialist finishes."
-        },
-        {
-          "step": 2,
-          "title": "Surface Preparation",
-          "description": "Filling, sanding, and priming completed before any paint goes on."
-        },
-        {
-          "step": 3,
-          "title": "Application",
-          "description": "Coats applied to internal and external surfaces as specified."
-        },
-        {
-          "step": 4,
-          "title": "Finishing & Handover",
-          "description": "Final coat checked under normal daylight, not just site lighting."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "How much preparation work is included before painting?",
-          "answer": "All of it — filling, sanding, and priming are included as standard, not an optional extra. Most of what makes a paint job look right happens before any paint goes on."
-        },
-        {
-          "question": "How many coats do you apply?",
-          "answer": "It depends on the surface and colour, but two coats is standard for most walls and woodwork, with a third where a strong colour change needs it to look even under daylight."
-        },
-        {
-          "question": "Do you do wallpaper as well as paint?",
-          "answer": "Yes — wallpapering and specialist finishes are part of the service, alongside standard internal and external decoration."
-        },
-        {
-          "question": "Does weather affect external decorating?",
-          "answer": "Yes — external paint needs the right temperature and dry conditions to cure properly, so we schedule exterior work around the forecast rather than risking a finish that won't last."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Painters & Decorators London | Fit & Finish Services",
-        "metaDescription": "Internal and external painting and decorating in London, with full surface preparation and specialist finishes.",
-        "keywords": [
-          "painters and decorators London",
-          "interior decorating London",
-          "exterior painting London"
-        ]
-      },
-      "sections": [
-        {
-          "id": "painting-decorating-section-1",
-          "heading": "Where every other trade's mistakes surface",
-          "body": "Decoration is the trade every other trade's mistakes end up resting on — poor plastering, filled cracks, and uneven surfaces all show through paint eventually. Good prep is most of the job.",
-          "image": null
-        },
-        {
-          "id": "painting-decorating-section-2",
-          "heading": "Preparation is most of the job",
-          "body": "We prepare surfaces properly before painting, including filling, sanding, and priming, and cover internal and external decoration, wallpapering, and specialist finishes where a project calls for them.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1717281234297-3def5ae3eee1",
-            "alt": "A tradesperson painting a wall with a paint roller"
-          }
-        },
-        {
-          "id": "painting-decorating-section-3",
-          "heading": "Judged in daylight, not site lighting",
-          "body": "Colour and finish choices are discussed up front, but the work itself is judged on how flat and even the final coat looks under normal daylight, not just under site lighting.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Electricals",
-      "slug": "electricals",
-      "category": "Systems & Maintenance",
-      "shortDescription": "Rewires, consumer units, and certified electrical work, done to code.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 12,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1596480330945-12a5380b9c59",
-        "alt": "Close-up of electrical wiring and a consumer unit"
-      },
-      "highlights": [
-        "Full and partial rewires",
-        "Consumer unit upgrades and additional circuits",
-        "Lighting design and installation",
-        "All work tested, certified, and documented"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Site Survey & Assessment",
-          "description": "Existing wiring and consumer unit assessed to determine scope — full rewire, partial, or additional circuits."
-        },
-        {
-          "step": 2,
-          "title": "Design & Specification",
-          "description": "Circuit layout and lighting design specified to current wiring regulations."
-        },
-        {
-          "step": 3,
-          "title": "Installation",
-          "description": "Rewiring, consumer unit upgrade, or additional circuits installed."
-        },
-        {
-          "step": 4,
-          "title": "Testing & Certification",
-          "description": "All work tested and certified, with documentation provided."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Is all your electrical work certified?",
-          "answer": "Yes — every job is tested and certified against current wiring regulations on completion, with documentation provided so there's a clear record of what was done and to what standard."
-        },
-        {
-          "question": "How do I know if I need a full rewire or just a partial one?",
-          "answer": "It depends on the age and condition of the existing wiring — we assess this at the site visit and give you an honest recommendation rather than defaulting to the larger job. Many older properties only need specific circuits addressed, not a full rewire."
-        },
-        {
-          "question": "When does a consumer unit need upgrading?",
-          "answer": "Usually when it's an old fuse-box style unit without modern RCD protection, or when it can't safely handle the additional circuits a renovation is adding — we'll flag this if it applies to your property."
-        },
-        {
-          "question": "Can you add circuits for a home office, EV charger, or extension?",
-          "answer": "Yes — additional circuits for kitchens, home offices, extensions, and EV charging points are a normal part of the job, planned in alongside whatever else is happening on the project."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Electricians London | Systems & Maintenance Services",
-        "metaDescription": "Certified rewires, consumer unit upgrades, and electrical installations in London, tested and documented on completion.",
-        "keywords": [
-          "electricians London",
-          "rewiring London",
-          "consumer unit upgrade"
-        ]
-      },
-      "sections": [
-        {
-          "id": "electricals-section-1",
-          "heading": "Safety first, always",
-          "body": "Electrical work is the one trade on a project where getting it wrong isn't just inconvenient — it's a safety issue, which is why every job is certified against current wiring regulations rather than just switched on and left.",
-          "image": null
-        },
-        {
-          "id": "electricals-section-2",
-          "heading": "Rewires, circuits, and lighting",
-          "body": "We handle full and partial rewires, consumer unit upgrades, lighting design and installation, and additional circuits for kitchens, home offices, and extensions.",
-          "image": {
-            "url": "https://images.unsplash.com/photo-1596480330945-12a5380b9c59",
-            "alt": "Close-up of electrical wiring and a consumer unit"
-          }
-        },
-        {
-          "id": "electricals-section-3",
-          "heading": "Tested, certified, documented",
-          "body": "All work is tested and certified on completion, with documentation provided so there's a clear record of what was done and to what standard.",
-          "image": null
-        }
-      ]
-    },
-    {
-      "title": "Plumbing",
+      "id": "plumbing",
       "slug": "plumbing",
-      "category": "Systems & Maintenance",
-      "shortDescription": "Heating, water, and drainage — fitted, repaired, and maintained.",
+      "title": "Plumbing",
+      "categorySlug": "mechanical-electrical",
+      "categoryName": "Mechanical & Electrical",
       "status": "published",
-      "featured": false,
-      "displayOrder": 13,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1722411487131-23bb3ac91df3",
-        "alt": "Black and white photo of plumbing pipes"
+      "featured": true,
+      "displayOrder": 8,
+
+      "hero": {
+        "eyebrow": "Mechanical & Electrical",
+        "title": "Plumbing Services",
+        "subtitle": "Reliable plumbing for homes, renovations and commercial properties.",
+        "description": "From first-fix pipework on a full renovation to a same-week repair, our plumbing team works to the same standard on every job — clean installs, tested systems, and no call-backs.",
+        "image": {
+          "url": "/images/services/plumbing/hero.jpg",
+          "alt": "Professional plumbing services in London"
+        },
+        "primaryCta": { "label": "Request a Quote", "href": "/contact#quote" },
+        "secondaryCta": { "label": "Explore Our Services", "href": "/services" }
       },
-      "highlights": [
-        "Heating system installation, servicing, and repair",
-        "Water supply and drainage work",
-        "First-fix and second-fix plumbing for wet rooms",
-        "Boiler work carried out by qualified engineers"
-      ],
-      "process": [
-        {
-          "step": 1,
-          "title": "Site Survey & Assessment",
-          "description": "Existing system assessed, whether for a repair, new installation, or full re-plumb."
-        },
-        {
-          "step": 2,
-          "title": "Design & Specification",
-          "description": "Heating, water, and drainage layout specified for the job."
-        },
-        {
-          "step": 3,
-          "title": "Installation",
-          "description": "First-fix and second-fix plumbing, heating installation, and drainage work carried out by qualified engineers."
-        },
-        {
-          "step": 4,
-          "title": "Testing & Handover",
-          "description": "System tested and signed off before handover."
-        }
-      ],
-      "faqs": [
-        {
-          "question": "Are boiler and heating installations carried out by qualified engineers?",
-          "answer": "Yes — all boiler and heating work is carried out by appropriately qualified, Gas Safe registered engineers, not general trades, and servicing and repairs are available beyond the initial installation."
-        },
-        {
-          "question": "What's the difference between first-fix and second-fix plumbing?",
-          "answer": "First-fix is the pipework and drainage installed before walls and floors are closed up; second-fix is fitting the visible sanitaryware, taps, and fittings once the room is finished. Both are planned together so nothing gets sealed up before it's ready."
-        },
-        {
-          "question": "Can you fix a leak without a full re-plumb?",
-          "answer": "In most cases, yes — leaks usually trace back to a specific joint or pipe run rather than the whole system, and we repair at that level wherever it's safe and sensible to do so."
-        },
-        {
-          "question": "Do you handle drainage issues as well as supply plumbing?",
-          "answer": "Yes — water supply and drainage are both part of the service, whether that's a blocked or undersized run or drainage falls that need correcting."
-        }
-      ],
-      "areas": [
-        "London",
-        "West London",
-        "Richmond",
-        "Chelsea",
-        "Kensington"
-      ],
-      "seo": {
-        "metaTitle": "Plumbers London | Systems & Maintenance Services",
-        "metaDescription": "Heating, water supply, and drainage services in London, fitted and repaired by qualified engineers.",
-        "keywords": [
-          "plumbers London",
-          "heating engineers London",
-          "boiler installation London"
-        ]
-      },
+
       "sections": [
         {
-          "id": "plumbing-section-1",
-          "heading": "Small faults, expensive consequences",
-          "body": "Plumbing failures rarely announce themselves politely — a bad joint or an undersized pipe run tends to show up as a leak months later, usually somewhere inconvenient. Getting the first fix right avoids most of that.",
-          "image": null
-        },
-        {
-          "id": "plumbing-section-2",
-          "heading": "Heating, water, and drainage",
-          "body": "We handle heating system installation and repair, water supply and drainage work, and the plumbing first-fix and second-fix for kitchens, bathrooms, and utility rooms.",
+          "id": "plumbing-installation",
+          "layout": "image-left",
+          "title": "Installations Done Properly",
+          "content": "New bathrooms, kitchen pipework, cylinder and system upgrades, or full re-pipes as part of a wider renovation — we install to current regulations and pressure-test everything before it's boxed in or plastered over.",
           "image": {
-            "url": "https://images.unsplash.com/photo-1722411487131-23bb3ac91df3",
-            "alt": "Black and white photo of plumbing pipes"
-          }
+            "url": "/images/services/plumbing/section-1.jpg",
+            "alt": "Plumbing installation work"
+          },
+          "cta": { "label": "Get a Plumbing Quote", "href": "/contact#quote" }
         },
         {
-          "id": "plumbing-section-3",
-          "heading": "Qualified engineers, properly certified",
-          "body": "Boiler and heating work is carried out by appropriately qualified engineers, with servicing and repairs available beyond the initial installation.",
-          "image": null
+          "id": "plumbing-maintenance",
+          "layout": "image-right",
+          "title": "Maintenance & Repairs",
+          "content": "Leaks, low pressure, failing valves, or an ageing system that needs attention before it fails — we diagnose the actual cause, not just the symptom, and fix it once.",
+          "image": {
+            "url": "/images/services/plumbing/section-2.jpg",
+            "alt": "Plumbing maintenance work"
+          },
+          "cta": { "label": "Book a Callout", "href": "/contact#quote" }
         }
-      ]
-    },
-    {
-      "title": "Minor Electrical Repairs",
-      "slug": "minor-electrical-repairs",
-      "category": "Systems & Maintenance",
-      "shortDescription": "Small electrical jobs — a faulty socket, a flickering light, a tripping circuit — fixed properly, without a big project attached.",
-      "status": "published",
-      "featured": false,
-      "displayOrder": 14,
-      "image": {
-        "url": "https://images.unsplash.com/photo-1596480330945-12a5380b9c59",
-        "alt": "Close-up of electrical wiring and a consumer unit"
+      ],
+
+      "whatsIncluded": {
+        "title": "What's Included",
+        "intro": "Our plumbing service covers:",
+        "items": [
+          "Bathroom and kitchen pipework installation",
+          "Cylinder, tank and system upgrades",
+          "Leak detection and repair",
+          "Pressure testing and certification",
+          "Emergency and same-week callouts",
+          "Coordination with renovation and construction projects"
+        ]
       },
+
+      "process": {
+        "title": "Our Plumbing Process",
+        "description": "A straightforward approach to identifying and completing plumbing work properly.",
+        "steps": [
+          { "step": 1, "title": "Assessment", "content": "We understand the issue or project requirements and assess the work needed." },
+          { "step": 2, "title": "Installation or Repair", "content": "Our team completes the agreed work using appropriate methods and materials, to current regulations." },
+          { "step": 3, "title": "Final Check", "content": "We pressure-test and inspect the completed work before signing it off." }
+        ]
+      },
+
+      "gallery": [
+        { "url": "/images/services/plumbing/gallery-1.jpg", "alt": "Plumbing installation" },
+        { "url": "/images/services/plumbing/gallery-2.jpg", "alt": "Plumbing maintenance" }
+      ],
+
+      "faqs": [
+        { "question": "Do you provide emergency plumbing repairs?", "answer": "We can discuss urgent plumbing issues and the appropriate response depending on the nature of the problem." },
+        { "question": "Can you handle plumbing as part of a larger renovation?", "answer": "Yes — plumbing is coordinated directly with our construction and renovation projects, so pipework, finishes and programme all line up." },
+        { "question": "Are your engineers qualified and insured?", "answer": "Yes, all plumbing work is carried out by qualified engineers and covered under our insurance." }
+      ],
+
+      "areasCovered": {
+        "title": "Areas We Cover",
+        "description": "Our plumbing team covers most of London, from single repairs to full system installs on larger projects.",
+        "areas": [
+          "Camden", "Islington", "Hackney", "Tower Hamlets", "Westminster",
+          "Kensington & Chelsea", "Wandsworth", "Lambeth", "Southwark",
+          "Haringey", "Barnet", "and surrounding areas"
+        ]
+      },
+
+      "cta": {
+        "title": "Need Plumbing Support?",
+        "content": "Contact BSL Construction to discuss your plumbing requirements, big or small.",
+        "buttonLabel": "Request a Quote",
+        "buttonHref": "/contact"
+      },
+
+      "seo": {
+        "metaTitle": "Plumbing Services London | BSL Construction",
+        "metaDescription": "Professional plumbing services for residential and commercial properties across London.",
+        "keywords": ["plumbing London", "plumbers London", "plumbing services London", "plumbing contractors"]
+      }
+    },
+
+    {
+      "id": "electrical",
+      "slug": "electrical",
+      "title": "Electrical",
+      "categorySlug": "mechanical-electrical",
+      "categoryName": "Mechanical & Electrical",
+      "status": "published",
+      "featured": true,
+      "displayOrder": 13,
+
+      "hero": {
+        "eyebrow": "Mechanical & Electrical",
+        "title": "Electrical Services",
+        "subtitle": "Safe, certified electrical work for modern properties.",
+        "description": "Full rewires, consumer unit upgrades, renovation first and second fix, or a single fault that needs sorting — our electricians work to current wiring regulations and certify every job.",
+        "image": {
+          "url": "/images/services/electrical/hero.jpg",
+          "alt": "Electrical installation services in London"
+        },
+        "primaryCta": { "label": "Request a Quote", "href": "/contact#quote" },
+        "secondaryCta": { "label": "Explore Our Services", "href": "/services" }
+      },
+
       "sections": [
         {
-          "id": "minor-electrical-repairs-section-1",
-          "heading": "Not every job needs a project",
-          "body": "A faulty socket, a light that flickers, a circuit that keeps tripping — these don't need a rewire or a big scope of works, just someone qualified to diagnose the fault and fix it properly the first time.",
-          "image": null
-        }
-      ],
-      "highlights": [
-        "Fault-finding and same-visit repairs where possible",
-        "Fully certified and tested on completion"
-      ],
-      "process": [],
-      "faqs": [
-        {
-          "question": "Do you take on small, one-off electrical jobs?",
-          "answer": "Yes — not everything needs to be part of a larger project. Single sockets, switches, and small circuit faults are booked and fixed on their own."
+          "id": "electrical-installation",
+          "layout": "image-left",
+          "title": "Electrical Installation",
+          "content": "New builds, extensions, refurbishments and rewires — we plan the electrical design around how each room is actually used, then install and test to full compliance with current wiring regulations.",
+          "image": {
+            "url": "/images/services/electrical/section-1.jpg",
+            "alt": "Electrical installation work"
+          },
+          "cta": { "label": "Get an Electrical Quote", "href": "/contact#quote" }
         },
         {
-          "question": "How quickly can you come out for a repair?",
-          "answer": "Most minor repairs are booked within a few days; get in touch and we'll confirm the nearest available slot for your area."
+          "id": "electrical-maintenance",
+          "layout": "image-right",
+          "title": "Improvements & Maintenance",
+          "content": "Consumer unit upgrades, additional circuits, fault-finding, or an EICR ahead of a sale or let — we handle the paperwork as thoroughly as the work itself, so you have a proper record of what's been done.",
+          "image": {
+            "url": "/images/services/electrical/section-2.jpg",
+            "alt": "Electrical maintenance work"
+          },
+          "cta": { "label": "Book an Assessment", "href": "/contact#quote" }
         }
       ],
-      "areas": [
-        "London",
-        "West London"
-      ],
-      "seo": {
-        "metaTitle": "Minor Electrical Repairs London | Systems & Maintenance",
-        "metaDescription": "Small electrical repairs in London — faulty sockets, flickering lights, and tripping circuits fixed and certified.",
-        "keywords": [
-          "electrical repairs London",
-          "electrician callout",
-          "small electrical jobs"
+
+      "whatsIncluded": {
+        "title": "What's Included",
+        "intro": "Our electrical service covers:",
+        "items": [
+          "Full and partial rewires",
+          "Consumer unit and circuit upgrades",
+          "First and second fix on renovations and new builds",
+          "Fault-finding and repairs",
+          "EICR testing and certification",
+          "Coordination with construction and refurbishment projects"
         ]
+      },
+
+      "process": {
+        "title": "Our Electrical Process",
+        "description": "A clear approach to understanding and completing electrical work safely.",
+        "steps": [
+          { "step": 1, "title": "Assessment", "content": "We understand the property's electrical requirements and agree the scope of work." },
+          { "step": 2, "title": "Installation or Repair", "content": "Our qualified electricians carry out the agreed work to current regulations." },
+          { "step": 3, "title": "Testing & Certification", "content": "We test everything, issue the relevant certification, and walk you through what's been done." }
+        ]
+      },
+
+      "gallery": [
+        { "url": "/images/services/electrical/gallery-1.jpg", "alt": "Electrical installation" },
+        { "url": "/images/services/electrical/gallery-2.jpg", "alt": "Electrical work" }
+      ],
+
+      "faqs": [
+        { "question": "Do you provide electrical certification?", "answer": "Yes, all electrical work is tested and certified in line with current regulations, and we provide copies for your records." },
+        { "question": "Can you carry out a full rewire while the property is occupied?", "answer": "In many cases yes, though this depends on the scope. We'll agree a practical plan with you before starting." },
+        { "question": "Do you handle commercial electrical work?", "answer": "Yes, we can discuss electrical requirements for suitable commercial and managed properties." }
+      ],
+
+      "areasCovered": {
+        "title": "Areas We Cover",
+        "description": "We carry out electrical work across most of London, on projects ranging from single-room upgrades to full rewires.",
+        "areas": [
+          "Westminster", "Kensington & Chelsea", "Camden", "Islington", "Hackney",
+          "Greenwich", "Lewisham", "Wandsworth", "Ealing", "Brent",
+          "Croydon", "and surrounding areas"
+        ]
+      },
+
+      "cta": {
+        "title": "Need Electrical Support?",
+        "content": "Contact our team to discuss your electrical requirements and get a clear, certified quote.",
+        "buttonLabel": "Request a Quote",
+        "buttonHref": "/contact"
+      },
+
+      "seo": {
+        "metaTitle": "Electrical Services London | BSL Construction",
+        "metaDescription": "Professional, certified electrical services for residential and commercial properties across London.",
+        "keywords": ["electrical services London", "electricians London", "electrical contractors London", "commercial electrical services"]
+      }
+    },
+
+    {
+      "id": "commercial-maintenance",
+      "slug": "commercial-maintenance",
+      "title": "Commercial Maintenance",
+      "categorySlug": "commercial",
+      "categoryName": "Commercial",
+      "status": "published",
+      "featured": true,
+      "displayOrder": 17,
+
+      "hero": {
+        "eyebrow": "Commercial",
+        "title": "Commercial Maintenance",
+        "subtitle": "Reliable maintenance for commercial properties and managed buildings.",
+        "description": "One team covering fabric, M&E and general building maintenance — scheduled around your business hours, with a single point of contact instead of a list of separate contractors to chase.",
+        "image": {
+          "url": "/images/services/commercial-maintenance/hero.jpg",
+          "alt": "Commercial property maintenance in London"
+        },
+        "primaryCta": { "label": "Discuss Your Requirements", "href": "/contact#quote" },
+        "secondaryCta": { "label": "Explore Our Services", "href": "/services" }
+      },
+
+      "sections": [
+        {
+          "id": "commercial-maintenance-support",
+          "layout": "image-left",
+          "title": "Maintenance Built Around Your Business",
+          "content": "Commercial properties need maintenance that works around trading hours, tenants and footfall — not the other way round. We schedule works to minimise disruption and keep your building compliant and presentable year-round.",
+          "image": {
+            "url": "/images/services/commercial-maintenance/section-1.jpg",
+            "alt": "Commercial building maintenance"
+          },
+          "cta": { "label": "Discuss a Maintenance Plan", "href": "/contact#quote" }
+        },
+        {
+          "id": "commercial-maintenance-management",
+          "layout": "image-right",
+          "title": "One Reliable Point of Contact",
+          "content": "Building fabric, M&E, general repairs and small works — we coordinate every trade under a single contract, so property owners and managers get one invoice and one number to call, not a spreadsheet of contractors.",
+          "image": {
+            "url": "/images/services/commercial-maintenance/section-2.jpg",
+            "alt": "Commercial property repair"
+          },
+          "cta": { "label": "Get a Maintenance Quote", "href": "/contact#quote" }
+        }
+      ],
+
+      "whatsIncluded": {
+        "title": "What's Included",
+        "intro": "Our commercial maintenance service covers:",
+        "items": [
+          "Scheduled and reactive building maintenance",
+          "Fabric repairs and general upkeep",
+          "M&E coordination and minor works",
+          "Out-of-hours scheduling to suit trading businesses",
+          "Single point of contact and reporting",
+          "Multi-site and portfolio support"
+        ]
+      },
+
+      "process": {
+        "title": "Our Commercial Maintenance Process",
+        "description": "A structured approach to managing commercial property maintenance requirements.",
+        "steps": [
+          { "step": 1, "title": "Assessment", "content": "We understand your property's maintenance requirements and agree the scope of work." },
+          { "step": 2, "title": "Maintenance", "content": "Our team coordinates and completes the agreed maintenance work, scheduled around your business." },
+          { "step": 3, "title": "Completion & Reporting", "content": "We complete the work, confirm sign-off, and report back clearly on what's been done." }
+        ]
+      },
+
+      "gallery": [
+        { "url": "/images/services/commercial-maintenance/gallery-1.jpg", "alt": "Commercial maintenance" },
+        { "url": "/images/services/commercial-maintenance/gallery-2.jpg", "alt": "Commercial building maintenance" }
+      ],
+
+      "faqs": [
+        { "question": "Do you provide ongoing maintenance contracts?", "answer": "Yes, we can discuss a scheduled maintenance contract tailored to your property and business hours." },
+        { "question": "Can you coordinate multiple trades under one contract?", "answer": "Yes, that's the core of the service — one contract, one point of contact, covering the trades your property needs." },
+        { "question": "Do you cover multi-site portfolios?", "answer": "We can discuss requirements for suitable multi-site and managed property portfolios." }
+      ],
+
+      "areasCovered": {
+        "title": "Areas We Cover",
+        "description": "We support commercial and managed properties across most of London, including multi-site portfolios.",
+        "areas": [
+          "City of London", "Westminster", "Camden", "Southwark", "Tower Hamlets",
+          "Hackney", "Wandsworth", "Lambeth", "Greenwich", "Croydon",
+          "Ealing", "and surrounding areas"
+        ]
+      },
+
+      "cta": {
+        "title": "Need Commercial Maintenance?",
+        "content": "Tell us about your property and discuss your maintenance requirements with our team.",
+        "buttonLabel": "Discuss Your Requirements",
+        "buttonHref": "/contact"
+      },
+
+      "seo": {
+        "metaTitle": "Commercial Maintenance London | BSL Construction",
+        "metaDescription": "Reliable commercial property maintenance services across London for businesses and managed buildings.",
+        "keywords": ["commercial maintenance London", "commercial property maintenance", "commercial building maintenance", "commercial maintenance contractors"]
+      }
+    },
+
+    {
+      "id": "facilities-support",
+      "slug": "facilities-support",
+      "title": "Facilities Support",
+      "categorySlug": "commercial",
+      "categoryName": "Commercial",
+      "status": "published",
+      "featured": true,
+      "displayOrder": 21,
+
+      "hero": {
+        "eyebrow": "Commercial",
+        "title": "Facilities Support",
+        "subtitle": "Ongoing property support for managed buildings and commercial spaces.",
+        "description": "A flexible facilities service that scales with your building — from routine upkeep to coordinated repairs and improvement works — so property managers and businesses have one team on call.",
+        "image": {
+          "url": "/images/services/facilities-support/hero.jpg",
+          "alt": "Facilities support for commercial properties in London"
+        },
+        "primaryCta": { "label": "Discuss Your Requirements", "href": "/contact#quote" },
+        "secondaryCta": { "label": "Explore Our Services", "href": "/services" }
+      },
+
+      "sections": [
+        {
+          "id": "facilities-support-management",
+          "layout": "image-left",
+          "title": "Supporting Your Building",
+          "content": "Maintenance, repairs and improvement works across suitable commercial and managed buildings — handled by a team that already knows your property, rather than a different contractor for every job.",
+          "image": {
+            "url": "/images/services/facilities-support/section-1.jpg",
+            "alt": "Commercial facilities support"
+          },
+          "cta": { "label": "Talk to the Team", "href": "/contact#quote" }
+        },
+        {
+          "id": "facilities-support-coordination",
+          "layout": "image-right",
+          "title": "Coordinated Property Support",
+          "content": "We coordinate the relevant trades and maintenance requirements on your behalf, giving property managers and businesses a straightforward, responsive point of contact for whatever the building needs next.",
+          "image": {
+            "url": "/images/services/facilities-support/section-2.jpg",
+            "alt": "Facilities management support"
+          },
+          "cta": { "label": "Request Facilities Support", "href": "/contact#quote" }
+        }
+      ],
+
+      "whatsIncluded": {
+        "title": "What's Included",
+        "intro": "Our facilities support service covers:",
+        "items": [
+          "Routine and scheduled property upkeep",
+          "Coordinated trade repairs and small works",
+          "Response to ad-hoc maintenance requests",
+          "Improvement and upgrade works",
+          "Single point of contact for property managers",
+          "Flexible scope, scaled to your building"
+        ]
+      },
+
+      "process": {
+        "title": "Our Facilities Support Process",
+        "description": "A flexible approach to supporting your property's ongoing requirements.",
+        "steps": [
+          { "step": 1, "title": "Understand", "content": "We understand your property, facilities and ongoing maintenance requirements." },
+          { "step": 2, "title": "Coordinate", "content": "We coordinate the relevant maintenance, repair and property works." },
+          { "step": 3, "title": "Support", "content": "We provide ongoing support based on the agreed requirements and scope." }
+        ]
+      },
+
+      "gallery": [
+        { "url": "/images/services/facilities-support/gallery-1.jpg", "alt": "Facilities support project" },
+        { "url": "/images/services/facilities-support/gallery-2.jpg", "alt": "Commercial property support" }
+      ],
+
+      "faqs": [
+        { "question": "What does facilities support include?", "answer": "It can include maintenance, repairs and other building-related requirements — the scope is agreed around what your property actually needs." },
+        { "question": "Can you provide ongoing support?", "answer": "Yes, we can discuss ongoing facilities and property support for suitable commercial buildings." },
+        { "question": "Do you respond to ad-hoc requests as well as scheduled work?", "answer": "Yes — we handle both scheduled upkeep and one-off requests as they come up." }
+      ],
+
+      "areasCovered": {
+        "title": "Areas We Cover",
+        "description": "We provide facilities support across most of London for commercial and managed properties.",
+        "areas": [
+          "City of London", "Westminster", "Camden", "Islington", "Hackney",
+          "Southwark", "Lambeth", "Wandsworth", "Greenwich", "Barnet",
+          "Croydon", "and surrounding areas"
+        ]
+      },
+
+      "cta": {
+        "title": "Need Reliable Facilities Support?",
+        "content": "Tell us about your property and discuss your ongoing facilities requirements with our team.",
+        "buttonLabel": "Discuss Your Requirements",
+        "buttonHref": "/contact"
+      },
+
+      "seo": {
+        "metaTitle": "Facilities Support London | BSL Construction",
+        "metaDescription": "Reliable facilities and property support services for commercial buildings and managed properties across London.",
+        "keywords": ["facilities support London", "facilities services London", "commercial facilities support", "property facilities management"]
       }
     }
   ]
