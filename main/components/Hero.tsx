@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
@@ -62,8 +63,6 @@ export default function Hero() {
 
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Tracks whether the video is actually playing.
-  // If autoplay is blocked, we show a manual play button.
   const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
@@ -71,7 +70,6 @@ export default function Hero() {
 
     if (!video) return;
 
-    // Force muted + inline playback for autoplay compatibility.
     video.muted = true;
     video.defaultMuted = true;
 
@@ -122,7 +120,6 @@ export default function Hero() {
       });
     }
 
-    // Retry triggers for browsers that silently block autoplay.
     document.addEventListener("touchstart", tryPlay, {
       once: true,
     });
@@ -208,7 +205,6 @@ export default function Hero() {
           />
         </video>
 
-        {/* Manual play fallback */}
         {mounted && !isPlaying && (
           <button
             type="button"
@@ -250,9 +246,7 @@ export default function Hero() {
       <div className="relative z-10 mx-auto w-full max-w-[1280px] px-6 pb-36 pt-28 md:px-10 md:pb-40 md:pt-32">
         <div className="max-w-5xl">
 
-          {/* =====================================================
-              EYEBROW
-          ====================================================== */}
+          {/* EYEBROW */}
 
           <div
             className={`mb-6 flex items-center gap-3 transition-all duration-700 ${
@@ -268,9 +262,7 @@ export default function Hero() {
             </span>
           </div>
 
-          {/* =====================================================
-              MAIN HEADLINE
-          ====================================================== */}
+          {/* MAIN HEADLINE */}
 
           <h1
             className={`bsl-hero-headline mb-7 max-w-4xl text-[clamp(2.8rem,6.5vw,5.8rem)] font-medium leading-[1.03] tracking-[-0.025em] text-white transition-all duration-700 ${
@@ -291,9 +283,7 @@ export default function Hero() {
             Services
           </h1>
 
-          {/* =====================================================
-              DESCRIPTION
-          ====================================================== */}
+          {/* SHORTER DESCRIPTION */}
 
           <p
             className={`mb-10 max-w-2xl text-[clamp(1rem,1.5vw,1.18rem)] leading-[1.75] text-white/80 transition-all duration-700 delay-100 ${
@@ -302,16 +292,12 @@ export default function Hero() {
                 : "translate-y-6 opacity-0"
             }`}
           >
-            From new builds and extensions to plumbing, heating,
-            air conditioning, electrical services and commercial
-            maintenance — BSL Construction delivers reliable
-            solutions for residential and commercial properties
+            Quality construction, mechanical and commercial
+            services for residential and commercial properties
             across London.
           </p>
 
-          {/* =====================================================
-              CTA BUTTONS
-          ====================================================== */}
+          {/* CTA BUTTONS */}
 
           <div
             className={`flex flex-wrap items-center gap-4 transition-all duration-700 delay-200 ${
@@ -320,8 +306,6 @@ export default function Hero() {
                 : "translate-y-6 opacity-0"
             }`}
           >
-            {/* Primary CTA */}
-
             <Link
               href="/contact#quote"
               className="group relative overflow-hidden rounded-full bg-[#A26028] px-9 py-4 text-[0.88rem] font-semibold uppercase tracking-[0.1em] text-white shadow-[0_10px_30px_-10px_rgba(162,96,40,0.4)] transition-all duration-300 hover:-translate-y-1 hover:bg-[#8A5121] hover:shadow-[0_16px_45px_-12px_rgba(162,96,40,0.55)]"
@@ -344,8 +328,6 @@ export default function Hero() {
                 </svg>
               </span>
             </Link>
-
-            {/* Secondary CTA */}
 
             <Link
               href="/projects"
@@ -384,16 +366,12 @@ export default function Hero() {
             : "translate-y-4 opacity-0"
         }`}
       >
-        {/* Gold accent */}
-
         <div
           aria-hidden="true"
           className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#A26028] to-transparent"
         />
 
         <div className="mx-auto flex max-w-[1280px] items-stretch">
-
-          {/* Fixed label */}
 
           <div className="hidden shrink-0 items-center gap-3 border-r border-white/10 px-6 py-5 sm:flex md:px-10">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A26028]" />
@@ -402,8 +380,6 @@ export default function Hero() {
               Our Services
             </span>
           </div>
-
-          {/* Scrolling ticker */}
 
           <div
             className="min-w-0 flex-1 overflow-hidden py-5"
