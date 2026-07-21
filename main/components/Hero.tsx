@@ -1,11 +1,6 @@
-
 "use client";
 
-import React, {
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Fraunces } from "next/font/google";
 
@@ -33,10 +28,7 @@ function useMounted(delayMs = 0) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(
-      () => setMounted(true),
-      delayMs
-    );
+    const t = setTimeout(() => setMounted(true), delayMs);
 
     return () => clearTimeout(t);
   }, [delayMs]);
@@ -44,14 +36,33 @@ function useMounted(delayMs = 0) {
   return mounted;
 }
 
+function useScrolled(threshold = 60) {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => {
+      setScrolled(window.scrollY > threshold);
+    };
+
+    window.addEventListener("scroll", onScroll, {
+      passive: true,
+    });
+
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [threshold]);
+
+  return scrolled;
+}
+
 export default function Hero() {
   const mounted = useMounted(100);
+  const scrolled = useScrolled(60);
 
-  const videoRef =
-    useRef<HTMLVideoElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const [isPlaying, setIsPlaying] =
-    useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -62,14 +73,8 @@ export default function Hero() {
     video.defaultMuted = true;
 
     video.setAttribute("muted", "");
-    video.setAttribute(
-      "playsinline",
-      ""
-    );
-    video.setAttribute(
-      "webkit-playsinline",
-      ""
-    );
+    video.setAttribute("playsinline", "");
+    video.setAttribute("webkit-playsinline", "");
 
     let cancelled = false;
 
@@ -103,42 +108,28 @@ export default function Hero() {
       }
     };
 
-    video.addEventListener(
-      "playing",
-      handlePlaying
-    );
-
-    video.addEventListener(
-      "pause",
-      handlePause
-    );
+    video.addEventListener("playing", handlePlaying);
+    video.addEventListener("pause", handlePause);
 
     if (video.readyState >= 1) {
       tryPlay();
     } else {
-      video.addEventListener(
-        "loadedmetadata",
-        tryPlay,
-        {
-          once: true,
-        }
-      );
+      video.addEventListener("loadedmetadata", tryPlay, {
+        once: true,
+      });
     }
 
-    document.addEventListener(
-      "touchstart",
-      tryPlay,
-      {
-        once: true,
-      }
-    );
+    document.addEventListener("touchstart", tryPlay, {
+      once: true,
+    });
+
+    document.addEventListener("click", tryPlay, {
+      once: true,
+    });
 
     document.addEventListener(
-      "click",
-      tryPlay,
-      {
-        once: true,
-      }
+      "visibilitychange",
+      tryPlay
     );
 
     return () => {
@@ -168,6 +159,11 @@ export default function Hero() {
         "click",
         tryPlay
       );
+
+      document.removeEventListener(
+        "visibilitychange",
+        tryPlay
+      );
     };
   }, []);
 
@@ -179,7 +175,7 @@ export default function Hero() {
     video.muted = true;
 
     video.play().catch(() => {
-      // Fallback to poster image.
+      // Poster image remains as fallback.
     });
   };
 
@@ -208,7 +204,9 @@ export default function Hero() {
           />
         </video>
 
-        {!isPlaying && mounted && (
+        {/* Manual play fallback */}
+
+        {mounted && !isPlaying && (
           <button
             type="button"
             onClick={handleManualPlay}
@@ -229,7 +227,7 @@ export default function Hero() {
       </div>
 
       {/* =========================================================
-          OVERLAYS
+          GRADIENT OVERLAYS
       ========================================================== */}
 
       <div
@@ -246,7 +244,7 @@ export default function Hero() {
           HERO CONTENT
       ========================================================== */}
 
-      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-6 pb-36 pt-28 md:px-10 md:pb-40 md:pt-32">
+      <div className="relative z-10 mx-auto w-full max-w-[1280px] px-6 pb-44 pt-28 md:px-10 md:pb-48 md:pt-32">
         <div className="max-w-5xl">
 
           {/* EYEBROW */}
@@ -268,7 +266,7 @@ export default function Hero() {
           {/* HEADLINE */}
 
           <h1
-            className={`bsl-hero-headline mb-6 max-w-4xl text-[clamp(2.8rem,6.5vw,5.8rem)] font-medium leading-[1.03] tracking-[-0.025em] text-white transition-all duration-700 ${
+            className={`bsl-hero-headline mb-7 max-w-4xl text-[clamp(2.8rem,6.5vw,5.8rem)] font-medium leading-[1.03] tracking-[-0.025em] text-white transition-all duration-700 ${
               mounted
                 ? "translate-y-0 opacity-100"
                 : "translate-y-6 opacity-0"
@@ -289,42 +287,19 @@ export default function Hero() {
           {/* SHORTER DESCRIPTION */}
 
           <p
-            className={`mb-8 max-w-2xl text-[clamp(1rem,1.5vw,1.18rem)] leading-[1.7] text-white/80 transition-all duration-700 delay-100 ${
+            className={`mb-10 max-w-2xl text-[clamp(1rem,1.5vw,1.18rem)] leading-[1.75] text-white/80 transition-all duration-700 delay-100 ${
               mounted
                 ? "translate-y-0 opacity-100"
                 : "translate-y-6 opacity-0"
             }`}
           >
-            From new builds and extensions to
-            mechanical, electrical and commercial
-            maintenance, BSL Construction delivers
-            reliable building solutions across London.
+            From new builds and extensions to mechanical,
+            electrical and commercial maintenance, BSL
+            Construction delivers reliable building solutions
+            across London.
           </p>
 
-          {/* =====================================================
-              SCROLL INDICATOR
-              NOW ABOVE THE BUTTONS
-          ====================================================== */}
-
-          <div
-            className={`mb-7 flex items-center gap-3 transition-all duration-700 delay-150 ${
-              mounted
-                ? "translate-y-0 opacity-100"
-                : "translate-y-4 opacity-0"
-            }`}
-          >
-            <div className="flex h-8 w-5 items-start justify-center rounded-full border border-white/40 p-1">
-              <span className="h-1.5 w-0.5 animate-[bsl-scroll-wheel_1.6s_ease-in-out_infinite] rounded-full bg-[#E8C599]" />
-            </div>
-
-            <span className="text-[0.62rem] font-medium uppercase tracking-[0.3em] text-white/60">
-              Scroll to explore
-            </span>
-          </div>
-
-          {/* =====================================================
-              CTA BUTTONS
-          ====================================================== */}
+          {/* CTA BUTTONS */}
 
           <div
             className={`flex flex-wrap items-center gap-4 transition-all duration-700 delay-200 ${
@@ -333,7 +308,7 @@ export default function Hero() {
                 : "translate-y-6 opacity-0"
             }`}
           >
-            {/* PRIMARY */}
+            {/* Primary CTA */}
 
             <Link
               href="/contact#quote"
@@ -358,7 +333,7 @@ export default function Hero() {
               </span>
             </Link>
 
-            {/* SECONDARY */}
+            {/* Secondary CTA */}
 
             <Link
               href="/projects"
@@ -387,6 +362,31 @@ export default function Hero() {
       </div>
 
       {/* =========================================================
+          SCROLL INDICATOR
+          
+          Positioned ABOVE the service ticker,
+          BELOW the CTA buttons,
+          with enough spacing to avoid touching them.
+      ========================================================== */}
+
+      <div
+        aria-hidden="true"
+        className={`absolute bottom-[112px] left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 transition-all duration-700 md:bottom-[125px] ${
+          mounted && !scrolled
+            ? "translate-y-0 opacity-100 delay-500"
+            : "translate-y-3 opacity-0"
+        }`}
+      >
+        <div className="flex h-9 w-5 items-start justify-center rounded-full border border-white/50 p-1.5">
+          <span className="h-2 w-1 animate-[bsl-scroll-wheel_1.6s_ease-in-out_infinite] rounded-full bg-[#E8C599]" />
+        </div>
+
+        <span className="text-[0.6rem] font-medium uppercase tracking-[0.3em] text-white/60">
+          Scroll
+        </span>
+      </div>
+
+      {/* =========================================================
           SERVICES TICKER
       ========================================================== */}
 
@@ -397,6 +397,8 @@ export default function Hero() {
             : "translate-y-4 opacity-0"
         }`}
       >
+        {/* Gold accent */}
+
         <div
           aria-hidden="true"
           className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#A26028] to-transparent"
@@ -404,7 +406,7 @@ export default function Hero() {
 
         <div className="mx-auto flex max-w-[1280px] items-stretch">
 
-          {/* LABEL */}
+          {/* Fixed label */}
 
           <div className="hidden shrink-0 items-center gap-3 border-r border-white/10 px-6 py-5 sm:flex md:px-10">
             <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#A26028]" />
@@ -414,13 +416,14 @@ export default function Hero() {
             </span>
           </div>
 
-          {/* TICKER */}
+          {/* Scrolling ticker */}
 
           <div
             className="min-w-0 flex-1 overflow-hidden py-5"
             style={{
               maskImage:
                 "linear-gradient(to right, transparent 0, black 48px, black calc(100% - 48px), transparent 100%)",
+
               WebkitMaskImage:
                 "linear-gradient(to right, transparent 0, black 48px, black calc(100% - 48px), transparent 100%)",
             }}
@@ -478,7 +481,7 @@ export default function Hero() {
           }
 
           70% {
-            transform: translateY(8px);
+            transform: translateY(10px);
             opacity: 0;
           }
 
@@ -491,4 +494,3 @@ export default function Hero() {
     </section>
   );
 }
-
