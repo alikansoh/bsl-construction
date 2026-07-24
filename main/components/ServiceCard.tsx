@@ -39,7 +39,7 @@ export default function ServiceCard({
 }: ServiceCardProps) {
   return (
     <Link
-      href={`/services/${categorySlug}/${slug}`}
+      href={`/services/${slug}`}
       data-reveal
       className="group flex h-full flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-[#1C1712]/8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-20px_rgba(28,23,18,0.28)] sm:rounded-[28px]"
     >

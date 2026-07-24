@@ -87,10 +87,23 @@ export type TrustBarItem = {
   label: string;
 };
 
+/* -------------------------------------------------------------------------- */
+/* Service Type                                                               */
+/* -------------------------------------------------------------------------- */
+/*
+  The site groups every service into exactly one of three top-level
+  categories. Keep this union in sync with the category cards on the
+  homepage / services index:
+
+    01 — Construction
+    02 — Mechanical & Electrical
+    03 — Commercial
+*/
+
 export type ServiceType =
   | "construction"
-  | "trade"
-  | "property";
+  | "mechanical-electrical"
+  | "commercial";
 
 /* -------------------------------------------------------------------------- */
 /* Service                                                                    */
@@ -280,6 +293,15 @@ async function fetchJson<T>(
 /* -------------------------------------------------------------------------- */
 /* Service Type Resolver                                                      */
 /* -------------------------------------------------------------------------- */
+/*
+  Classifies a service into one of the three site-wide categories based on
+  its category name / slug / title. Keyword lists are matched against the
+  combined lowercase text, so a hit on any field is enough.
+
+  Order matters: construction and mechanical-electrical keywords are checked
+  first since they're the most specific; anything that doesn't match either
+  falls through to "commercial" as the catch-all.
+*/
 
 function getServiceType(
   categoryName: string,
@@ -295,15 +317,27 @@ function getServiceType(
     "design build",
     "new-build",
     "new build",
+    "new builds",
     "extension",
     "extensions",
     "refurbishment",
     "refurbishments",
     "renovation",
     "renovations",
+    "conversion",
+    "conversions",
     "loft-conversion",
     "loft conversion",
+    "loft conversions",
     "basement",
+    "basement conversion",
+    "basement conversions",
+    "kitchen",
+    "kitchens",
+    "bathroom",
+    "bathrooms",
+    "roofing",
+    "roof",
     "groundwork",
     "groundworks",
     "structural",
@@ -320,32 +354,44 @@ function getServiceType(
     return "construction";
   }
 
-  const propertyKeywords = [
-    "property",
-    "property-maintenance",
-    "property maintenance",
-    "property-management",
-    "property management",
-    "landlord",
-    "landlords",
-    "letting",
-    "lettings",
-    "facilities",
-    "facility",
-    "estate-management",
-    "estate management",
+  const mechanicalElectricalKeywords = [
+    "mechanical",
+    "electrical",
+    "mechanical-electrical",
+    "mechanical & electrical",
+    "m&e",
+    "m & e",
+    "plumbing",
+    "plumber",
+    "heating",
+    "boiler",
+    "boilers",
+    "heat pump",
+    "heat pumps",
+    "gas",
+    "gas services",
+    "air conditioning",
+    "air-conditioning",
+    "aircon",
+    "hvac",
+    "water regulations",
+    "water regulation",
+    "rpz",
+    "rpz testing",
   ];
 
   if (
-    propertyKeywords.some(
+    mechanicalElectricalKeywords.some(
       (keyword) =>
         categoryText.includes(keyword)
     )
   ) {
-    return "property";
+    return "mechanical-electrical";
   }
 
-  return "trade";
+  // Everything else (office fit-outs, retail, industrial, general
+  // commercial works, etc.) rolls up under Commercial.
+  return "commercial";
 }
 
 /* -------------------------------------------------------------------------- */

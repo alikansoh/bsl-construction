@@ -8,7 +8,7 @@ import {
   Check,
 } from "lucide-react";
 
-import { getServicesByCategorySlug } from "@/lib/services";
+import { getServicesByType } from "@/lib/services";
 import ServiceCard from "@/components/ServiceCard";
 import ScrollReveal from "@/components/ScrollReveal";
 
@@ -20,7 +20,7 @@ export const metadata = {
 
 export default async function ConstructionPage() {
   const services =
-    await getServicesByCategorySlug("construction");
+    await getServicesByType("construction");
 
   return (
     <main className="overflow-x-hidden bg-[#F7F4EF] text-[#1C1712]">

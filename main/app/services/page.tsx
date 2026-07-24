@@ -736,7 +736,7 @@ function CategorySection({
         {services.length > 0 && (
           <div className="mt-10 flex justify-start lg:mt-12">
             <Link
-              href={`/services/category/${category.slug}`}
+              href={`/services/${category.slug}`}
               className="
                 bsl-focus
                 group
