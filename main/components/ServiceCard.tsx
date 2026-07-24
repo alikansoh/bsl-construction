@@ -20,6 +20,7 @@ export interface ServiceCardProps {
   slug: string;
   title: string;
   shortDescription: string;
+  categorySlug?: string;
   category: string;
   image: { url: string; alt: string };
   index: number;
@@ -27,8 +28,9 @@ export interface ServiceCardProps {
 }
 
 export default function ServiceCard({
-  slug,
+  categorySlug,
   title,
+  slug,
   shortDescription,
   category,
   image,
@@ -37,7 +39,7 @@ export default function ServiceCard({
 }: ServiceCardProps) {
   return (
     <Link
-      href={`/services/${slug}`}
+      href={`/services/${categorySlug}/${slug}`}
       data-reveal
       className="group flex h-full flex-col overflow-hidden rounded-[24px] bg-white ring-1 ring-[#1C1712]/8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_-20px_rgba(28,23,18,0.28)] sm:rounded-[28px]"
     >

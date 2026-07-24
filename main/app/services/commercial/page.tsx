@@ -17,11 +17,11 @@ export const metadata = {
     "Reliable commercial maintenance, facilities support and property services across London. One experienced team, one point of contact.",
 };
 
-export default function CommercialServicesPage() {
+export default async function CommercialServicesPage() {
   const services =
-    getServicesByCategorySlug("commercial");
+    await getServicesByCategorySlug("commercial");
 
-  const trustBar = getTrustBar();
+  const trustBar = await getTrustBar();
 
   return (
     <main className="overflow-x-hidden bg-[#F8F5F0] text-[#1C1712]">
@@ -206,18 +206,29 @@ export default function CommercialServicesPage() {
 
           {/* Service cards */}
           <div className="mt-10 grid gap-6 sm:mt-14 lg:grid-cols-2">
-            {services.map((service, index) => (
-              <div key={service.id} data-reveal-group="commercial-cards">
-                <ServiceCard
-                  slug={service.slug}
-                  title={service.title}
-                  shortDescription={service.shortDescription}
-                  category={service.category}
-                  image={service.image}
-                  index={index}
-                />
-              </div>
-            ))}
+            {services.map((service, index) => {
+              const shortDescription = service.hero?.description
+                ? service.hero.description.replace(/<[^>]*>/g, "")
+                : `Professional ${service.title.toLowerCase()} services delivered by BSL Construction.`;
+
+              const image = service.hero?.image ?? {
+                url: "/com.jpg",
+                alt: service.title,
+              };
+
+              return (
+                <div key={service.id} data-reveal-group="commercial-cards">
+                  <ServiceCard
+                    slug={service.slug}
+                    title={service.title}
+                    shortDescription={shortDescription}
+                    category={service.categoryName}
+                    image={image}
+                    index={index}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

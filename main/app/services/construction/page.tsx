@@ -18,9 +18,9 @@ export const metadata = {
     "New builds, extensions and full-scale construction projects across London, delivered by one accountable team from first conversation to final handover.",
 };
 
-export default function ConstructionPage() {
+export default async function ConstructionPage() {
   const services =
-    getServicesByCategorySlug("construction");
+    await getServicesByCategorySlug("construction");
 
   return (
     <main className="overflow-x-hidden bg-[#F7F4EF] text-[#1C1712]">
@@ -53,24 +53,9 @@ export default function ConstructionPage() {
         </div>
 
         {/* Hero Content */}
-        <div className="relative mx-auto flex min-h-[100svh] max-w-[1500px] flex-col justify-between px-6 py-24 sm:min-h-[96vh] sm:px-10 sm:py-8 lg:min-h-[92vh] lg:px-16 lg:py-12">
+        <div className="relative mx-auto flex min-h-[100svh] max-w-[1500px] flex-col justify-between px-6 py-24 sm:min-h-[96vh] sm:px-10 sm:py-8 lg:min-h-[92vh] lg:px-16 lg:py-32">
           {/* Top */}
-          <div className="hidden items-center justify-between sm:flex">
-            <div className="flex items-center gap-3">
-              <span className="h-px w-10 bg-[#C58A52]" />
-
-              <span className="bsl-mono text-[10px] uppercase tracking-[0.25em] text-white/70">
-                BSL Construction
-              </span>
-            </div>
-
-            <div className="hidden items-center gap-2 text-xs text-white/60 sm:flex">
-              <span>London</span>
-              <span className="text-[#C58A52]">/</span>
-              <span>Construction</span>
-            </div>
-          </div>
-
+          
           {/* Main Hero */}
           <div className="grid gap-10 pb-8 sm:gap-12 sm:pb-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
             <div className="max-w-4xl">
@@ -252,19 +237,31 @@ export default function ConstructionPage() {
 
           {/* Dynamic Service Cards */}
           <div className="grid gap-6 lg:grid-cols-2">
-            {services.map((service, index) => (
-              <div key={service.id} data-reveal-group="construction-cards">
-                <ServiceCard
-                  slug={service.slug}
-                  title={service.title}
-                  shortDescription={service.shortDescription}
-                  category={service.category}
-                  image={service.image}
-                  index={index}
-                  accent="#A26028"
-                />
-              </div>
-            ))}
+            {services.map((service, index) => {
+              const shortDescription = service.hero?.description
+                ? service.hero.description.replace(/<[^>]*>/g, "")
+                : `Professional ${service.title.toLowerCase()} services delivered by BSL Construction.`;
+
+              const image = service.hero?.image ?? {
+                url: "/building.jpg",
+                alt: service.title,
+              };
+
+              return (
+                <div key={service.id} data-reveal-group="construction-cards">
+                  <ServiceCard
+                    slug={service.slug}
+                    categorySlug={service.categorySlug}
+                    title={service.title}
+                    shortDescription={shortDescription}
+                    category={service.categoryName}
+                    image={image}
+                    index={index}
+                    accent="#A26028"
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>

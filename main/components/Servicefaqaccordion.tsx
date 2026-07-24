@@ -4,6 +4,12 @@
  * Accessible FAQ accordion used on /services/[slug]. Single-open behavior,
  * keyboard/focus-visible support, reduced-motion friendly (no layout-shifting
  * animation beyond a short height/opacity transition).
+ *
+ * FAQ answers are stored as rich HTML (e.g. "<p><b>...</b></p>", lists,
+ * links), same as hero/section/process content elsewhere on the page — so
+ * they're rendered with dangerouslySetInnerHTML + the shared .bsl-rich-text
+ * styling (defined globally in app/services/[slug]/page.tsx) rather than as
+ * plain text, which would otherwise print literal "<p>" tags.
  * -------------------------------------------------------------------------
  */
 "use client";
@@ -63,9 +69,12 @@ export default function ServiceFaqAccordion({ faqs }: { faqs: ServiceFaq[] }) {
               }`}
             >
               <div className="min-h-0">
-                <p className="max-w-2xl pb-6 text-[0.92rem] leading-[1.7] text-[#6E6259]">
-                  {faq.answer}
-                </p>
+                {faq.answer && (
+                  <div
+                    className="bsl-rich-text max-w-2xl pb-6 text-[0.92rem] leading-[1.7] text-[#6E6259]"
+                    dangerouslySetInnerHTML={{ __html: faq.answer }}
+                  />
+                )}
               </div>
             </div>
           </div>

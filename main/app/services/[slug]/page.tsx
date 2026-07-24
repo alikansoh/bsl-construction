@@ -3,23 +3,15 @@
  * -------------------------------------------------------------------------
  * BSL Construction — Dynamic Service Detail Page
  *
- * Features:
- * - Dynamic service pages
- * - Static generation
- * - Dynamic metadata
- * - Automatic service selection in QuoteForm
- * - Service-type-aware language
- * - Construction / Trade / Property service handling
- * - Shared London-wide areas
- * - Editorial overview layout
- * - What's Included
- * - Gallery
- * - Process timeline
- * - FAQs + FAQ schema
- * - Trust bar
- * - Sticky in-page navigation
- * - On-page quote form
- * - Dynamic closing CTA
+ * API structure:
+ * - hero
+ * - sections
+ * - whatsIncluded
+ * - process
+ * - gallery
+ * - faqs
+ * - cta
+ * - seo
  * -------------------------------------------------------------------------
  */
 
@@ -42,6 +34,10 @@ import QuoteForm from "@/components/ServiceQuoteForm";
 import Reveal from "@/components/Reveal";
 import TrustBar from "@/components/TrustBar";
 
+/* -------------------------------------------------------------------------- */
+/* Fonts                                                                      */
+/* -------------------------------------------------------------------------- */
+
 const fraunces = Fraunces({
   subsets: ["latin"],
   weight: ["500", "600", "700"],
@@ -57,6 +53,10 @@ const plexMono = IBM_Plex_Mono({
   variable: "--font-plex-mono",
 });
 
+/* -------------------------------------------------------------------------- */
+/* Types                                                                      */
+/* -------------------------------------------------------------------------- */
+
 type PageProps = {
   params: Promise<{
     slug: string;
@@ -67,8 +67,10 @@ type PageProps = {
 /* Static Params                                                              */
 /* -------------------------------------------------------------------------- */
 
-export function generateStaticParams() {
-  return getAllServices().map((service) => ({
+export async function generateStaticParams() {
+  const services = await getAllServices();
+
+  return services.map((service) => ({
     slug: service.slug,
   }));
 }
@@ -82,32 +84,71 @@ export async function generateMetadata({
 }: PageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const service = getServiceBySlug(slug);
+  const service = await getServiceBySlug(slug);
 
   if (!service) {
     return {};
   }
 
   return {
-    title: service.seo.metaTitle,
-    description: service.seo.metaDescription,
-    keywords: service.seo.keywords,
+    title: service.seo?.metaTitle || service.title,
+    description:
+      service.seo?.metaDescription ||
+      service.hero?.description?.replace(/<[^>]*>/g, "") ||
+      "",
+
+    keywords: service.seo?.keywords || [],
 
     openGraph: {
-      title: service.seo.metaTitle,
-      description: service.seo.metaDescription,
-      images: [
-        {
-          url: service.image.url,
-          alt: service.image.alt,
-        },
-      ],
+      title: service.seo?.metaTitle || service.title,
+
+      description:
+        service.seo?.metaDescription ||
+        service.hero?.description?.replace(/<[^>]*>/g, "") ||
+        "",
+
+      images: service.hero?.image?.url
+        ? [
+            {
+              url: service.hero.image.url,
+              alt:
+                service.hero.image.alt ||
+                service.hero.title ||
+                service.title,
+            },
+          ]
+        : [],
     },
   };
 }
 
 /* -------------------------------------------------------------------------- */
-/* Shared Components                                                          */
+/* Rich Text                                                                  */
+/* -------------------------------------------------------------------------- */
+
+function RichText({
+  content,
+  className = "",
+}: {
+  content?: string;
+  className?: string;
+}) {
+  if (!content) {
+    return null;
+  }
+
+  return (
+    <div
+      className={`bsl-rich-text ${className}`}
+      dangerouslySetInnerHTML={{
+        __html: content,
+      }}
+    />
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Corner Ticks                                                               */
 /* -------------------------------------------------------------------------- */
 
 function CornerTicks({
@@ -169,6 +210,10 @@ function CornerTicks({
   );
 }
 
+/* -------------------------------------------------------------------------- */
+/* Arrow Icon                                                                 */
+/* -------------------------------------------------------------------------- */
+
 function ArrowIcon({
   size = 13,
 }: {
@@ -193,6 +238,10 @@ function ArrowIcon({
     </svg>
   );
 }
+
+/* -------------------------------------------------------------------------- */
+/* Section Divider                                                            */
+/* -------------------------------------------------------------------------- */
 
 function SectionDivider() {
   return (
@@ -245,134 +294,115 @@ export default async function ServiceDetailPage({
 }: PageProps) {
   const { slug } = await params;
 
-  const service = getServiceBySlug(slug);
+  const service = await getServiceBySlug(slug);
 
   if (!service) {
     notFound();
   }
 
   /* ------------------------------------------------------------------------ */
-  /* Content Flags                                                            */
+  /* Dynamic Data                                                             */
   /* ------------------------------------------------------------------------ */
+
+  const hero = service.hero;
+
+  const sections =
+    service.sections?.filter(
+      (section) =>
+        section &&
+        (section.title ||
+          section.content ||
+          section.image?.url)
+    ) || [];
+
+  const includedItems =
+    service.whatsIncluded?.items?.filter(
+      (item) => item?.trim()
+    ) || [];
+
+  const processSteps =
+    service.process?.steps?.filter(
+      (step) =>
+        step &&
+        (step.title ||
+          step.content)
+    ) || [];
+
+  const gallery =
+    service.gallery?.filter(
+      (image) => image?.url
+    ) || [];
+
+  const faqs =
+    service.faqs?.filter(
+      (faq) =>
+        faq &&
+        faq.question
+    ) || [];
+
+  const hasSections =
+    sections.length > 0;
 
   const hasWhatsIncluded =
-    (service.whatsIncluded?.items?.length ?? 0) > 0;
-
-  const hasFaqs =
-    service.faqs?.length > 0;
-
-  const hasGallery =
-    (service.gallery?.length ?? 0) > 0;
+    includedItems.length > 0;
 
   const hasProcess =
-    service.process?.length > 0;
+    processSteps.length > 0;
+
+  const hasGallery =
+    gallery.length > 0;
+
+  const hasFaqs =
+    faqs.length > 0;
 
   const trustBarItems =
-    getTrustBar();
+    await getTrustBar();
 
   /* ------------------------------------------------------------------------ */
-  /* Service Type                                                             */
+  /* Dynamic Labels                                                           */
   /* ------------------------------------------------------------------------ */
 
-  const serviceType =
-    service.serviceType ?? "trade";
+  const serviceTitle =
+    service.title || "Service";
 
-  const isConstruction =
-    serviceType === "construction";
-
-  const isTrade =
-    serviceType === "trade";
-
-  const isProperty =
-    serviceType === "property";
-
-  /* ------------------------------------------------------------------------ */
-  /* Dynamic Language                                                         */
-  /* ------------------------------------------------------------------------ */
-
-  const workLabel =
-    isConstruction
-      ? "project"
-      : isProperty
-        ? "property work"
-        : "service";
-
-  const workPluralLabel =
-    isConstruction
-      ? "projects"
-      : isProperty
-        ? "property services"
-        : "services";
+  const categoryName =
+    service.categoryName ||
+    "Construction";
 
   const overviewTitle =
-    isConstruction
-      ? `A considered approach to ${service.title.toLowerCase()}.`
-      : isTrade
-        ? `Professional ${service.title.toLowerCase()}, carried out properly.`
-        : `Reliable ${service.title.toLowerCase()} for your property.`;
+    `Professional ${serviceTitle.toLowerCase()}, carried out properly.`;
 
   const overviewDescription =
-    isConstruction
-      ? "Every project is approached with the same focus on quality, clear communication and careful coordination. From the first conversation through to completion, our team keeps the work organised, transparent and accountable."
-      : isTrade
-        ? `Every ${service.title.toLowerCase()} job is approached with a focus on quality, clear communication and professional workmanship. From the initial enquiry through to completion, our team keeps the work organised, transparent and accountable.`
-        : `Every ${service.title.toLowerCase()} service is approached with care, clear communication and attention to detail. Our team keeps the work organised, transparent and focused on delivering a properly finished result.`;
+    hero?.description ||
+    `We provide professional ${serviceTitle.toLowerCase()} services across London, with a focus on quality, clear communication and properly managed workmanship.`;
 
   const areasTitle =
-    isConstruction
-      ? "Delivering projects across London."
-      : isTrade
-        ? "Providing professional services across London."
-        : "Supporting properties across London.";
+    `Providing ${serviceTitle.toLowerCase()} services across London.`;
 
   const areasDescription =
-    isConstruction
-      ? "BSL Construction works across London, supporting homeowners, developers, landlords, property managers and commercial clients with professional construction and property services."
-      : isTrade
-        ? `BSL Construction provides professional ${service.title.toLowerCase()} services across London for homeowners, landlords, property managers and commercial clients.`
-        : `BSL Construction provides professional property services across London, supporting homeowners, landlords, property managers and commercial clients.`;
+    `BSL Construction provides professional ${serviceTitle.toLowerCase()} services across London for homeowners, landlords, property managers and commercial clients.`;
 
   const quoteTitle =
-    isConstruction
-      ? `Let's talk about your ${service.title.toLowerCase()} project.`
-      : isTrade
-        ? `Let's talk about your ${service.title.toLowerCase()} needs.`
-        : `Let's talk about your property requirements.`;
+    `Let's talk about your ${serviceTitle.toLowerCase()} needs.`;
 
   const quoteDescription =
-    isConstruction
-      ? "Tell us about your plans, your property and what you're looking to achieve. Our team will review your requirements and get back to you."
-      : isTrade
-        ? `Tell us what you need for your ${service.title.toLowerCase()}. Our team will review your requirements and get back to you with the next steps.`
-        : "Tell us what you need and our team will review your requirements and get back to you with the next steps.";
+    `Tell us what you need for your ${serviceTitle.toLowerCase()}. Our team will review your requirements and get back to you with the next steps.`;
 
   const closingTitle =
-    service.cta?.title ??
-    (
-      isConstruction
-        ? `Let's scope your ${service.title.toLowerCase()} project.`
-        : isTrade
-          ? `Need professional ${service.title.toLowerCase()}?`
-          : `Let's discuss your property requirements.`
-    );
+    service.cta?.title ||
+    `Need professional ${serviceTitle.toLowerCase()}?`;
 
   const closingContent =
-    service.cta?.content ??
-    (
-      isConstruction
-        ? "Tell us what you're planning and we'll come back with a clear, honest scope — no obligation, no upsell."
-        : isTrade
-          ? `Tell us what you need and we'll come back with a clear, honest scope for your ${service.title.toLowerCase()} — no obligation, no upsell.`
-          : "Tell us what you need and we'll come back with a clear, honest scope — no obligation, no upsell."
-    );
+    service.cta?.content ||
+    `Tell us what you need and we'll come back with a clear, honest scope for your ${serviceTitle.toLowerCase()}.`;
 
   const closingButton =
-    service.cta?.buttonLabel ??
-    (
-      isConstruction
-        ? "Discuss Your Project"
-        : "Request a Quote"
-    );
+    service.cta?.buttonLabel ||
+    "Request a Quote";
+
+  const closingButtonHref =
+    service.cta?.buttonHref ||
+    "#quote";
 
   /* ------------------------------------------------------------------------ */
   /* FAQ Schema                                                               */
@@ -382,19 +412,27 @@ export default async function ServiceDetailPage({
     ? {
         "@context": "https://schema.org",
         "@type": "FAQPage",
-        mainEntity: service.faqs.map((faq) => ({
+
+        mainEntity: faqs.map((faq) => ({
           "@type": "Question",
+
           name: faq.question,
+
           acceptedAnswer: {
             "@type": "Answer",
-            text: faq.answer,
+
+            text:
+              faq.answer?.replace(
+                /<[^>]*>/g,
+                ""
+              ) || "",
           },
         })),
       }
     : null;
 
   /* ------------------------------------------------------------------------ */
-  /* In-page Navigation                                                       */
+  /* In Page Navigation                                                       */
   /* ------------------------------------------------------------------------ */
 
   const inPageNav = [
@@ -407,7 +445,7 @@ export default async function ServiceDetailPage({
       ? [
           {
             href: "#included",
-            label: "What's included",
+            label: "What's Included",
           },
         ]
       : []),
@@ -425,14 +463,14 @@ export default async function ServiceDetailPage({
       ? [
           {
             href: "#process",
-            label: "How it works",
+            label: "How It Works",
           },
         ]
       : []),
 
     {
       href: "#areas",
-      label: "Areas we cover",
+      label: "Areas We Cover",
     },
 
     ...(hasFaqs
@@ -446,9 +484,13 @@ export default async function ServiceDetailPage({
 
     {
       href: "#quote",
-      label: "Get a quote",
+      label: "Get a Quote",
     },
   ];
+
+  /* ------------------------------------------------------------------------ */
+  /* Render                                                                   */
+  /* ------------------------------------------------------------------------ */
 
   return (
     <main
@@ -516,6 +558,41 @@ export default async function ServiceDetailPage({
           scroll-behavior: smooth;
         }
 
+        .bsl-rich-text p {
+          margin-bottom: 1rem;
+        }
+
+        .bsl-rich-text p:last-child {
+          margin-bottom: 0;
+        }
+
+        .bsl-rich-text ul {
+          list-style: disc;
+          padding-left: 1.5rem;
+          margin: 1rem 0;
+        }
+
+        .bsl-rich-text ol {
+          list-style: decimal;
+          padding-left: 1.5rem;
+          margin: 1rem 0;
+        }
+
+        .bsl-rich-text li {
+          margin-bottom: 0.5rem;
+        }
+
+        .bsl-rich-text strong,
+        .bsl-rich-text b {
+          font-weight: 600;
+        }
+
+        .bsl-rich-text a {
+          color: #A26028;
+          text-decoration: underline;
+          text-underline-offset: 3px;
+        }
+
         @keyframes bsl-kenburns {
           from {
             transform: scale(1.03) translate3d(0, 0, 0);
@@ -551,19 +628,6 @@ export default async function ServiceDetailPage({
             brightness(1.02);
         }
 
-        .bsl-reveal {
-          opacity: 0;
-          transform: translateY(16px);
-          transition:
-            opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1),
-            transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .bsl-reveal-visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
         @media (prefers-reduced-motion: reduce) {
           html {
             scroll-behavior: auto;
@@ -582,25 +646,8 @@ export default async function ServiceDetailPage({
             transform: none;
             filter: none;
           }
-
-          .bsl-reveal {
-            opacity: 1;
-            transform: none;
-            transition: none;
-          }
         }
       `}</style>
-
-      <noscript>
-        <style>
-          {`
-            .bsl-reveal {
-              opacity: 1 !important;
-              transform: none !important;
-            }
-          `}
-        </style>
-      </noscript>
 
       {/* ================================================================== */}
       {/* FAQ SCHEMA                                                          */}
@@ -610,7 +657,8 @@ export default async function ServiceDetailPage({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(faqSchema),
+            __html:
+              JSON.stringify(faqSchema),
           }}
         />
       )}
@@ -620,16 +668,26 @@ export default async function ServiceDetailPage({
       {/* ================================================================== */}
 
       <header className="relative overflow-hidden px-5 pb-20 pt-32 sm:px-8 lg:px-12 lg:pb-28 lg:pt-40">
-        <div className="absolute inset-0 overflow-hidden">
-          <Image
-            src={service.image.url}
-            alt={service.image.alt}
-            fill
-            priority
-            sizes="100vw"
-            className="bsl-hero-image object-cover"
-          />
-        </div>
+        {/* Hero Image */}
+
+        {hero?.image?.url && (
+          <div className="absolute inset-0 overflow-hidden">
+            <Image
+              src={hero.image.url}
+              alt={
+                hero.image.alt ||
+                hero.title ||
+                serviceTitle
+              }
+              fill
+              priority
+              sizes="100vw"
+              className="bsl-hero-image object-cover"
+            />
+          </div>
+        )}
+
+        {/* Overlay */}
 
         <div
           aria-hidden="true"
@@ -723,6 +781,8 @@ export default async function ServiceDetailPage({
           </span>
         </div>
 
+        {/* Hero Content */}
+
         <div className="relative mx-auto max-w-[1180px]">
           {/* Breadcrumb */}
 
@@ -742,11 +802,11 @@ export default async function ServiceDetailPage({
             </span>
 
             <span className="text-white/85">
-              {service.title}
+              {serviceTitle}
             </span>
           </nav>
 
-          {/* Category */}
+          {/* Eyebrow */}
 
           <span className="bsl-mono mb-4 inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.28em] text-[#E8C599]">
             <span
@@ -754,13 +814,15 @@ export default async function ServiceDetailPage({
               className="h-px w-6 bg-[#E8C599]"
             />
 
-            {service.category}
+            {hero?.eyebrow ||
+              categoryName}
           </span>
 
           {/* Title */}
 
           <h1 className="bsl-serif mb-5 max-w-2xl text-[clamp(2.6rem,5.6vw,4.2rem)] font-semibold leading-[1.05] tracking-[-0.02em] text-white">
-            {service.title}
+            {hero?.title ||
+              serviceTitle}
           </h1>
 
           <div
@@ -768,29 +830,42 @@ export default async function ServiceDetailPage({
             className="bsl-gold-rule mb-6 h-px w-24"
           />
 
-          <p className="max-w-2xl text-[clamp(1.05rem,1.6vw,1.25rem)] leading-[1.75] text-white/70">
-            {service.shortDescription}
-          </p>
+          {/* Description */}
+
+          <RichText
+            content={
+              hero?.description
+            }
+            className="max-w-2xl text-[clamp(1.05rem,1.6vw,1.25rem)] leading-[1.75] text-white/70"
+          />
 
           {/* Hero CTAs */}
 
           <div className="mt-9 flex flex-wrap items-center gap-4">
-            <Link
-              href="#quote"
-              className="bsl-focus group inline-flex items-center gap-2 rounded-full bg-[#A26028] px-7 py-3 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#8A5121] hover:shadow-[0_14px_28px_-12px_rgba(162,96,40,0.55)]"
-            >
-              {service.primaryCta?.label ??
-                "Get a Quote"}
-
-              <ArrowIcon />
-            </Link>
-
-            {service.secondaryCta && (
+            {hero?.primaryCta && (
               <Link
-                href={service.secondaryCta.href}
+                href={
+                  hero.primaryCta.href ||
+                  "#quote"
+                }
+                className="bsl-focus group inline-flex items-center gap-2 rounded-full bg-[#A26028] px-7 py-3 text-[0.82rem] font-semibold uppercase tracking-[0.08em] text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#8A5121] hover:shadow-[0_14px_28px_-12px_rgba(162,96,40,0.55)]"
+              >
+                {hero.primaryCta.label ||
+                  "Get a Quote"}
+
+                <ArrowIcon />
+              </Link>
+            )}
+
+            {hero?.secondaryCta && (
+              <Link
+                href={
+                  hero.secondaryCta.href ||
+                  "#"
+                }
                 className="bsl-focus bsl-mono text-[0.78rem] font-medium uppercase tracking-[0.06em] text-white/75 underline decoration-white/30 underline-offset-4 transition-colors hover:text-white"
               >
-                {service.secondaryCta.label}
+                {hero.secondaryCta.label}
               </Link>
             )}
           </div>
@@ -801,13 +876,17 @@ export default async function ServiceDetailPage({
       {/* TRUST BAR                                                           */}
       {/* ================================================================== */}
 
-      <TrustBar items={trustBarItems} />
+      <TrustBar
+        items={trustBarItems}
+      />
 
       {/* ================================================================== */}
-      {/* IN-PAGE NAV                                                         */}
+      {/* IN PAGE NAV                                                         */}
       {/* ================================================================== */}
 
-      <ServiceSectionNav items={inPageNav} />
+      <ServiceSectionNav
+        items={inPageNav}
+      />
 
       {/* ================================================================== */}
       {/* OVERVIEW                                                            */}
@@ -818,7 +897,6 @@ export default async function ServiceDetailPage({
         className="scroll-mt-16 bg-[#FAF7F2] px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
       >
         <div className="mx-auto max-w-[1180px]">
-
           {/* Intro Header */}
 
           <div className="mb-16 grid gap-10 lg:mb-24 lg:grid-cols-[1fr_0.75fr] lg:items-end">
@@ -838,9 +916,12 @@ export default async function ServiceDetailPage({
             </div>
 
             <div className="border-l border-[#A26028]/25 pl-6 lg:pl-8">
-              <p className="text-[1rem] leading-[1.85] text-[#5C544A]">
-                {overviewDescription}
-              </p>
+              <RichText
+                content={
+                  overviewDescription
+                }
+                className="text-[1rem] leading-[1.85] text-[#5C544A]"
+              />
 
               <div className="mt-7 flex items-center gap-3">
                 <span className="h-px w-8 bg-[#A26028]" />
@@ -852,106 +933,158 @@ export default async function ServiceDetailPage({
             </div>
           </div>
 
-          {/* Overview Rows */}
+          {/* Overview Sections */}
 
-          <div className="space-y-28 lg:space-y-36">
-            {service.sections.map((sec, i) => {
-              const imageOnRight =
-                sec.layout === "image-right";
+          {hasSections && (
+            <div className="space-y-28 lg:space-y-36">
+              {sections.map(
+                (section, i) => {
+                  const imageOnRight =
+                    section.layout ===
+                    "image-right";
 
-              const position =
-                `${String(i + 1).padStart(2, "0")} / ${String(
-                  service.sections.length
-                ).padStart(2, "0")}`;
+                  const position =
+                    `${String(i + 1).padStart(
+                      2,
+                      "0"
+                    )} / ${String(
+                      sections.length
+                    ).padStart(
+                      2,
+                      "0"
+                    )}`;
 
-              return (
-                <Reveal
-                  key={sec.id}
-                  id={sec.id}
-                  className="scroll-mt-24"
-                >
-                  <div
-                    className={`bsl-section-row group mx-auto flex max-w-[1080px] flex-col items-start gap-12 lg:gap-16 ${
-                      imageOnRight
-                        ? "lg:flex-row-reverse"
-                        : "lg:flex-row"
-                    }`}
-                  >
-                    {/* Image */}
+                  return (
+                    <Reveal
+                      key={
+                        section._id ||
+                        section.id ||
+                        i
+                      }
+                      id={
+                        section.id ||
+                        undefined
+                      }
+                      className="scroll-mt-24"
+                    >
+                      <div
+                        className={`bsl-section-row group mx-auto flex max-w-[1080px] flex-col items-start gap-12 lg:gap-16 ${
+                          imageOnRight
+                            ? "lg:flex-row-reverse"
+                            : "lg:flex-row"
+                        }`}
+                      >
+                        {/* Image */}
 
-                    <figure className="w-full shrink-0 lg:w-[46%]">
-                      <div className="relative mx-auto max-w-[480px] p-4 lg:mx-0">
-                        <span
-                          aria-hidden="true"
-                          className="absolute inset-2 -z-10 translate-x-3 translate-y-3 bg-[#E8C599]/25 lg:translate-x-4 lg:translate-y-4"
-                        />
-
-                        <div className="relative bg-[#FAF7F2] p-2.5 shadow-[0_1px_3px_rgba(28,23,18,0.08)] ring-1 ring-[#1C1712]/[0.06]">
-                          <CornerTicks />
-
-                          <div className="relative aspect-[6/7] w-full overflow-hidden">
-                            {sec.image && (
-                              <Image
-                                src={sec.image.url}
-                                alt={sec.image.alt}
-                                fill
-                                sizes="(min-width: 1024px) 480px, 86vw"
-                                className="bsl-section-image object-cover"
+                        {section.image?.url && (
+                          <figure className="w-full shrink-0 lg:w-[46%]">
+                            <div className="relative mx-auto max-w-[480px] p-4 lg:mx-0">
+                              <span
+                                aria-hidden="true"
+                                className="absolute inset-2 -z-10 translate-x-3 translate-y-3 bg-[#E8C599]/25 lg:translate-x-4 lg:translate-y-4"
                               />
-                            )}
-                          </div>
+
+                              <div className="relative bg-[#FAF7F2] p-2.5 shadow-[0_1px_3px_rgba(28,23,18,0.08)] ring-1 ring-[#1C1712]/[0.06]">
+                                <CornerTicks />
+
+                                <div className="relative aspect-[6/7] w-full overflow-hidden">
+                                  <Image
+                                    src={
+                                      section
+                                        .image
+                                        .url
+                                    }
+                                    alt={
+                                      section
+                                        .image
+                                        .alt ||
+                                      section.title ||
+                                      serviceTitle
+                                    }
+                                    fill
+                                    sizes="(min-width: 1024px) 480px, 86vw"
+                                    className="bsl-section-image object-cover"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            <figcaption className="mt-3 flex items-baseline gap-3 px-4">
+                              <span className="bsl-mono shrink-0 text-[0.68rem] font-medium tracking-[0.08em] text-[#A26028]">
+                                Fig.{" "}
+                                {String(
+                                  i + 1
+                                ).padStart(
+                                  2,
+                                  "0"
+                                )}
+                              </span>
+
+                              <span className="bsl-mono text-[0.72rem] leading-snug tracking-[0.01em] text-[#8A8074]">
+                                {
+                                  section
+                                    .image
+                                    .alt
+                                }
+                              </span>
+                            </figcaption>
+                          </figure>
+                        )}
+
+                        {/* Text */}
+
+                        <div className="w-full lg:w-[50%] lg:pt-8">
+                          <span className="bsl-mono mb-4 inline-flex items-center gap-3 text-[0.68rem] font-medium tracking-[0.2em] text-[#A26028]">
+                            <span
+                              aria-hidden="true"
+                              className="h-px w-6 bg-[#A26028]/60"
+                            />
+
+                            {position}
+                          </span>
+
+                          {section.title && (
+                            <h3 className="bsl-serif mb-5 max-w-[26ch] text-[clamp(1.7rem,2.8vw,2.35rem)] font-medium leading-[1.22] tracking-[-0.01em] text-[#1C1712]">
+                              {section.title}
+                            </h3>
+                          )}
+
+                          <RichText
+                            content={
+                              section.content
+                            }
+                            className="max-w-[50ch] text-[1rem] leading-[1.9] text-[#5C544A]"
+                          />
+
+                          {section.cta && (
+                            <Link
+                              href={
+                                section
+                                  .cta
+                                  .href ||
+                                "#quote"
+                              }
+                              className="bsl-focus group/cta mt-7 inline-flex items-center gap-2 rounded-full border border-[#A26028] px-5 py-2.5 text-[0.76rem] font-semibold uppercase tracking-[0.06em] text-[#A26028] transition-all duration-200 ease-out hover:bg-[#A26028] hover:text-white"
+                            >
+                              {
+                                section
+                                  .cta
+                                  .label
+                              }
+
+                              <ArrowIcon
+                                size={12}
+                              />
+                            </Link>
+                          )}
                         </div>
                       </div>
-
-                      {sec.image && (
-                        <figcaption className="mt-3 flex items-baseline gap-3 px-4">
-                          <span className="bsl-mono shrink-0 text-[0.68rem] font-medium tracking-[0.08em] text-[#A26028]">
-                            Fig. {String(i + 1).padStart(2, "0")}
-                          </span>
-
-                          <span className="bsl-mono text-[0.72rem] leading-snug tracking-[0.01em] text-[#8A8074]">
-                            {sec.image.alt}
-                          </span>
-                        </figcaption>
-                      )}
-                    </figure>
-
-                    {/* Text */}
-
-                    <div className="w-full lg:w-[50%] lg:pt-8">
-                      <span className="bsl-mono mb-4 inline-flex items-center gap-3 text-[0.68rem] font-medium tracking-[0.2em] text-[#A26028]">
-                        <span
-                          aria-hidden="true"
-                          className="h-px w-6 bg-[#A26028]/60"
-                        />
-
-                        {position}
-                      </span>
-
-                      <h3 className="bsl-serif mb-5 max-w-[26ch] text-[clamp(1.7rem,2.8vw,2.35rem)] font-medium leading-[1.22] tracking-[-0.01em] text-[#1C1712]">
-                        {sec.heading}
-                      </h3>
-
-                      <p className="mb-7 max-w-[50ch] text-[1rem] leading-[1.9] text-[#5C544A]">
-                        {sec.body}
-                      </p>
-
-                      {sec.cta && (
-                        <Link
-                          href={sec.cta.href}
-                          className="bsl-focus group/cta inline-flex items-center gap-2 rounded-full border border-[#A26028] px-5 py-2.5 text-[0.76rem] font-semibold uppercase tracking-[0.06em] text-[#A26028] transition-all duration-200 ease-out hover:bg-[#A26028] hover:text-white"
-                        >
-                          {sec.cta.label}
-
-                          <ArrowIcon size={12} />
-                        </Link>
-                      )}
-                    </div>
-                  </div>
-                </Reveal>
-              );
-            })}
-          </div>
+                    </Reveal>
+                  );
+                }
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -968,7 +1101,6 @@ export default async function ServiceDetailPage({
             className="scroll-mt-16 bg-white px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
           >
             <div className="mx-auto max-w-[1180px]">
-
               <div className="grid gap-10 border-b border-[#1C1712]/10 pb-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-end">
                 <div>
                   <span className="bsl-mono mb-4 inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-[#A26028]">
@@ -977,7 +1109,8 @@ export default async function ServiceDetailPage({
                       className="h-px w-6 bg-[#A26028]"
                     />
 
-                    {service.whatsIncluded?.title ??
+                    {service.whatsIncluded
+                      ?.title ||
                       "What's Included"}
                   </span>
 
@@ -987,25 +1120,36 @@ export default async function ServiceDetailPage({
                 </div>
 
                 <div className="lg:max-w-xl lg:justify-self-end">
-                  <p className="text-[1rem] leading-[1.85] text-[#5C544A]">
-                    {service.whatsIncluded?.intro ??
-                      "From the initial scope through to completion, our team coordinates the essential elements of the work with a clear focus on quality, safety and a properly finished result."}
-                  </p>
+                  <RichText
+                    content={
+                      service
+                        .whatsIncluded
+                        ?.intro
+                    }
+                    className="text-[1rem] leading-[1.85] text-[#5C544A]"
+                  />
                 </div>
               </div>
 
               <div className="mt-12 grid gap-x-10 gap-y-0 md:grid-cols-2 lg:grid-cols-3">
-                {service.whatsIncluded!.items.map(
+                {includedItems.map(
                   (item, i) => (
                     <Reveal
-                      key={item}
-                      delay={Math.min(i * 60, 240)}
-                      className="group relative border-b border-[#1C1712]/10 py-7 first:pt-0 md:nth-[2]:pt-0 lg:nth-[3]:pt-0"
+                      key={`${item}-${i}`}
+                      delay={Math.min(
+                        i * 60,
+                        240
+                      )}
+                      className="group relative border-b border-[#1C1712]/10 py-7 first:pt-0"
                     >
                       <div className="flex items-start gap-5">
-
                         <span className="bsl-mono shrink-0 text-[0.7rem] font-medium tracking-[0.12em] text-[#A26028]">
-                          {String(i + 1).padStart(2, "0")}
+                          {String(
+                            i + 1
+                          ).padStart(
+                            2,
+                            "0"
+                          )}
                         </span>
 
                         <div>
@@ -1068,7 +1212,6 @@ export default async function ServiceDetailPage({
             className="scroll-mt-16 bg-[#FAF7F2] px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
           >
             <div className="mx-auto max-w-[1080px]">
-
               <div className="mb-9 flex flex-wrap items-end justify-between gap-4">
                 <div>
                   <span className="bsl-mono mb-3 inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-[#A26028]">
@@ -1082,7 +1225,7 @@ export default async function ServiceDetailPage({
 
                   <h2 className="bsl-serif max-w-2xl text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold leading-[1.15] text-[#1C1712]">
                     A closer look at{" "}
-                    {service.title.toLowerCase()}{" "}
+                    {serviceTitle.toLowerCase()}{" "}
                     on site.
                   </h2>
                 </div>
@@ -1093,8 +1236,8 @@ export default async function ServiceDetailPage({
               </div>
 
               <ServiceGallerySlider
-                images={service.gallery}
-                title={service.title}
+                images={gallery}
+                title={serviceTitle}
               />
             </div>
           </section>
@@ -1114,54 +1257,81 @@ export default async function ServiceDetailPage({
             className="scroll-mt-16 bg-white px-5 py-20 sm:px-8 lg:py-28"
           >
             <div className="mx-auto max-w-[780px]">
-
               <span className="bsl-mono mb-3 inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-[#A26028]">
                 <span
                   aria-hidden="true"
                   className="h-px w-6 bg-[#A26028]"
                 />
 
-                How it works
+                How It Works
               </span>
 
               <h2 className="bsl-serif mb-4 text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold leading-[1.15] text-[#1C1712]">
-                {service.processTitle ??
-                  "From first visit to completion"}
+                {service.process
+                  ?.title ||
+                  "From first conversation to completion"}
               </h2>
 
-              {service.processDescription && (
-                <p className="mb-11 max-w-xl text-[1rem] leading-[1.7] text-[#5C544A]">
-                  {service.processDescription}
-                </p>
+              {service.process
+                ?.description && (
+                <RichText
+                  content={
+                    service.process
+                      .description
+                  }
+                  className="mb-11 max-w-xl text-[1rem] leading-[1.7] text-[#5C544A]"
+                />
               )}
 
               <ol className="relative space-y-11 border-l border-[#1C1712]/10 pl-9">
-                {service.process.map(
+                {processSteps.map(
                   (step, i) => (
                     <Reveal
                       as="li"
-                      key={step.step}
-                      delay={Math.min(i * 80, 240)}
+                      key={
+                        step._id ||
+                        `${step.step}-${i}`
+                      }
+                      delay={Math.min(
+                        i * 80,
+                        240
+                      )}
                       className="relative"
                     >
                       <span
                         aria-hidden="true"
                         className="bsl-mono absolute -left-[2.95rem] flex h-10 w-10 items-center justify-center rounded-full border border-[#A26028]/25 bg-[#1C1712] text-[0.82rem] font-medium text-[#E8C599] shadow-[0_6px_16px_-6px_rgba(162,96,40,0.45)]"
                       >
-                        {String(step.step).padStart(2, "0")}
+                        {String(
+                          step.step ||
+                            i + 1
+                        ).padStart(
+                          2,
+                          "0"
+                        )}
                       </span>
 
                       <p className="bsl-mono mb-1.5 text-[0.68rem] font-medium uppercase tracking-[0.22em] text-[#A26028]">
-                        Step {String(step.step).padStart(2, "0")}
+                        Step{" "}
+                        {String(
+                          step.step ||
+                            i + 1
+                        ).padStart(
+                          2,
+                          "0"
+                        )}
                       </p>
 
                       <h3 className="bsl-serif mb-2 text-[1.2rem] font-semibold text-[#1C1712]">
                         {step.title}
                       </h3>
 
-                      <p className="max-w-lg text-[1rem] leading-[1.75] text-[#5C544A]">
-                        {step.description}
-                      </p>
+                      <RichText
+                        content={
+                          step.content
+                        }
+                        className="max-w-lg text-[1rem] leading-[1.75] text-[#5C544A]"
+                      />
                     </Reveal>
                   )
                 )}
@@ -1182,9 +1352,7 @@ export default async function ServiceDetailPage({
         className="scroll-mt-16 bg-[#1C1712] px-5 py-20 text-white sm:px-8 lg:px-10 lg:py-28"
       >
         <div className="mx-auto max-w-[1180px]">
-
           <div className="grid gap-14 lg:grid-cols-[0.8fr_1.2fr]">
-
             {/* Left */}
 
             <div>
@@ -1197,23 +1365,27 @@ export default async function ServiceDetailPage({
                 Areas We Cover
               </span>
 
-              <h2 className="bsl-serif max-w-md text-[clamp(2rem,3.5vw,2.8rem)] font-semibold leading-[1.12] tracking-[-0.02em]">
+              <h2 className="bsl-serif max-w-md text-[clamp(2rem,3.5vw,2.8rem)] font-semibold leading-[1.12] tracking-[-0.02em]"
+              >
                 {areasTitle}
               </h2>
 
-              <p className="mt-6 max-w-md text-[1rem] leading-[1.85] text-white/60">
-                {areasDescription}
-              </p>
+              <RichText
+                content={
+                  areasDescription
+                }
+                className="mt-6 max-w-md text-[1rem] leading-[1.85] text-white/60"
+              />
 
               <Link
                 href="#quote"
                 className="bsl-focus group mt-8 inline-flex items-center gap-2 rounded-full border border-[#E8C599]/50 px-5 py-2.5 text-[0.76rem] font-semibold uppercase tracking-[0.06em] text-[#E8C599] transition-colors hover:bg-[#E8C599] hover:text-[#1C1712]"
               >
-                {isConstruction
-                  ? "Discuss Your Project"
-                  : "Request a Quote"}
+                Request a Quote
 
-                <ArrowIcon size={12} />
+                <ArrowIcon
+                  size={12}
+                />
               </Link>
             </div>
 
@@ -1227,7 +1399,12 @@ export default async function ServiceDetailPage({
                     className="flex items-center gap-3 border-b border-white/10 py-5"
                   >
                     <span className="bsl-mono text-[0.62rem] text-[#E8C599]/60">
-                      {String(i + 1).padStart(2, "0")}
+                      {String(
+                        i + 1
+                      ).padStart(
+                        2,
+                        "0"
+                      )}
                     </span>
 
                     <span className="text-[0.88rem] text-white/75">
@@ -1253,7 +1430,6 @@ export default async function ServiceDetailPage({
           className="scroll-mt-16 bg-[#FAF7F2] px-5 py-20 sm:px-8 lg:py-28"
         >
           <div className="mx-auto max-w-[820px]">
-
             <span className="bsl-mono mb-3 inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-[#A26028]">
               <span
                 aria-hidden="true"
@@ -1265,11 +1441,11 @@ export default async function ServiceDetailPage({
 
             <h2 className="bsl-serif mb-9 text-[clamp(1.7rem,2.8vw,2.2rem)] font-semibold leading-[1.15] text-[#1C1712]">
               Frequently asked about{" "}
-              {service.title.toLowerCase()}
+              {serviceTitle.toLowerCase()}
             </h2>
 
             <ServiceFaqAccordion
-              faqs={service.faqs}
+              faqs={faqs}
             />
           </div>
         </section>
@@ -1284,10 +1460,8 @@ export default async function ServiceDetailPage({
         className="scroll-mt-16 bg-[#FAF7F2] px-5 py-20 sm:px-8 lg:px-10 lg:py-28"
       >
         <div className="mx-auto max-w-[1180px]">
-
           <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20">
-
-            {/* Left Content */}
+            {/* Left */}
 
             <div>
               <span className="bsl-mono mb-4 inline-flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.24em] text-[#A26028]">
@@ -1303,27 +1477,34 @@ export default async function ServiceDetailPage({
                 {quoteTitle}
               </h2>
 
-              <p className="mt-6 max-w-lg text-[1rem] leading-[1.85] text-[#5C544A]">
-                {quoteDescription}
-              </p>
+              <RichText
+                content={
+                  quoteDescription
+                }
+                className="mt-6 max-w-lg text-[1rem] leading-[1.85] text-[#5C544A]"
+              />
 
               <div className="mt-8 border-l border-[#A26028]/30 pl-6">
                 <p className="bsl-mono text-[0.7rem] uppercase tracking-[0.12em] text-[#8A8074]">
-                  Service enquiry
+                  Service Enquiry
                 </p>
 
                 <p className="mt-2 text-sm font-medium text-[#1C1712]">
-                  {service.title}
+                  {serviceTitle}
                 </p>
               </div>
             </div>
 
-            {/* Quote Form */}
+            {/* Form */}
 
             <div>
               <QuoteForm
-                defaultService={service.title}
-                serviceSlug={service.slug}
+                defaultService={
+                  serviceTitle
+                }
+                serviceSlug={
+                  service.slug
+                }
               />
             </div>
           </div>
@@ -1336,11 +1517,14 @@ export default async function ServiceDetailPage({
 
       <div className="bg-white px-5 py-14 sm:px-8 lg:px-10 lg:py-16">
         <Reveal className="relative mx-auto flex max-w-[1180px] flex-col items-start gap-6 overflow-hidden rounded-[28px] bg-[#1C1712] px-7 py-10 sm:px-10 lg:flex-row lg:items-center lg:justify-between lg:px-14 lg:py-14">
+          {/* Grain */}
 
           <div
             aria-hidden="true"
             className="bsl-grain pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-overlay"
           />
+
+          {/* Corner */}
 
           <svg
             aria-hidden="true"
@@ -1406,27 +1590,38 @@ export default async function ServiceDetailPage({
             />
           </svg>
 
+          {/* Content */}
+
           <div className="relative max-w-lg">
             <span className="bsl-mono mb-3 inline-flex items-center gap-2 text-[0.66rem] font-medium uppercase tracking-[0.24em] text-[#E8C599]">
-              Ready to start?
+              Ready to Start?
             </span>
 
             <h2 className="bsl-serif mb-3 text-[clamp(1.6rem,2.9vw,2.2rem)] font-semibold leading-tight text-white">
               {closingTitle}
             </h2>
 
-            <p className="text-[1rem] leading-[1.65] text-white/65">
-              {closingContent}
-            </p>
+            <RichText
+              content={
+                closingContent
+              }
+              className="text-[1rem] leading-[1.65] text-white/65"
+            />
           </div>
 
+          {/* CTA */}
+
           <Link
-            href="#quote"
+            href={
+              closingButtonHref
+            }
             className="bsl-focus group relative inline-flex shrink-0 items-center gap-2 rounded-full bg-[#A26028] px-7 py-3.5 text-[0.88rem] font-semibold uppercase tracking-[0.08em] text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#8A5121] hover:shadow-[0_16px_32px_-14px_rgba(162,96,40,0.6)]"
           >
             {closingButton}
 
-            <ArrowIcon size={14} />
+            <ArrowIcon
+              size={14}
+            />
           </Link>
         </Reveal>
       </div>

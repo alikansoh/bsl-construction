@@ -16,6 +16,13 @@
  * (e.g. "mechanical-electrical"). Added `categorySlug` to the local type
  * and switched the grouping filter to use it — this is what was causing
  * every category section to render empty.
+ *
+ * FIX 2: getAllServices() from lib/services.ts is now async, and it returns
+ * the nested API/DB shape (categoryName, hero.image, hero.description) —
+ * not the flattened shape (category, image, shortDescription) this page's
+ * card/hero components are built around. The previous `as Service[]` cast
+ * hid that mismatch rather than fixing it. This page is now async and maps
+ * each fetched service into the local display `Service` shape below.
  * -------------------------------------------------------------------------
  */
 
@@ -23,7 +30,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Fraunces, Archivo, IBM_Plex_Mono } from "next/font/google";
 
-import { getAllServices } from "@/lib/services";
+import { getAllServices, type Service as ApiService } from "@/lib/services";
 import HeroScene from "@/components/HeroScene";
 import ServicesCategoryNav, {
   type NavCategory,
@@ -79,6 +86,43 @@ type ServiceCategory = {
 };
 
 /* =========================================================================
+   HELPERS
+   ========================================================================= */
+
+function formatCategory(category: string) {
+  return category
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/*
+  Maps the nested Service shape returned by lib/services.ts (hero.image,
+  hero.description, categoryName) into the flattened display shape this
+  page's ServiceCard/HeroScene were built around (image, shortDescription,
+  category). Keeping the mapping in one place means the rest of this file
+  doesn't need to change if the API shape or the card's display shape
+  changes independently later.
+*/
+function toDisplayService(service: ApiService): Service {
+  return {
+    slug: service.slug,
+    title: service.title,
+    category: service.categoryName,
+    categorySlug: service.categorySlug,
+    shortDescription: service.hero?.description
+      ? service.hero.description.replace(/<[^>]*>/g, "")
+      : undefined,
+    image: service.hero?.image?.url
+      ? {
+          url: service.hero.image.url,
+          alt: service.hero.image.alt,
+        }
+      : undefined,
+  };
+}
+
+/* =========================================================================
    STATIC MAIN CATEGORIES
    ========================================================================= */
 
@@ -110,17 +154,6 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     cta: "Explore Commercial",
   },
 ];
-
-/* =========================================================================
-   HELPERS
-   ========================================================================= */
-
-function formatCategory(category: string) {
-  return category
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
 
 /* =========================================================================
    SERVICE CARD
@@ -753,8 +786,9 @@ function CategorySection({
    MAIN PAGE
    ========================================================================= */
 
-export default function ServicesPage() {
-  const services = getAllServices() as Service[];
+export default async function ServicesPage() {
+  const apiServices = await getAllServices();
+  const services: Service[] = apiServices.map(toDisplayService);
 
   /* =======================================================================
      GROUP SERVICES BY CATEGORY
