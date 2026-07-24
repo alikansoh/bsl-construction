@@ -170,7 +170,7 @@ function ServiceCard({
 
   return (
     <Link
-      href={`/services/${service.categorySlug}/${service.slug}`}
+      href={`/services/${service.slug}`}
       className="
         bsl-focus
         bsl-reveal
