@@ -33,14 +33,14 @@ export interface IService extends Document {
     layout: "image-left" | "image-right";
     title: string;
     content: string;
-    image: {
-      url: string;
+    image?: {
+      url?: string;
       publicId?: string;
-      alt: string;
+      alt?: string;
     };
     cta?: {
-      label: string;
-      href: string;
+      label?: string;
+      href?: string;
     };
   }[];
 
@@ -71,11 +71,11 @@ export interface IService extends Document {
     answer: string;
   }[];
 
-  cta: {
-    title: string;
-    content: string;
-    buttonLabel: string;
-    buttonHref: string;
+  cta?: {
+    title?: string;
+    content?: string;
+    buttonLabel?: string;
+    buttonHref?: string;
   };
 
   seo: {
@@ -84,6 +84,8 @@ export interface IService extends Document {
     keywords: string[];
   };
 }
+
+/* Strict versions — used where the field is genuinely required (hero). */
 
 const ImageSchema = new Schema(
   {
@@ -116,6 +118,84 @@ const CtaSchema = new Schema(
       type: String,
       required: true,
       trim: true,
+    },
+  },
+  { _id: false }
+);
+
+/*
+  Optional versions — used for content sections, where the image and CTA
+  are genuinely optional. Without these, Mongoose still validates the
+  inner fields of the shared ImageSchema/CtaSchema as required even when
+  the parent field itself isn't marked required, causing save() to fail
+  on empty strings.
+*/
+
+const OptionalImageSchema = new Schema(
+  {
+    url: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    publicId: {
+      type: String,
+      trim: true,
+    },
+    alt: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
+  { _id: false }
+);
+
+const OptionalCtaSchema = new Schema(
+  {
+    label: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    href: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+  },
+  { _id: false }
+);
+
+/*
+  Optional version of the page-level CTA block (different shape from the
+  section CTA above: title/content/buttonLabel/buttonHref instead of
+  label/href). Using a real Schema type here — rather than a plain nested
+  object literal — means that if `cta` is omitted entirely, Mongoose won't
+  create the subdocument at all, so its fields are never validated.
+*/
+
+const OptionalPageCtaSchema = new Schema(
+  {
+    title: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    content: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    buttonLabel: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    buttonHref: {
+      type: String,
+      trim: true,
+      default: "",
     },
   },
   { _id: false }
@@ -217,11 +297,10 @@ const ServiceSchema = new Schema<IService>(
           required: true,
         },
         image: {
-          type: ImageSchema,
-          required: true,
+          type: OptionalImageSchema,
         },
         cta: {
-          type: CtaSchema,
+          type: OptionalCtaSchema,
         },
       },
     ],
@@ -287,22 +366,7 @@ const ServiceSchema = new Schema<IService>(
     ],
 
     cta: {
-      title: {
-        type: String,
-        required: true,
-      },
-      content: {
-        type: String,
-        required: true,
-      },
-      buttonLabel: {
-        type: String,
-        required: true,
-      },
-      buttonHref: {
-        type: String,
-        required: true,
-      },
+      type: OptionalPageCtaSchema,
     },
 
     seo: {

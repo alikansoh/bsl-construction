@@ -10,11 +10,14 @@
  *
  * The "Services" nav item is a mega-menu dropdown (desktop: hover/focus,
  * mobile: accordion) populated from GET /api/services and grouped into
- * the 3 fixed service categories.
+ * the 3 fixed service categories. On both desktop and mobile the
+ * "Services" label itself is a real link to /services — the caret is a
+ * separate control that only opens/closes the submenu.
  */
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact Us"];
@@ -101,11 +104,19 @@ function serviceHref(service: NavService) {
   return `/services/${service.slug}`;
 }
 
+// Assumption: there's no dedicated category page, so a category name
+// links to the services page filtered to that category via query param.
+// If BSL adds real category pages later, swap this for `/services/category/${categorySlug}`.
+function categoryHref(categorySlug: string) {
+  return `/services?category=${categorySlug}`;
+}
+
 /* ----------------------------------------------------------------------- */
 /* Nav                                                                      */
 /* ----------------------------------------------------------------------- */
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isServicesOpen, setIsServicesOpen] = useState(false);
@@ -120,6 +131,12 @@ export default function Navbar() {
     () => groupServicesByCategory(services),
     [services],
   );
+
+  const isActive = (label: string) => {
+    const href = navHref(label);
+    if (href === "/") return pathname === "/";
+    return pathname === href || pathname?.startsWith(`${href}/`);
+  };
 
   const closeMobileMenu = () => {
     setIsMenuOpen(false);
@@ -349,6 +366,8 @@ export default function Navbar() {
           }}
         >
           {NAV_LINKS.map((label) => {
+            const active = isActive(label);
+
             if (label === "Services") {
               return (
                 <div
@@ -362,9 +381,10 @@ export default function Navbar() {
                 >
                   <Link
                     href={navHref(label)}
-                    className="site-nav-link"
+                    className={`site-nav-link${active ? " active" : ""}`}
                     aria-haspopup="true"
                     aria-expanded={isServicesOpen}
+                    aria-current={active ? "page" : undefined}
                     style={{
                       display: "inline-flex",
                       alignItems: "center",
@@ -440,18 +460,23 @@ export default function Navbar() {
                                 : "1px solid rgba(11,11,13,0.08)",
                           }}
                         >
-                          <p
+                          <Link
+                            href={categoryHref(group.slug)}
+                            onClick={() => setIsServicesOpen(false)}
+                            className="site-nav-services-category"
                             style={{
+                              display: "block",
                               margin: "0 0 0.75rem",
                               fontSize: "0.68rem",
                               fontWeight: 700,
                               letterSpacing: "0.08em",
                               textTransform: "uppercase",
                               color: "#D98E1F",
+                              textDecoration: "none",
                             }}
                           >
                             {group.name}
-                          </p>
+                          </Link>
 
                           <div
                             style={{
@@ -483,6 +508,43 @@ export default function Navbar() {
                           </div>
                         </div>
                       ))}
+
+                      <Link
+                        href="/services"
+                        onClick={() => setIsServicesOpen(false)}
+                        className="site-nav-services-viewall"
+                        style={{
+                          alignSelf: "stretch",
+                          marginLeft: "0.5rem",
+                          paddingLeft: "1.5rem",
+                          borderLeft: "1px solid rgba(11,11,13,0.08)",
+                          display: "flex",
+                          alignItems: "center",
+                          fontSize: "0.82rem",
+                          fontWeight: 600,
+                          color: "#D98E1F",
+                          textDecoration: "none",
+                          whiteSpace: "nowrap",
+                          gap: "0.35rem",
+                        }}
+                      >
+                        View all services
+                        <svg
+                          width="12"
+                          height="12"
+                          viewBox="0 0 12 12"
+                          aria-hidden="true"
+                        >
+                          <path
+                            d="M4 2.5L8 6L4 9.5"
+                            stroke="currentColor"
+                            strokeWidth="1.4"
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      </Link>
                     </div>
                   )}
                 </div>
@@ -493,7 +555,8 @@ export default function Navbar() {
               <Link
                 key={label}
                 href={navHref(label)}
-                className="site-nav-link"
+                className={`site-nav-link${active ? " active" : ""}`}
+                aria-current={active ? "page" : undefined}
                 style={{
                   fontSize: "0.92rem",
                   fontWeight: 600,
@@ -621,6 +684,8 @@ export default function Navbar() {
         </button>
 
         {NAV_LINKS.map((label, i) => {
+          const active = isActive(label);
+
           if (label === "Services") {
             return (
               <div
@@ -638,49 +703,79 @@ export default function Navbar() {
                   }s`,
                 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setIsMobileServicesOpen((open) => !open)}
-                  className="mobile-nav-link"
-                  aria-expanded={isMobileServicesOpen}
+                {/* Label is a real link to /services; the caret is a
+                    separate hit target that only opens the accordion —
+                    so tapping "Services" navigates, tapping the caret
+                    browses the submenu. */}
+                <div
                   style={{
                     display: "inline-flex",
                     alignItems: "center",
-                    gap: "0.5rem",
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    fontSize: "1.6rem",
-                    fontWeight: 700,
-                    color: "#fff",
-                    letterSpacing: "-0.01em",
-                    textTransform: "uppercase",
-                    cursor: "pointer",
+                    gap: "0.4rem",
                   }}
                 >
-                  {label}
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 10 10"
-                    aria-hidden="true"
+                  <Link
+                    href={navHref(label)}
+                    onClick={closeMobileMenu}
+                    className="mobile-nav-link"
+                    aria-current={active ? "page" : undefined}
                     style={{
-                      transform: isMobileServicesOpen
-                        ? "rotate(180deg)"
-                        : "rotate(0deg)",
-                      transition: "transform .2s ease",
+                      fontSize: "1.6rem",
+                      fontWeight: 700,
+                      color: "#fff",
+                      letterSpacing: "-0.01em",
+                      textTransform: "uppercase",
+                      textDecoration: "none",
                     }}
                   >
-                    <path
-                      d="M1.5 3.5L5 7L8.5 3.5"
-                      stroke="currentColor"
-                      strokeWidth="1.4"
-                      fill="none"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
+                    {label}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileServicesOpen((open) => !open)}
+                    aria-label={
+                      isMobileServicesOpen
+                        ? "Collapse services list"
+                        : "Expand services list"
+                    }
+                    aria-expanded={isMobileServicesOpen}
+                    className="mobile-nav-services-caret"
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 32,
+                      height: 32,
+                      background: "rgba(255,255,255,0.08)",
+                      border: "none",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <svg
+                      width="14"
+                      height="14"
+                      viewBox="0 0 10 10"
+                      aria-hidden="true"
+                      style={{
+                        transform: isMobileServicesOpen
+                          ? "rotate(180deg)"
+                          : "rotate(0deg)",
+                        transition: "transform .2s ease",
+                      }}
+                    >
+                      <path
+                        d="M1.5 3.5L5 7L8.5 3.5"
+                        stroke="#fff"
+                        strokeWidth="1.4"
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
                 {isMobileServicesOpen && serviceGroups.length > 0 && (
                   <div
@@ -706,50 +801,76 @@ export default function Navbar() {
                             paddingTop: "0.6rem",
                           }}
                         >
-                          <button
-                            type="button"
-                            onClick={() => toggleMobileCategory(group.slug)}
-                            aria-expanded={isCategoryOpen}
+                          <div
                             style={{
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              gap: "0.4rem",
+                              gap: "0.35rem",
                               width: "100%",
-                              background: "none",
-                              border: "none",
                               padding: "0.2rem 0",
-                              fontSize: "0.72rem",
-                              fontWeight: 700,
-                              letterSpacing: "0.08em",
-                              textTransform: "uppercase",
-                              color: "#D98E1F",
-                              cursor: "pointer",
                             }}
                           >
-                            {group.name}
-                            <svg
-                              width="10"
-                              height="10"
-                              viewBox="0 0 10 10"
-                              aria-hidden="true"
+                            <Link
+                              href={categoryHref(group.slug)}
+                              onClick={closeMobileMenu}
                               style={{
-                                transform: isCategoryOpen
-                                  ? "rotate(180deg)"
-                                  : "rotate(0deg)",
-                                transition: "transform .2s ease",
+                                fontSize: "0.72rem",
+                                fontWeight: 700,
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                                color: "#D98E1F",
+                                textDecoration: "none",
                               }}
                             >
-                              <path
-                                d="M1.5 3.5L5 7L8.5 3.5"
-                                stroke="currentColor"
-                                strokeWidth="1.4"
-                                fill="none"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                          </button>
+                              {group.name}
+                            </Link>
+                            <button
+                              type="button"
+                              onClick={() => toggleMobileCategory(group.slug)}
+                              aria-label={
+                                isCategoryOpen
+                                  ? `Collapse ${group.name}`
+                                  : `Expand ${group.name}`
+                              }
+                              aria-expanded={isCategoryOpen}
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                width: 22,
+                                height: 22,
+                                background: "none",
+                                border: "none",
+                                padding: 0,
+                                color: "#D98E1F",
+                                cursor: "pointer",
+                                flexShrink: 0,
+                              }}
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 10 10"
+                                aria-hidden="true"
+                                style={{
+                                  transform: isCategoryOpen
+                                    ? "rotate(180deg)"
+                                    : "rotate(0deg)",
+                                  transition: "transform .2s ease",
+                                }}
+                              >
+                                <path
+                                  d="M1.5 3.5L5 7L8.5 3.5"
+                                  stroke="currentColor"
+                                  strokeWidth="1.4"
+                                  fill="none"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            </button>
+                          </div>
 
                           {isCategoryOpen && (
                             <div
@@ -781,6 +902,20 @@ export default function Navbar() {
                         </div>
                       );
                     })}
+
+                    <Link
+                      href="/services"
+                      onClick={closeMobileMenu}
+                      style={{
+                        marginTop: "0.4rem",
+                        fontSize: "0.9rem",
+                        fontWeight: 600,
+                        color: "#D98E1F",
+                        textDecoration: "none",
+                      }}
+                    >
+                      View all services →
+                    </Link>
                   </div>
                 )}
               </div>
@@ -793,6 +928,7 @@ export default function Navbar() {
               href={navHref(label)}
               onClick={closeMobileMenu}
               className="mobile-nav-link"
+              aria-current={active ? "page" : undefined}
               style={{
                 fontSize: "1.6rem",
                 fontWeight: 700,
@@ -850,7 +986,8 @@ export default function Navbar() {
           background: currentColor;
           transition: width 0.25s ease;
         }
-        .site-nav-link:hover::after {
+        .site-nav-link:hover::after,
+        .site-nav-link.active::after {
           width: 100%;
         }
 
@@ -863,8 +1000,20 @@ export default function Navbar() {
           background: rgba(11, 11, 13, 0.06);
         }
 
+        .site-nav-services-viewall:hover {
+          opacity: 0.75;
+        }
+
+        .site-nav-services-category:hover {
+          opacity: 0.75;
+        }
+
         .site-nav-services-column:first-child {
           padding-left: 0;
+        }
+
+        .mobile-nav-services-caret:hover {
+          background: rgba(255, 255, 255, 0.16) !important;
         }
 
         .site-nav-logo {

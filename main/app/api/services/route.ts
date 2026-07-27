@@ -20,7 +20,7 @@ interface HeroInput {
 interface SectionInput {
   title: string;
   content: string;
-  image: ImageInput;
+  image?: ImageInput;
   [key: string]: unknown;
 }
 
@@ -277,12 +277,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!cta || !cta.title || !cta.content || !cta.buttonLabel || !cta.buttonHref) {
-      return NextResponse.json(
-        { success: false, message: "CTA title, content and button details are required" },
-        { status: 400 }
-      );
-    }
+    // cta is optional — no required-field check here
 
     if (!seo || !seo.metaTitle || !seo.metaDescription) {
       return NextResponse.json(
@@ -291,16 +286,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // Each section needs an image + title/content (schema requires these)
+    // Each section needs a title/content; image is optional
     if (Array.isArray(sections)) {
       const invalidSection = sections.find(
-        (s: SectionInput) => !s?.title || !s?.content || !s?.image?.url
+        (s: SectionInput) => !s?.title || !s?.content
       );
       if (invalidSection) {
         return NextResponse.json(
           {
             success: false,
-            message: "Every content section needs a title, content and image",
+            message: "Every content section needs a title and content",
           },
           { status: 400 }
         );
@@ -331,7 +326,7 @@ export async function POST(request: Request) {
       process: processInfo,
       gallery: gallery ?? [],
       faqs: faqs ?? [],
-      cta,
+      cta: cta ?? undefined,
       seo: {
         metaTitle: seo.metaTitle,
         metaDescription: seo.metaDescription,

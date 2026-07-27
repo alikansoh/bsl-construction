@@ -45,7 +45,6 @@ interface ServiceForm {
   categorySlug: string;
   categoryName: string;
   status: "draft" | "published";
-  featured: boolean;
   displayOrder: number;
   hero: {
     eyebrow: string;
@@ -122,7 +121,6 @@ interface RawService {
   categorySlug?: string;
   categoryName?: string;
   status?: string;
-  featured?: boolean;
   displayOrder?: number;
   hero?: {
     eyebrow?: string;
@@ -181,7 +179,6 @@ const emptyForm = (): ServiceForm => ({
   categorySlug: "",
   categoryName: "",
   status: "draft",
-  featured: false,
   displayOrder: 0,
   hero: {
     eyebrow: "",
@@ -232,7 +229,6 @@ function toForm(raw: RawService): ServiceForm {
     categorySlug: raw.categorySlug ?? base.categorySlug,
     categoryName: raw.categoryName ?? base.categoryName,
     status: raw.status === "published" ? "published" : "draft",
-    featured: Boolean(raw.featured),
     displayOrder: Number(raw.displayOrder) || 0,
     hero: {
       eyebrow: raw.hero?.eyebrow ?? base.hero.eyebrow,
@@ -312,6 +308,87 @@ function toForm(raw: RawService): ServiceForm {
   };
 }
 
+/*
+  Validates the required fields across the form and reports exactly which
+  section each problem belongs to, so the UI can jump the user straight to
+  the part that needs fixing instead of leaving them guessing.
+*/
+function validateForm(form: ServiceForm): { id: NavId; message: string }[] {
+  const errors: { id: NavId; message: string }[] = [];
+
+  if (!form.title.trim()) {
+    errors.push({ id: "basics", message: "Add a service title." });
+  } else if (!form.slug.trim()) {
+    errors.push({ id: "basics", message: "Add a slug." });
+  } else if (!form.categorySlug) {
+    errors.push({ id: "basics", message: "Choose a category." });
+  }
+
+  if (!form.hero.eyebrow.trim()) {
+    errors.push({ id: "hero", message: "Add an eyebrow label." });
+  } else if (!form.hero.title.trim()) {
+    errors.push({ id: "hero", message: "Add a hero title." });
+  } else if (!form.hero.description.trim()) {
+    errors.push({ id: "hero", message: "Add a hero description." });
+  } else if (!form.hero.image.url) {
+    errors.push({ id: "hero", message: "Upload a hero image." });
+  }
+
+  form.sections.forEach((section, index) => {
+    if (!section.title.trim()) {
+      errors.push({ id: "sections", message: `Section ${index + 1} is missing a title.` });
+    } else if (!section.content.trim()) {
+      errors.push({ id: "sections", message: `Section ${index + 1} is missing content.` });
+    }
+  });
+
+  if (!form.whatsIncluded.title.trim()) {
+    errors.push({ id: "included", message: "Add a title." });
+  } else if (!form.whatsIncluded.intro.trim()) {
+    errors.push({ id: "included", message: "Add an intro." });
+  }
+
+  if (!form.process.title.trim()) {
+    errors.push({ id: "process", message: "Add a process title." });
+  } else if (!form.process.description.trim()) {
+    errors.push({ id: "process", message: "Add a process description." });
+  } else {
+    form.process.steps.forEach((step, index) => {
+      if (!step.title.trim()) {
+        errors.push({ id: "process", message: `Step ${index + 1} is missing a title.` });
+      } else if (!step.content.trim()) {
+        errors.push({ id: "process", message: `Step ${index + 1} is missing content.` });
+      }
+    });
+  }
+
+  form.faqs.forEach((faq, index) => {
+    if (!faq.question.trim()) {
+      errors.push({ id: "faqs", message: `FAQ ${index + 1} is missing a question.` });
+    } else if (!faq.answer.trim()) {
+      errors.push({ id: "faqs", message: `FAQ ${index + 1} is missing an answer.` });
+    }
+  });
+
+  if (!form.cta.title.trim()) {
+    errors.push({ id: "cta", message: "Add a title." });
+  } else if (!form.cta.content.trim()) {
+    errors.push({ id: "cta", message: "Add content." });
+  } else if (!form.cta.buttonLabel.trim()) {
+    errors.push({ id: "cta", message: "Add a button label." });
+  } else if (!form.cta.buttonHref.trim()) {
+    errors.push({ id: "cta", message: "Add a button link." });
+  }
+
+  if (!form.seo.metaTitle.trim()) {
+    errors.push({ id: "seo", message: "Add a meta title." });
+  } else if (!form.seo.metaDescription.trim()) {
+    errors.push({ id: "seo", message: "Add a meta description." });
+  }
+
+  return errors;
+}
+
 const NAV = [
   { id: "basics", label: "Basics", n: "01" },
   { id: "hero", label: "Hero", n: "02" },
@@ -335,19 +412,27 @@ function SectionCard({
   n,
   title,
   description,
+  errors,
   children,
 }: {
   id: string;
   n: string;
   title: string;
   description?: string;
+  errors?: string[];
   children: React.ReactNode;
 }) {
+  const hasErrors = Boolean(errors?.length);
+
   return (
     <section
       id={id}
       data-nav-section={id}
-      className="scroll-mt-36 rounded-xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+      className={`scroll-mt-36 rounded-xl border bg-white p-6 shadow-sm transition-colors sm:p-8 ${
+        hasErrors
+          ? "border-[#C1401F]/50 ring-1 ring-[#C1401F]/20"
+          : "border-slate-200"
+      }`}
     >
       <div className="mb-6 flex items-start gap-3 border-b border-dashed border-slate-200 pb-4">
         <span className="font-mono text-xs font-semibold tracking-widest text-[#D98E1F]">
@@ -362,6 +447,24 @@ function SectionCard({
           )}
         </div>
       </div>
+
+      {hasErrors && (
+        <div className="mb-5 rounded-lg border border-[#C1401F]/30 bg-[#C1401F]/5 px-4 py-3">
+          <p className="text-sm font-medium text-[#C1401F]">
+            {errors!.length === 1
+              ? "This section needs attention:"
+              : `This section needs attention (${errors!.length}):`}
+          </p>
+
+          <ul className="mt-1 space-y-0.5">
+            {errors!.map((message, index) => (
+              <li key={index} className="text-sm text-[#C1401F]/90">
+                • {message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="space-y-5">{children}</div>
     </section>
@@ -490,9 +593,27 @@ function CtaFields({
 
 function CheckDot({
   complete,
+  hasError,
 }: {
   complete: boolean;
+  hasError?: boolean;
 }) {
+  if (hasError) {
+    return (
+      <span className="flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-[#C1401F] text-white">
+        <svg
+          viewBox="0 0 12 12"
+          className="h-2 w-2"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path d="M6 3v3.5M6 8.5h.01" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    );
+  }
+
   return (
     <span
       className={`flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full transition-colors ${
@@ -519,10 +640,12 @@ function CheckDot({
 function TopTabBar({
   active,
   sectionComplete,
+  errorSections,
   onNavigate,
 }: {
   active: NavId;
   sectionComplete: Record<NavId, boolean>;
+  errorSections?: Partial<Record<NavId, string[]>>;
   onNavigate: (id: NavId) => void;
 }) {
   return (
@@ -534,6 +657,7 @@ function TopTabBar({
         >
           {NAV.map((item) => {
             const isActive = active === item.id;
+            const hasError = Boolean(errorSections?.[item.id]?.length);
 
             return (
               <button
@@ -543,12 +667,14 @@ function TopTabBar({
                 className={`flex shrink-0 items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-[#1C2024] text-white"
-                    : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                    : hasError
+                      ? "text-[#C1401F] hover:bg-[#C1401F]/10"
+                      : "text-slate-500 hover:bg-slate-100 hover:text-slate-700"
                 }`}
               >
                 <span
                   className={`font-mono text-[10px] tracking-widest ${
-                    isActive ? "text-[#D98E1F]" : "text-slate-300"
+                    isActive ? "text-[#D98E1F]" : hasError ? "text-[#C1401F]" : "text-slate-300"
                   }`}
                 >
                   {item.n}
@@ -556,7 +682,7 @@ function TopTabBar({
 
                 <span className="whitespace-nowrap">{item.label}</span>
 
-                <CheckDot complete={sectionComplete[item.id]} />
+                <CheckDot complete={sectionComplete[item.id]} hasError={hasError} />
               </button>
             );
           })}
@@ -689,6 +815,24 @@ export default function EditServicePage() {
 
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
   const [focusSection, setFocusSection] = useState<NavId>("basics");
+
+  /*
+    Only surface validation errors after the user has actually tried to
+    publish once — no need to greet them with red banners on page load.
+  */
+  const [showValidation, setShowValidation] = useState(false);
+
+  const validationErrors = useMemo(() => validateForm(form), [form]);
+
+  const errorsBySection = useMemo(() => {
+    const grouped: Partial<Record<NavId, string[]>> = {};
+
+    validationErrors.forEach((error) => {
+      grouped[error.id] = [...(grouped[error.id] ?? []), error.message];
+    });
+
+    return grouped;
+  }, [validationErrors]);
 
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -1011,6 +1155,26 @@ export default function EditServicePage() {
   }, [sectionComplete]);
 
   const handleSubmit = async (status: "draft" | "published") => {
+    if (status === "published" && validationErrors.length > 0) {
+      setShowValidation(true);
+
+      const firstError = validationErrors[0];
+      const sectionCount = Object.keys(errorsBySection).length;
+      const firstSectionLabel =
+        NAV.find((item) => item.id === firstError.id)?.label ?? "";
+
+      navigateTo(firstError.id);
+
+      setFeedback({
+        type: "error",
+        text: `Fix ${sectionCount} section${
+          sectionCount > 1 ? "s" : ""
+        } before publishing — starting with ${firstSectionLabel}.`,
+      });
+
+      return;
+    }
+
     setSaving(status);
     setFeedback(null);
 
@@ -1035,6 +1199,8 @@ export default function EditServicePage() {
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Something went wrong");
       }
+
+      setShowValidation(false);
 
       setFeedback({
         type: "success",
@@ -1219,6 +1385,7 @@ export default function EditServicePage() {
         <TopTabBar
           active={focusSection}
           sectionComplete={sectionComplete}
+          errorSections={showValidation ? errorsBySection : undefined}
           onNavigate={navigateTo}
         />
       </div>
@@ -1231,6 +1398,7 @@ export default function EditServicePage() {
             n="01"
             title="Basics"
             description="How this service is identified and organized."
+            errors={showValidation ? errorsBySection.basics : undefined}
           >
             <Field label="Service title" required>
               <TextInput
@@ -1282,34 +1450,6 @@ export default function EditServicePage() {
             </div>
 
             <div className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={form.featured}
-                onClick={() => update("featured", !form.featured)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  form.featured ? "bg-[#D98E1F]" : "bg-slate-300"
-                }`}
-              >
-                <span
-                  className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                    form.featured ? "translate-x-5" : "translate-x-0.5"
-                  }`}
-                />
-              </button>
-
-              <div>
-                <p className="text-sm font-medium text-slate-700">
-                  Featured service
-                </p>
-
-                <p className="text-xs text-slate-500">
-                  Highlighted on the services overview page
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 rounded-lg bg-slate-50 px-4 py-3">
               <span
                 className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide ${
                   form.status === "published"
@@ -1331,6 +1471,7 @@ export default function EditServicePage() {
             n="02"
             title="Hero"
             description="The banner shown at the top of the service page."
+            errors={showValidation ? errorsBySection.hero : undefined}
           >
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Eyebrow" required hint="Small label above the title">
@@ -1410,6 +1551,7 @@ export default function EditServicePage() {
             n="03"
             title="Content sections"
             description="Alternating image/text blocks that expand on the service."
+            errors={showValidation ? errorsBySection.sections : undefined}
           >
             {form.sections.length === 0 && (
               <p className="rounded-lg bg-slate-50 px-4 py-6 text-center text-sm text-slate-500">
@@ -1506,6 +1648,7 @@ export default function EditServicePage() {
             n="04"
             title="What's Included"
             description="A bullet list of what's covered as standard."
+            errors={showValidation ? errorsBySection.included : undefined}
           >
             <Field label="Title" required>
               <TextInput
@@ -1576,6 +1719,7 @@ export default function EditServicePage() {
             n="05"
             title="Process"
             description="The numbered steps shown to explain how the work runs."
+            errors={showValidation ? errorsBySection.process : undefined}
           >
             <Field label="Title" required>
               <TextInput
@@ -1665,6 +1809,7 @@ export default function EditServicePage() {
             n="07"
             title="FAQs"
             description="Common questions shown near the bottom of the page."
+            errors={showValidation ? errorsBySection.faqs : undefined}
           >
             <div className="space-y-4">
               {form.faqs.map((faq, index) => (
@@ -1720,6 +1865,7 @@ export default function EditServicePage() {
             n="08"
             title="Call to Action"
             description="The closing banner encouraging the visitor to get in touch."
+            errors={showValidation ? errorsBySection.cta : undefined}
           >
             <Field label="Title" required>
               <TextInput
@@ -1774,6 +1920,7 @@ export default function EditServicePage() {
             n="09"
             title="SEO"
             description="Metadata used for search engines and social previews."
+            errors={showValidation ? errorsBySection.seo : undefined}
           >
             <Field
               label="Meta title"

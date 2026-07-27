@@ -1,9 +1,8 @@
 // components/TrustBar.tsx
 import type { TrustBarItem } from "@/lib/services";
-import { JSX } from "react/jsx-runtime";
+import type { ReactElement } from "react";
 
-const ICONS: Record<string, JSX.Element> = {
-  team: (
+const ICONS: Record<string, ReactElement> = {  team: (
     <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
       <circle cx="12" cy="8" r="3.2" stroke="currentColor" strokeWidth="1.4" />
       <path d="M5 20c0-3.3 3.1-5.5 7-5.5s7 2.2 7 5.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
