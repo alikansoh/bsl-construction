@@ -63,7 +63,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 
-const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact Us"];
+const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact" ];
 
 // Mirrors FAQ.tsx's "areas-covered" answer.
 const AREAS = [
@@ -357,7 +357,7 @@ export default function Footer() {
                 <a href="tel:+442000000000" className="footer-link">020 0000 0000</a>
               </li>
               <li>
-                <a href="mailto:info@bslconstruction.co.uk" className="footer-link">info@bslconstruction.co.uk</a>
+                <a href="mailto:info@bsl-construction.co.uk" className="footer-link">info@bsl-construction.co.uk</a>
               </li>
               <li className="text-white/55">London, UK</li>
             </ul>

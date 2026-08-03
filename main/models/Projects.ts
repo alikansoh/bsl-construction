@@ -4,6 +4,8 @@ export interface IProject extends Document {
   slug: string;
   title: string;
   shortDescription: string;
+  createdAt: Date;
+  updatedAt: Date;
 
   category: string;
   client?: string;

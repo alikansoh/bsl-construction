@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   BriefcaseBusiness,
@@ -11,92 +12,166 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 
-const stats = [
-  {
-    title: "Total Services",
-    value: "12",
-    change: "+2",
-    description: "from last month",
-    icon: BriefcaseBusiness,
-  },
-  {
-    title: "Active Projects",
-    value: "8",
-    change: "+3",
-    description: "currently running",
-    icon: FileText,
-  },
-  {
-    title: "New Enquiries",
-    value: "24",
-    change: "+12%",
-    description: "this month",
-    icon: MessageSquare,
-  },
-  {
-    title: "Team Members",
-    value: "6",
-    change: "+1",
-    description: "active users",
-    icon: Users,
-  },
-];
+/* -------------------------------------------------------------------------- */
+/* Types                                                                      */
+/* -------------------------------------------------------------------------- */
 
-const services = [
-  {
-    name: "New Builds",
-    category: "Construction",
-    status: "Published",
-    projects: 4,
-  },
-  {
-    name: "Extensions",
-    category: "Construction",
-    status: "Published",
-    projects: 7,
-  },
-  {
-    name: "Plumbing",
-    category: "Mechanical & Electrical",
-    status: "Published",
-    projects: 12,
-  },
-  {
-    name: "Electrical",
-    category: "Mechanical & Electrical",
-    status: "Published",
-    projects: 9,
-  },
-];
+type ServiceRow = {
+  _id: string;
+  slug: string;
+  title: string;
+  categoryName: string;
+  status: "draft" | "published";
+};
 
-const enquiries = [
-  {
-    name: "James Anderson",
-    type: "New Build",
-    date: "Today",
-    status: "New",
-  },
-  {
-    name: "Sarah Williams",
-    type: "House Extension",
-    date: "Yesterday",
-    status: "Contacted",
-  },
-  {
-    name: "Michael Brown",
-    type: "Electrical",
-    date: "2 days ago",
-    status: "New",
-  },
-  {
-    name: "Daniel Smith",
-    type: "Commercial Maintenance",
-    date: "3 days ago",
-    status: "In Progress",
-  },
-];
+type ProjectRow = {
+  _id: string;
+  slug: string;
+  title: string;
+  status: "draft" | "published";
+};
+
+type BlogRow = {
+  _id: string;
+  slug: string;
+  title: string;
+  status: "draft" | "published";
+};
+
+type BookingRow = {
+  _id: string;
+  name: string;
+  service?: string;
+  serviceType?: string;
+  status: string;
+  createdAt: string;
+};
+
+type UserRow = {
+  _id: string;
+  name?: string;
+  email: string;
+};
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
+function timeAgo(dateString: string): string {
+  const date = new Date(dateString);
+  const diffMs = Date.now() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+
+  return date.toLocaleDateString();
+}
+
+/* -------------------------------------------------------------------------- */
+/* Page                                                                       */
+/* -------------------------------------------------------------------------- */
 
 export default function DashboardPage() {
+  const [services, setServices] = useState<ServiceRow[]>([]);
+  const [projects, setProjects] = useState<ProjectRow[]>([]);
+  const [blogs, setBlogs] = useState<BlogRow[]>([]);
+  const [bookings, setBookings] = useState<BookingRow[]>([]);
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadDashboardData() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [servicesRes, projectsRes, blogsRes, bookingsRes, usersRes] =
+          await Promise.all([
+            fetch("/api/services", { cache: "no-store" }),
+            fetch("/api/projects", { cache: "no-store" }),
+            fetch("/api/blogs", { cache: "no-store" }),
+            fetch("/api/bookings", { cache: "no-store" }),
+            fetch("/api/user", { cache: "no-store" }),
+          ]);
+
+        const [servicesData, projectsData, blogsData, bookingsData, usersData] =
+          await Promise.all([
+            servicesRes.json(),
+            projectsRes.json(),
+            blogsRes.json(),
+            bookingsRes.json(),
+            usersRes.json(),
+          ]);
+
+        if (cancelled) return;
+
+        setServices(
+          Array.isArray(servicesData?.services) ? servicesData.services : []
+        );
+        setProjects(
+          Array.isArray(projectsData?.projects) ? projectsData.projects : []
+        );
+        setBlogs(Array.isArray(blogsData?.blogs) ? blogsData.blogs : []);
+        setBookings(
+          Array.isArray(bookingsData?.bookings) ? bookingsData.bookings : []
+        );
+        setUsers(Array.isArray(usersData?.users) ? usersData.users : []);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Failed to load dashboard data", err);
+          setError("Failed to load dashboard data. Please try again.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadDashboardData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const activeProjectsCount = projects.filter(
+    (p) => p.status === "published"
+  ).length;
+
+  const stats = [
+    {
+      title: "Total Services",
+      value: String(services.length),
+      description: "published & draft",
+      icon: BriefcaseBusiness,
+    },
+    {
+      title: "Active Projects",
+      value: String(activeProjectsCount),
+      description: "currently published",
+      icon: FileText,
+    },
+    {
+      title: "New Enquiries",
+      value: String(bookings.length),
+      description: "total bookings",
+      icon: MessageSquare,
+    },
+    {
+      title: "Team Members",
+      value: String(users.length),
+      description: "active users",
+      icon: Users,
+    },
+  ];
+
+  const recentServices = services.slice(0, 4);
+  const recentEnquiries = bookings.slice(0, 4);
+
   return (
     <div className="min-h-full bg-[#f7f7f5] p-4 sm:p-6 lg:p-8">
       <div className="mx-auto max-w-[1600px]">
@@ -136,6 +211,12 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => {
@@ -150,10 +231,6 @@ export default function DashboardPage() {
                   <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#f5efe6] text-[#a17c42]">
                     <Icon size={21} strokeWidth={1.8} />
                   </div>
-
-                  <span className="rounded-full bg-[#eef7ef] px-2.5 py-1 text-xs font-semibold text-[#3d7a48]">
-                    {stat.change}
-                  </span>
                 </div>
 
                 <div className="mt-5">
@@ -163,7 +240,7 @@ export default function DashboardPage() {
 
                   <div className="mt-1 flex items-end gap-2">
                     <h2 className="text-3xl font-semibold tracking-tight text-[#171717]">
-                      {stat.value}
+                      {loading ? "–" : stat.value}
                     </h2>
 
                     <span className="mb-1 text-xs text-[#8a8a8a]">
@@ -202,47 +279,56 @@ export default function DashboardPage() {
             </div>
 
             <div className="divide-y divide-[#eeeeeb]">
-              {services.map((service) => (
-                <div
-                  key={service.name}
-                  className="flex flex-col gap-4 px-5 py-5 transition hover:bg-[#fafaf8] sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f5efe6]">
-                      <BriefcaseBusiness
-                        size={19}
-                        className="text-[#a17c42]"
-                      />
-                    </div>
-
-                    <div>
-                      <h3 className="text-sm font-semibold text-[#171717]">
-                        {service.name}
-                      </h3>
-
-                      <p className="mt-1 text-xs text-[#858585]">
-                        {service.category}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-6">
-                    <div className="hidden text-right sm:block">
-                      <p className="text-xs text-[#999999]">
-                        Projects
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold text-[#171717]">
-                        {service.projects}
-                      </p>
-                    </div>
-
-                    <span className="rounded-full bg-[#eef7ef] px-3 py-1.5 text-xs font-semibold text-[#3d7a48]">
-                      {service.status}
-                    </span>
-                  </div>
+              {loading && (
+                <div className="px-5 py-8 text-sm text-[#858585]">
+                  Loading services…
                 </div>
-              ))}
+              )}
+
+              {!loading && recentServices.length === 0 && (
+                <div className="px-5 py-8 text-sm text-[#858585]">
+                  No services yet.
+                </div>
+              )}
+
+              {!loading &&
+                recentServices.map((service) => (
+                  <div
+                    key={service._id}
+                    className="flex flex-col gap-4 px-5 py-5 transition hover:bg-[#fafaf8] sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f5efe6]">
+                        <BriefcaseBusiness
+                          size={19}
+                          className="text-[#a17c42]"
+                        />
+                      </div>
+
+                      <div>
+                        <h3 className="text-sm font-semibold text-[#171717]">
+                          {service.title}
+                        </h3>
+
+                        <p className="mt-1 text-xs text-[#858585]">
+                          {service.categoryName}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-6">
+                      <span
+                        className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+                          service.status === "published"
+                            ? "bg-[#eef7ef] text-[#3d7a48]"
+                            : "bg-[#f5efe6] text-[#9a7136]"
+                        }`}
+                      >
+                        {service.status === "published" ? "Published" : "Draft"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
 
@@ -380,7 +466,7 @@ export default function DashboardPage() {
             </div>
 
             <Link
-              href="/dashboard/enquiries"
+              href="/dashboard/bookings"
               className="inline-flex items-center gap-1 text-sm font-semibold text-[#a17c42] transition hover:text-[#80602f]"
             >
               View all
@@ -411,40 +497,58 @@ export default function DashboardPage() {
               </thead>
 
               <tbody className="divide-y divide-[#eeeeeb]">
-                {enquiries.map((enquiry) => (
-                  <tr
-                    key={enquiry.name}
-                    className="transition hover:bg-[#fafaf8]"
-                  >
-                    <td className="px-5 py-4">
-                      <p className="text-sm font-semibold text-[#171717]">
-                        {enquiry.name}
-                      </p>
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-[#737373]">
-                      {enquiry.type}
-                    </td>
-
-                    <td className="px-5 py-4 text-sm text-[#737373]">
-                      {enquiry.date}
-                    </td>
-
-                    <td className="px-5 py-4">
-                      <span
-                        className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
-                          enquiry.status === "New"
-                            ? "bg-[#f5efe6] text-[#9a7136]"
-                            : enquiry.status === "Contacted"
-                            ? "bg-[#eef4fa] text-[#42698c]"
-                            : "bg-[#eef7ef] text-[#3d7a48]"
-                        }`}
-                      >
-                        {enquiry.status}
-                      </span>
+                {loading && (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-8 text-sm text-[#858585]">
+                      Loading enquiries…
                     </td>
                   </tr>
-                ))}
+                )}
+
+                {!loading && recentEnquiries.length === 0 && (
+                  <tr>
+                    <td colSpan={4} className="px-5 py-8 text-sm text-[#858585]">
+                      No enquiries yet.
+                    </td>
+                  </tr>
+                )}
+
+                {!loading &&
+                  recentEnquiries.map((enquiry) => (
+                    <tr
+                      key={enquiry._id}
+                      className="transition hover:bg-[#fafaf8]"
+                    >
+                      <td className="px-5 py-4">
+                        <p className="text-sm font-semibold text-[#171717]">
+                          {enquiry.name}
+                        </p>
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-[#737373]">
+                        {enquiry.service ?? enquiry.serviceType ?? "—"}
+                      </td>
+
+                      <td className="px-5 py-4 text-sm text-[#737373]">
+                        {timeAgo(enquiry.createdAt)}
+                      </td>
+
+                      <td className="px-5 py-4">
+                        <span
+                          className={`inline-flex rounded-full px-3 py-1.5 text-xs font-semibold ${
+                            enquiry.status === "new" || enquiry.status === "New"
+                              ? "bg-[#f5efe6] text-[#9a7136]"
+                              : enquiry.status === "contacted" ||
+                                enquiry.status === "Contacted"
+                              ? "bg-[#eef4fa] text-[#42698c]"
+                              : "bg-[#eef7ef] text-[#3d7a48]"
+                          }`}
+                        >
+                          {enquiry.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -454,4 +558,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

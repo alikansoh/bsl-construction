@@ -8,6 +8,8 @@ export interface IService extends Document {
   status: "draft" | "published";
   featured: boolean;
   displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
 
   hero: {
     eyebrow: string;

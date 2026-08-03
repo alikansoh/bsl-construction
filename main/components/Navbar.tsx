@@ -20,7 +20,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact Us"];
+const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact"];
 
 const MOBILE_BREAKPOINT = 768;
 

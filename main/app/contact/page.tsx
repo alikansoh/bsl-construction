@@ -37,7 +37,7 @@ const fraunces = Fraunces({
 
 const CONTACT_BLOCK = [
   { label: "Call", value: "+44 20 7946 0958" },
-  { label: "Email", value: "info@bslconstruction.co.uk" },
+  { label: "Email", value: "info@bsl-construction.co.uk" },
   { label: "Hours", value: "Mon–Fri, 8–6" },
   { label: "Based", value: "London, UK" },
 ];
@@ -53,8 +53,8 @@ const CONTACT_METHODS = [
   {
     icon: "mail",
     label: "Email Us",
-    value: "info@bslconstruction.co.uk",
-    href: "mailto:info@bslconstruction.co.uk",
+    value: "info@bsl-construction.co.uk",
+    href: "mailto:info@bsl-construction.co.uk",
     note: "We reply within one working day",
   },
   {
@@ -248,7 +248,7 @@ const STRUCTURED_DATA = {
     "@type": "HomeAndConstructionBusiness",
     name: "BSL Construction",
     areaServed: "London",
-    email: "info@bslconstruction.co.uk",
+    email: "info@bsl-construction.co.uk",
     telephone: "+44 20 7946 0958",
   },
 };

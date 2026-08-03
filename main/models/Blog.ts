@@ -4,6 +4,8 @@ export interface IBlog extends Document {
   slug: string;
   title: string;
   excerpt: string;
+  createdAt: Date;
+  updatedAt: Date;
 
   category: string;
   author: string;
