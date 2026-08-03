@@ -5,7 +5,6 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ChatWidget from "@/components/ChatWidget";
 
-
 export default function SiteChrome({
   children,
 }: {
@@ -23,7 +22,7 @@ export default function SiteChrome({
 
   return (
     <>
-    <ChatWidget />
+ <ChatWidget />
       <Navbar />
       {children}
       <Footer />

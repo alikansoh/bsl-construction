@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
+import { jwtVerify } from "jose";
 
 type JwtPayload = {
   userId: string;
@@ -9,19 +9,24 @@ type JwtPayload = {
   exp?: number;
 };
 
-function verifyAuthToken(token: string): JwtPayload | null {
+async function verifyAuthToken(token: string): Promise<JwtPayload | null> {
   try {
     const secret = process.env.JWT_SECRET;
     if (!secret) return null;
 
-    const decoded = jwt.verify(token, secret);
+    const { payload } = await jwtVerify(
+      token,
+      new TextEncoder().encode(secret),
+      { algorithms: ["HS256"] } // match whatever algorithm you sign tokens with
+    );
+
     if (
-      typeof decoded === "object" &&
-      decoded !== null &&
-      "userId" in decoded &&
-      "role" in decoded
+      typeof payload === "object" &&
+      payload !== null &&
+      "userId" in payload &&
+      "role" in payload
     ) {
-      return decoded as JwtPayload;
+      return payload as JwtPayload;
     }
 
     return null;
@@ -30,11 +35,10 @@ function verifyAuthToken(token: string): JwtPayload | null {
   }
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
   const token = request.cookies.get("auth_token")?.value ?? "";
 
-  // Include real route + common typos
   const protectedPrefixes = [
     "/dashboard",
     "/dashbord",
@@ -43,24 +47,21 @@ export function middleware(request: NextRequest) {
     "/deshboard",
   ];
 
-  const isProtected = protectedPrefixes.some(
+  const matchedPrefix = protectedPrefixes.find(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
+  const isProtected = !!matchedPrefix;
   const isLoginRoute = pathname === "/login";
 
   if (isProtected) {
-    // Always normalize typos to /dashboard (only if authenticated)
-    const isCanonicalDashboard =
-      pathname === "/dashboard" || pathname.startsWith("/dashboard/");
-
     if (!token) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", `${pathname}${search}`);
       return NextResponse.redirect(loginUrl);
     }
 
-    const payload = verifyAuthToken(token);
+    const payload = await verifyAuthToken(token);
     if (!payload) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("from", `${pathname}${search}`);
@@ -75,20 +76,35 @@ export function middleware(request: NextRequest) {
       return res;
     }
 
-    // Logged in but typo route -> redirect to canonical /dashboard
-    if (!isCanonicalDashboard) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
+    // Normalize misspelled prefixes to /dashboard, preserving the rest of the path
+    if (matchedPrefix !== "/dashboard") {
+      const correctedPath = pathname.replace(matchedPrefix, "/dashboard");
+      const correctedUrl = new URL(correctedPath + search, request.url);
+      return NextResponse.redirect(correctedUrl);
     }
 
     return NextResponse.next();
   }
 
-  // Prevent logged-in users from seeing login page
-  if (isLoginRoute && token) {
-    const payload = verifyAuthToken(token);
+  if (isLoginRoute) {
+    if (!token) {
+      return NextResponse.next();
+    }
+
+    const payload = await verifyAuthToken(token);
     if (payload) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
+
+    // If the cookie is present but invalid/stale, clear it and let the login page render
+    const res = NextResponse.next();
+    res.cookies.set({
+      name: "auth_token",
+      value: "",
+      path: "/",
+      maxAge: 0,
+    });
+    return res;
   }
 
   return NextResponse.next();

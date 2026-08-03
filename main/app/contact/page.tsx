@@ -14,8 +14,8 @@
  * CONTACT_METHODS for your real details before shipping this page.
  *
  * NOTE — form submission:
- * handleSubmit currently simulates a request. Point it at your real
- * endpoint (e.g. POST /api/contact, or a CRM/email provider) where marked.
+ * handleSubmit posts to /api/bookings, which saves the enquiry to the
+ * Booking collection and surfaces it in /dashboard/bookings.
  * -------------------------------------------------------------------------
  */
 
@@ -206,20 +206,18 @@ function SendIcon() {
 
 function useReveal<T extends Element>(threshold = 0.15) {
   const ref = useRef<T | null>(null);
-  const [visible, setVisible] = useState(false);
+
+  const [visible, setVisible] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  });
 
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
 
-    const reduced =
-      typeof window !== "undefined" &&
-      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
-
-    if (reduced) {
-      setVisible(true);
-      return;
-    }
+    // Already visible (reduced motion) — no observer needed.
+    if (visible) return;
 
     const observer = new IntersectionObserver(
       ([entry]) => {
@@ -233,6 +231,7 @@ function useReveal<T extends Element>(threshold = 0.15) {
 
     observer.observe(node);
     return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [threshold]);
 
   return [ref, visible] as const;
@@ -287,6 +286,7 @@ export default function ContactUs() {
 
   const [form, setForm] = useState<FormState>(INITIAL_FORM);
   const [status, setStatus] = useState<SubmitStatus>("idle");
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -296,20 +296,29 @@ export default function ContactUs() {
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setStatus("submitting");
+    setErrorMessage(null);
 
     try {
-      // TODO: replace with a real endpoint, e.g.
-      // await fetch("/api/contact", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(form),
-      // });
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-      await new Promise((resolve) => setTimeout(resolve, 900));
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Something went wrong sending your message.");
+      }
 
       setStatus("success");
       setForm(INITIAL_FORM);
-    } catch {
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "Something went wrong sending your message."
+      );
       setStatus("error");
     }
   }
@@ -393,8 +402,6 @@ export default function ContactUs() {
         aria-labelledby="contact-hero-heading"
         className="relative overflow-hidden bg-gradient-to-b from-[#26201A] via-[#1D1813] to-[#161210] px-5 pb-16 pt-28 sm:px-8 md:pb-24 md:pt-36"
       >
-        {/* Soft light glow behind the nav logo, top-left */}
-
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0"
@@ -572,12 +579,12 @@ export default function ContactUs() {
                 </button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} noValidate  id="quote" >
+              <form onSubmit={handleSubmit} noValidate id="quote">
                 <h3 className="bsl-serif mb-6 text-[1.3rem] font-medium text-[#1C1712]">
                   Request a free quote
                 </h3>
 
-                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2" >
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <div className="sm:col-span-1">
                     <label
                       htmlFor="name"
@@ -682,8 +689,8 @@ export default function ContactUs() {
 
                 {status === "error" && (
                   <p className="mt-4 text-[0.85rem] text-red-600">
-                    Something went wrong sending your message. Please try
-                    again, or call us directly.
+                    {errorMessage ||
+                      "Something went wrong sending your message. Please try again, or call us directly."}
                   </p>
                 )}
 

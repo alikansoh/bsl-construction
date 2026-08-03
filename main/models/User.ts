@@ -4,7 +4,6 @@ import bcrypt from "bcryptjs";
 export interface IUser extends Document {
   username: string;
   password: string;
-  role: "admin" | "editor";
   comparePassword(password: string): Promise<boolean>;
 }
 
@@ -23,11 +22,7 @@ const UserSchema = new Schema<IUser>(
       minlength: 6,
     },
 
-    role: {
-      type: String,
-      enum: ["admin", "editor"],
-      default: "editor",
-    },
+   
   },
   {
     timestamps: true,

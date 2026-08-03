@@ -85,8 +85,8 @@ const MANAGEMENT_ITEMS = [
     ),
   },
   {
-    label: "Settings",
-    href: "/dashboard/settings",
+    label: "reports",
+    href: "/dashboard/reports",
     icon: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
         <circle cx="12" cy="12" r="3" />
@@ -181,7 +181,6 @@ export default function DashboardSidebar({
         </p>
 
         <nav className="space-y-1">
-```
 
 {NAV_ITEMS.map((item) => {
   const active = isActive(item.href);

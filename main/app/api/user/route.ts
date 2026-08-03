@@ -2,6 +2,27 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/mongodb";
 import User from "@/models/User";
 
+function getErrorMessage(error: unknown) {
+  if (error && typeof error === "object" && "errors" in error) {
+    const mongooseError = error as {
+      errors?: Record<string, { message?: string }>;
+      message?: string;
+    };
+
+    const firstFieldError = mongooseError.errors
+      ? Object.values(mongooseError.errors)[0]?.message
+      : null;
+
+    return firstFieldError || mongooseError.message || "Validation failed";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Something went wrong";
+}
+
 // GET ALL USERS
 export async function GET() {
   try {
@@ -33,29 +54,14 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const username = String(body.username || "")
-      .trim()
-      .toLowerCase();
-
+    const username = String(body.username || "").trim().toLowerCase();
     const password = String(body.password || "");
-
-    const role = body.role || "editor";
 
     if (!username || !password) {
       return NextResponse.json(
         {
           success: false,
           message: "Username and password are required",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!["admin", "editor"].includes(role)) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Invalid role",
         },
         { status: 400 }
       );
@@ -78,7 +84,6 @@ export async function POST(request: Request) {
     const user = await User.create({
       username,
       password,
-      role,
     });
 
     return NextResponse.json(
@@ -87,7 +92,6 @@ export async function POST(request: Request) {
         user: {
           id: user._id.toString(),
           username: user.username,
-          role: user.role,
         },
       },
       { status: 201 }
@@ -98,9 +102,9 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to create user",
+        message: getErrorMessage(error),
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
@@ -110,7 +114,7 @@ export async function PATCH(request: Request) {
   try {
     const body = await request.json();
 
-    const { id, username, password, role } = body;
+    const { id, username, password } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -137,27 +141,11 @@ export async function PATCH(request: Request) {
     }
 
     if (username) {
-      user.username = String(username)
-        .trim()
-        .toLowerCase();
+      user.username = String(username).trim().toLowerCase();
     }
 
     if (password) {
       user.password = String(password);
-    }
-
-    if (role) {
-      if (!["admin", "editor"].includes(role)) {
-        return NextResponse.json(
-          {
-            success: false,
-            message: "Invalid role",
-          },
-          { status: 400 }
-        );
-      }
-
-      user.role = role;
     }
 
     await user.save();
@@ -167,7 +155,6 @@ export async function PATCH(request: Request) {
       user: {
         id: user._id.toString(),
         username: user.username,
-        role: user.role,
       },
     });
   } catch (error) {
@@ -176,9 +163,9 @@ export async function PATCH(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to update user",
+        message: getErrorMessage(error),
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }
@@ -187,7 +174,6 @@ export async function PATCH(request: Request) {
 export async function DELETE(request: Request) {
   try {
     const body = await request.json();
-
     const { id } = body;
 
     if (!id) {
@@ -224,9 +210,9 @@ export async function DELETE(request: Request) {
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to delete user",
+        message: getErrorMessage(error),
       },
-      { status: 500 }
+      { status: 400 }
     );
   }
 }

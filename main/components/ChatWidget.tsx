@@ -17,6 +17,9 @@ const PAGE_LABELS: Record<string, string> = {
 const PHONE_REGEX = /\+44\s?\d{4}\s?\d{6}/g;
 const PAGE_REGEX = /\/(contact|about|services|projects)\b/gi;
 
+// TODO: replace with your real emergency / urgent-callout number
+const EMERGENCY_PHONE = "+44 7342 324660";
+
 function PhoneIcon() {
   return (
     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
@@ -75,6 +78,39 @@ function MessageActions({ phones, pages }: { phones: string[]; pages: string[] }
   );
 }
 
+// Sticky banner shown at the very top of the chat panel so an urgent caller
+// never has to type anything to reach a human.
+function EmergencyBanner() {
+  return (
+    <a
+      href={`tel:${EMERGENCY_PHONE.replace(/\s/g, "")}`}
+      className="group relative flex items-center gap-3 overflow-hidden bg-gradient-to-r from-[#C0392B] to-[#E05A45] px-4 py-2.5 text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.15)] transition-all hover:from-[#A5311F] hover:to-[#C0392B]"
+    >
+      {/* subtle shine sweep on hover */}
+      <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+
+      <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/30">
+        <span className="absolute h-full w-full animate-ping rounded-full bg-white/20" />
+        <PhoneIcon />
+      </span>
+
+      <span className="relative flex flex-col leading-tight">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-white/80">
+          Need urgent help?
+        </span>
+        <span className="text-sm font-bold tracking-tight">
+          Call {EMERGENCY_PHONE}
+        </span>
+      </span>
+
+      <span className="relative ml-auto flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold ring-1 ring-white/30 transition-colors group-hover:bg-white/25">
+        Call now
+        <ArrowIcon />
+      </span>
+    </a>
+  );
+}
+
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -123,6 +159,8 @@ export default function ChatWidget() {
     <div className="fixed bottom-6 right-6 z-50">
       {open && (
         <div className="mb-3 flex h-[480px] w-[340px] flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-xl">
+          <EmergencyBanner />
+
           <div className="flex items-center justify-between bg-[#0B0B0D] px-4 py-3">
             <span className="text-sm font-medium text-white">Ask us anything</span>
             <button onClick={() => setOpen(false)} className="text-white/70 hover:text-white">
