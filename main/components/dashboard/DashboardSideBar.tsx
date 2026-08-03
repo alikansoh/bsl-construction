@@ -1,8 +1,10 @@
+
+
 "use client";
 
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 interface DashboardSidebarProps {
   open: boolean;
@@ -99,6 +101,7 @@ export default function DashboardSidebar({
   onClose,
 }: DashboardSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
 
   const isActive = (href: string) => {
     if (href === "/dashboard") {
@@ -107,6 +110,24 @@ export default function DashboardSidebar({
 
     return pathname.startsWith(href);
   };
+
+  async function handleLogout() {
+    try {
+      const response = await fetch("/api/logout", {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        throw new Error("Logout failed");
+      }
+
+      router.replace("/login"); // Change if needed
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed:", error);
+      alert("Failed to logout.");
+    }
+  }
 
   return (
     <aside
@@ -119,7 +140,6 @@ export default function DashboardSidebar({
         ${open ? "translate-x-0" : "-translate-x-full"}
       `}
     >
-      {/* Logo */}
       <div className="flex h-[88px] items-center justify-between border-b border-[#D9D5CC] px-7">
         <Link
           href="/dashboard"
@@ -136,7 +156,6 @@ export default function DashboardSidebar({
           />
         </Link>
 
-        {/* Mobile Close Button */}
         <button
           type="button"
           onClick={onClose}
@@ -156,143 +175,144 @@ export default function DashboardSidebar({
         </button>
       </div>
 
-      {/* Navigation */}
       <div className="flex-1 overflow-y-auto px-4 py-7">
-        {/* Workspace */}
         <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#9A968E]">
           Workspace
         </p>
 
         <nav className="space-y-1">
-          {NAV_ITEMS.map((item) => {
-            const active = isActive(item.href);
+```
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`
-                  group flex items-center gap-3 rounded-xl px-3 py-3
-                  text-sm font-medium transition-all duration-200
-                  ${
-                    active
-                      ? "bg-[#171717] text-white shadow-sm"
-                      : "text-[#625F58] hover:bg-white hover:text-[#171717]"
-                  }
-                `}
-              >
-                <span
-                  className={`
-                    flex h-9 w-9 items-center justify-center rounded-lg
-                    transition
-                    ${
-                      active
-                        ? "bg-white/10"
-                        : "bg-white/60 group-hover:bg-[#F3F1EC]"
-                    }
-                  `}
-                >
-                  <span className="h-[18px] w-[18px]">
-                    {item.icon}
-                  </span>
-                </span>
+{NAV_ITEMS.map((item) => {
+  const active = isActive(item.href);
 
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={onClose}
+      className={`
+        group flex items-center gap-3 rounded-xl px-3 py-3
+        text-sm font-medium transition-all duration-200
+        ${
+          active
+            ? "bg-[#171717] text-white shadow-sm"
+            : "text-[#625F58] hover:bg-white hover:text-[#171717]"
+        }
+      `}
+    >
+      <span
+        className={`
+          flex h-9 w-9 items-center justify-center rounded-lg
+          transition
+          ${
+            active
+              ? "bg-white/10"
+              : "bg-white/60 group-hover:bg-[#F3F1EC]"
+          }
+        `}
+      >
+        <span className="h-[18px] w-[18px]">
+          {item.icon}
+        </span>
+      </span>
 
-        {/* Divider */}
-        <div className="my-7 h-px bg-[#D9D5CC]" />
+      <span>{item.label}</span>
+    </Link>
+  );
+})}
+</nav>
 
-        {/* Management */}
-        <p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#9A968E]">
-          Management
-        </p>
+{/* Divider */}
+<div className="my-7 h-px bg-[#D9D5CC]" />
 
-        <nav className="space-y-1">
-          {MANAGEMENT_ITEMS.map((item) => {
-            const active = isActive(item.href);
+{/* Management */}
+<p className="mb-3 px-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#9A968E]">
+Management
+</p>
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`
-                  group flex items-center gap-3 rounded-xl px-3 py-3
-                  text-sm font-medium transition-all duration-200
-                  ${
-                    active
-                      ? "bg-[#171717] text-white shadow-sm"
-                      : "text-[#625F58] hover:bg-white hover:text-[#171717]"
-                  }
-                `}
-              >
-                <span
-                  className={`
-                    flex h-9 w-9 items-center justify-center rounded-lg
-                    ${
-                      active
-                        ? "bg-white/10"
-                        : "bg-white/60 group-hover:bg-[#F3F1EC]"
-                    }
-                  `}
-                >
-                  <span className="h-[18px] w-[18px]">
-                    {item.icon}
-                  </span>
-                </span>
+<nav className="space-y-1">
+{MANAGEMENT_ITEMS.map((item) => {
+  const active = isActive(item.href);
 
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+  return (
+    <Link
+      key={item.href}
+      href={item.href}
+      onClick={onClose}
+      className={`
+        group flex items-center gap-3 rounded-xl px-3 py-3
+        text-sm font-medium transition-all duration-200
+        ${
+          active
+            ? "bg-[#171717] text-white shadow-sm"
+            : "text-[#625F58] hover:bg-white hover:text-[#171717]"
+        }
+      `}
+    >
+      <span
+        className={`
+          flex h-9 w-9 items-center justify-center rounded-lg
+          ${
+            active
+              ? "bg-white/10"
+              : "bg-white/60 group-hover:bg-[#F3F1EC]"
+          }
+        `}
+      >
+        <span className="h-[18px] w-[18px]">
+          {item.icon}
+        </span>
+      </span>
 
-      {/* User Profile */}
-      <div className="border-t border-[#D9D5CC] p-4">
-        <div className="flex items-center gap-3 rounded-xl border border-[#D9D5CC] bg-white/70 p-3">
-          {/* Avatar */}
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#171717] text-sm font-semibold text-white">
-            A
-          </div>
+      <span>{item.label}</span>
+    </Link>
+  );
+})}
+</nav>
+</div>
 
-          {/* User info */}
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-[#171717]">
-              Admin User
-            </p>
+{/* User Profile */}
+<div className="border-t border-[#D9D5CC] p-4">
+<div className="flex items-center gap-3 rounded-xl border border-[#D9D5CC] bg-white/70 p-3">
+{/* Avatar */}
+<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#171717] text-sm font-semibold text-white">
+  A
+</div>
 
-            <p className="truncate text-xs text-[#8A867E]">
-              Administrator
-            </p>
-          </div>
+{/* User info */}
+<div className="min-w-0 flex-1">
+  <p className="truncate text-sm font-semibold text-[#171717]">
+    Admin User
+  </p>
 
-          {/* Logout */}
-          <Link
-            href="/api/logout"
-            title="Logout"
-            aria-label="Logout"
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#8A867E] transition hover:bg-red-50 hover:text-red-500"
-          >
-            <svg
-              className="h-[18px] w-[18px]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M10 17l5-5-5-5" />
-              <path d="M15 12H3" />
-              <path d="M21 19V5a2 2 0 00-2-2h-6" />
-            </svg>
-          </Link>
-        </div>
-      </div>
+  <p className="truncate text-xs text-[#8A867E]">
+    Administrator
+  </p>
+</div>
+
+{/* Logout Button */}
+<button
+  type="button"
+  onClick={handleLogout}
+  title="Logout"
+  aria-label="Logout"
+  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#8A867E] transition hover:bg-red-50 hover:text-red-500"
+>
+  <svg
+    className="h-[18px] w-[18px]"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+  >
+    <path d="M10 17l5-5-5-5" />
+    <path d="M15 12H3" />
+    <path d="M21 19V5a2 2 0 00-2-2h-6" />
+  </svg>
+</button>
+</div>
+</div>
     </aside>
   );
 }
