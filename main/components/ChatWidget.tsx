@@ -55,8 +55,8 @@ function MessageActions({ phones, pages }: { phones: string[]; pages: string[] }
   return (
     <div className="mt-2 flex flex-wrap gap-1.5">
       {phones.map((phone) => (
-        <a
-          key={phone}
+        
+         <a key={phone}
           href={`tel:${phone.replace(/\s/g, "")}`}
           className="inline-flex items-center gap-1.5 rounded-full bg-[#A26028] px-3 py-1.5 text-xs font-medium text-white shadow-sm transition-colors hover:bg-[#8A5121]"
         >
@@ -82,8 +82,8 @@ function MessageActions({ phones, pages }: { phones: string[]; pages: string[] }
 // never has to type anything to reach a human.
 function EmergencyBanner() {
   return (
-    <a
-      href={`tel:${EMERGENCY_PHONE.replace(/\s/g, "")}`}
+    
+     <a href={`tel:${EMERGENCY_PHONE.replace(/\s/g, "")}`}
       className="group relative flex items-center gap-3 overflow-hidden bg-gradient-to-r from-[#C0392B] to-[#E05A45] px-4 py-2.5 text-white shadow-[inset_0_-1px_0_rgba(0,0,0,0.15)] transition-all hover:from-[#A5311F] hover:to-[#C0392B]"
     >
       {/* subtle shine sweep on hover */}
@@ -117,10 +117,20 @@ export default function ChatWidget() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, open]);
+
+  // Focus the input whenever the panel opens, so people can start typing right away.
+  useEffect(() => {
+    if (open) {
+      // slight delay avoids the focus firing before the panel has finished mounting/animating in
+      const id = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(id);
+    }
+  }, [open]);
 
   async function sendMessage() {
     if (!input.trim() || loading) return;
@@ -152,13 +162,15 @@ export default function ChatWidget() {
       ]);
     } finally {
       setLoading(false);
+      // return focus to the input after a round trip, so people can keep typing without re-tapping
+      inputRef.current?.focus();
     }
   }
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed inset-x-4 bottom-4 z-50 flex flex-col items-end sm:inset-x-auto sm:bottom-6 sm:right-6">
       {open && (
-        <div className="mb-3 flex h-[480px] w-[340px] flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-xl">
+        <div className="mb-3 flex h-[70vh] max-h-[480px] w-[calc(100vw-2rem)] max-w-[340px] flex-col overflow-hidden rounded-lg border border-black/10 bg-white shadow-xl">
           <EmergencyBanner />
 
           <div className="flex items-center justify-between bg-[#0B0B0D] px-4 py-3">
@@ -207,15 +219,17 @@ export default function ChatWidget() {
 
           <div className="flex items-center gap-2 border-t border-black/10 px-3 py-3">
             <input
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && sendMessage()}
               placeholder="Type a message..."
-              className="flex-1 rounded-full border border-black/10 px-3 py-2 text-sm outline-none focus:border-[#A26028]"
+              // text-base (16px) instead of text-sm (14px) so iOS Safari doesn't auto-zoom on focus
+              className="flex-1 rounded-full border border-black/10 px-3 py-2 text-base outline-none focus:border-[#A26028] sm:text-sm"
             />
             <button
               onClick={sendMessage}
-              className="rounded-full bg-[#A26028] px-4 py-2 text-sm text-white hover:bg-[#8A5121]"
+              className="shrink-0 rounded-full bg-[#A26028] px-4 py-2 text-sm text-white hover:bg-[#8A5121]"
             >
               Send
             </button>
@@ -225,7 +239,7 @@ export default function ChatWidget() {
 
       <button
         onClick={() => setOpen(!open)}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-[#A26028] text-white shadow-lg hover:bg-[#8A5121]"
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#A26028] text-white shadow-lg hover:bg-[#8A5121]"
       >
         {open ? "✕" : "💬"}
       </button>
