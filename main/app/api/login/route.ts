@@ -24,8 +24,8 @@ export async function POST(request: Request) {
     }
 
     await connectDB();
-
     const user = await User.findOne({ username });
+    console.log("User found:", !!user, "password valid:", user ? await user.comparePassword(password) : "n/a");
 
     if (!user) {
       return NextResponse.json(
@@ -62,6 +62,8 @@ export async function POST(request: Request) {
         role: user.role,
       },
     });
+    console.log("Setting cookie, token length:", token.length);
+    console.log("NODE_ENV:", process.env.NODE_ENV);
 
     response.cookies.set({
       name: "auth_token",

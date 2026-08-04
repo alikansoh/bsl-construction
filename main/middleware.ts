@@ -12,7 +12,10 @@ type JwtPayload = {
 async function verifyAuthToken(token: string): Promise<JwtPayload | null> {
   try {
     const secret = process.env.JWT_SECRET;
-    if (!secret) return null;
+    if (!secret) {
+      console.error("JWT verify failed: JWT_SECRET is missing/undefined");
+      return null;
+    }
 
     const { payload } = await jwtVerify(
       token,
@@ -29,8 +32,10 @@ async function verifyAuthToken(token: string): Promise<JwtPayload | null> {
       return payload as JwtPayload;
     }
 
+    console.error("JWT verify failed: payload missing userId/role", payload);
     return null;
-  } catch {
+  } catch (err) {
+    console.error("JWT verify failed:", err);
     return null;
   }
 }
