@@ -522,7 +522,7 @@ export default function AboutUs() {
         >
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-3xl shadow-[0_20px_40px_-20px_rgba(11,11,13,0.35)] md:order-2">
             <Image
-              src="/home.webp"
+              src="/aboutus.webp"
               alt="A recent BSL Construction building project in London"
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
