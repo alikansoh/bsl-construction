@@ -13,7 +13,7 @@ type PageProps = {
 
 // Only real service × borough combinations are valid — anything else 404s
 // instead of rendering an arbitrary/unknown borough.
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 export async function generateStaticParams() {
   const services = await getAllServices();
