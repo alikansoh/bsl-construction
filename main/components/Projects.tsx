@@ -306,12 +306,12 @@ export default function Projects() {
   const heroTimeline = useRef<gsap.core.Timeline | null>(null);
 
   const activeIndexRef = useRef(0);
-  const isAnimatingRef = useRef(false);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
 
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const touchTracking = useRef(false);
+  const swipeConsumedClick = useRef(false);
 
   useEffect(() => {
     activeIndexRef.current = activeIndex;
@@ -370,50 +370,18 @@ export default function Projects() {
     };
   }, []);
 
-  function transitionTo(nextIndex: number) {
-    const stage = stageRef.current;
-    const details = detailsRef.current;
-    if (!stage || !details || isAnimatingRef.current || total === 0) return;
-
-    const clamped = ((nextIndex % total) + total) % total;
-    if (clamped === activeIndexRef.current) return;
-    isAnimatingRef.current = true;
-
-    const q = gsap.utils.selector(stage);
-    const image = q("[data-card-image]");
-
-    const tl = gsap.timeline({
-      defaults: { ease: "power2.out" },
-      onComplete: () => {
-        isAnimatingRef.current = false;
-      },
-    });
-
-    tl.to(details, { opacity: 0, y: 10, duration: 0.22 }, 0)
-      .to(image, { clipPath: "inset(0% 0% 100% 0%)", duration: 0.3, ease: "power2.in" }, 0)
-      .call(() => {
-        activeIndexRef.current = clamped;
-        setActiveIndex(clamped);
-        setActiveImageIndex(0);
-      })
-      .set(image, { clipPath: "inset(0% 0% 100% 0%)" })
-      .set(details, { y: 10 })
-      .to(image, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.5, ease: "power3.out" })
-      .to(details, { opacity: 1, y: 0, duration: 0.4 }, "<0.08");
-  }
-
   function goTo(nextIndex: number) {
-    if (total === 0) return;
+    if (total <= 1) return;
     const clamped = ((nextIndex % total) + total) % total;
     if (clamped === activeIndexRef.current) return;
 
-    const st = scrollTriggerRef.current;
-    if (st) {
-      const target = st.start + (clamped / (total - 1)) * (st.end - st.start);
-      window.scrollTo({ top: target, behavior: "smooth" });
-    } else {
-      transitionTo(clamped);
-    }
+    activeIndexRef.current = clamped;
+    setImageFading(true);
+    window.setTimeout(() => {
+      setActiveIndex(clamped);
+      setActiveImageIndex(0);
+      setImageFading(false);
+    }, 180);
   }
 
   function handleTouchStart(e: React.TouchEvent) {
@@ -434,10 +402,22 @@ export default function Projects() {
 
     if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
 
+    // A real horizontal swipe happened — stop the hero <a> from also firing a
+    // click and navigating to the project page instead of switching projects.
+    swipeConsumedClick.current = true;
+    e.preventDefault();
+
     if (dx < 0) {
       goTo(activeIndexRef.current + 1);
     } else {
       goTo(activeIndexRef.current - 1);
+    }
+  }
+
+  function handleHeroClick(e: React.MouseEvent) {
+    if (swipeConsumedClick.current) {
+      e.preventDefault();
+      swipeConsumedClick.current = false;
     }
   }
 
@@ -566,33 +546,11 @@ export default function Projects() {
           };
         }
 
-        if (isDesktop && !reduceMotion && total > 1) {
-          const distancePerProject = Math.max(window.innerHeight * 0.85, 560);
-
-          const st = ScrollTrigger.create({
-            trigger: stage,
-            start: () => `top ${getNavbarHeight()}px`,
-            end: () => `+=${(total - 1) * distancePerProject}`,
-            pin: true,
-            pinSpacing: true,
-            scrub: 0.8,
-            snap: {
-              snapTo: 1 / (total - 1),
-              duration: 0.5,
-              ease: "power1.inOut",
-            },
-            onUpdate: (self) => {
-              const idx = Math.round(self.progress * (total - 1));
-              if (idx !== activeIndexRef.current) {
-                transitionTo(idx);
-              }
-            },
-          });
-          scrollTriggerRef.current = st;
-          triggers.push(st);
-        } else {
-          scrollTriggerRef.current = null;
-        }
+        // The switcher is driven entirely by manual navigation (arrows,
+        // swipe, thumbnails, numeral rail) on every breakpoint — no
+        // scroll-pinning, so `goTo` just updates React state directly.
+        void isDesktop;
+        scrollTriggerRef.current = null;
 
         const imgEl = hero.querySelector("img");
         const onLoad = () => ScrollTrigger.refresh();
@@ -613,7 +571,6 @@ export default function Projects() {
     ScrollTrigger.refresh();
 
     return () => mm.revert();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadState, total]);
 
   useEffect(() => {
@@ -746,6 +703,8 @@ export default function Projects() {
                   onBlur={() => heroTimeline.current?.reverse()}
                   onTouchStart={handleTouchStart}
                   onTouchEnd={handleTouchEnd}
+                  onClick={handleHeroClick}
+                  style={{ touchAction: "pan-y" }}
                   className="group relative block overflow-hidden rounded-2xl bg-white transition-shadow duration-300 ease-out hover:shadow-[0_28px_56px_-20px_rgba(28,23,18,0.28),0_8px_20px_-8px_rgba(162,96,40,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A26028]"
                 >
                   <div className="relative aspect-[4/3] overflow-hidden">
@@ -882,14 +841,16 @@ export default function Projects() {
 
                 <div ref={switcherRef} className="flex flex-col gap-4">
                   <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => goTo(activeIndex - 1)}
-                      aria-label="Previous project"
-                      className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028] active:bg-[#A26028]/10 lg:h-9 lg:w-9"
-                    >
-                      <ChevronIcon direction="left" />
-                    </button>
+                    {total > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => goTo(activeIndex - 1)}
+                        aria-label="Previous project"
+                        className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028] active:bg-[#A26028]/10 lg:h-9 lg:w-9"
+                      >
+                        <ChevronIcon direction="left" />
+                      </button>
+                    )}
 
                     {/* Photo rail for the CURRENTLY ACTIVE project — every
                         merged image (hero, thumbnail, gallery). Switching
@@ -933,14 +894,16 @@ export default function Projects() {
                       ))}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => goTo(activeIndex + 1)}
-                      aria-label="Next project"
-                      className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028] active:bg-[#A26028]/10 lg:h-9 lg:w-9"
-                    >
-                      <ChevronIcon direction="right" />
-                    </button>
+                    {total > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => goTo(activeIndex + 1)}
+                        aria-label="Next project"
+                        className="flex h-11 w-11 flex-none items-center justify-center rounded-full border border-[#1C1712]/15 text-[#1C1712] transition-colors duration-200 hover:border-[#A26028] hover:bg-[#A26028]/5 hover:text-[#A26028] active:bg-[#A26028]/10 lg:h-9 lg:w-9"
+                      >
+                        <ChevronIcon direction="right" />
+                      </button>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-3">

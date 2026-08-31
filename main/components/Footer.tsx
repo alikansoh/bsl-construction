@@ -354,7 +354,7 @@ export default function Footer() {
             {/* TODO: replace the placeholders below with BSL Construction's real phone, email and address. */}
             <ul className="flex flex-col gap-2 text-[0.92rem] text-white/70">
               <li>
-                <a href="tel:+442000000000" className="footer-link">020 0000 0000</a>
+                <a href="tel:+447342324660" className="footer-link">+44 7342 324660</a>
               </li>
               <li>
                 <a href="mailto:info@bsl-construction.co.uk" className="footer-link">info@bsl-construction.co.uk</a>

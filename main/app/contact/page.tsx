@@ -36,18 +36,18 @@ const fraunces = Fraunces({
 /* -------------------------------------------------------------------------- */
 
 const CONTACT_BLOCK = [
-  { label: "Call", value: "+44 20 7946 0958" },
-  { label: "Email", value: "info@bsl-construction.co.uk" },
-  { label: "Hours", value: "Mon–Fri, 8–6" },
-  { label: "Based", value: "London, UK" },
+  { label: "Response", value: "Within 1 working day" },
+  { label: "Hours", value: "Mon–Fri, 8:00–18:00" },
+  { label: "Call", value: "+44 7342 324660" },
+  { label: "Coverage", value: "London & surrounding" },
 ];
 
 const CONTACT_METHODS = [
   {
     icon: "phone",
     label: "Call Us",
-    value: "+44 20 7946 0958",
-    href: "tel:+442079460958",
+    value: "+44 7342 324660",
+    href: "tel:+447342324660",
     note: "Mon–Fri, 8:00–18:00",
   },
   {
@@ -249,7 +249,7 @@ const STRUCTURED_DATA = {
     name: "BSL Construction",
     areaServed: "London",
     email: "info@bsl-construction.co.uk",
-    telephone: "+44 20 7946 0958",
+    telephone: "+44 7342 324660",
   },
 };
 
@@ -340,12 +340,24 @@ export default function ContactUs() {
           background-size: 22px 22px;
         }
 
-        .bsl-hero-accent {
-          background-image: linear-gradient(100deg, #E8C599 10%, #FFF3DC 45%, #C98A3F 80%);
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-          -webkit-text-fill-color: transparent;
+        @keyframes bsl-hero-in {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bsl-hero-anim > * {
+          opacity: 0;
+          animation: bsl-hero-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+        .bsl-hero-anim > *:nth-child(1) { animation-delay: 0.04s; }
+        .bsl-hero-anim > *:nth-child(2) { animation-delay: 0.14s; }
+        .bsl-hero-anim > *:nth-child(3) { animation-delay: 0.24s; }
+
+        @media (prefers-reduced-motion: reduce) {
+          .bsl-hero-anim > * {
+            opacity: 1 !important;
+            animation: none !important;
+          }
         }
 
         .bsl-fade {
@@ -395,81 +407,44 @@ export default function ContactUs() {
       />
 
       {/* ==================================================================
-          HERO — CONTACT BLOCK
+          PAGE INTRO
       =================================================================== */}
 
       <section
         aria-labelledby="contact-hero-heading"
-        className="relative overflow-hidden bg-gradient-to-b from-[#26201A] via-[#1D1813] to-[#161210] px-5 pb-16 pt-28 sm:px-8 md:pb-24 md:pt-36"
+        className="bg-[#FAFAF9] px-5 pt-28 pb-10 sm:px-8 md:pt-36 md:pb-14"
       >
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 340px 220px at 6% 4%, rgba(250,248,246,0.95) 0%, rgba(250,248,246,0.65) 32%, rgba(250,248,246,0.22) 55%, rgba(250,248,246,0) 78%)",
-          }}
-        />
+        <div className="bsl-hero-anim mx-auto max-w-[1180px]">
+          <span className="relative mb-4 inline-block pl-9 text-[0.8rem] font-bold uppercase tracking-[0.14em] text-[#A26028] before:absolute before:left-0 before:top-1/2 before:h-[2px] before:w-7 before:-translate-y-1/2 before:bg-[#A26028]">
+            Contact BSL Construction
+          </span>
 
-        <div
-          aria-hidden="true"
-          className="bsl-blueprint-grid-dark pointer-events-none absolute inset-0 opacity-30"
-        />
+          <h1
+            id="contact-hero-heading"
+            className="bsl-serif max-w-3xl text-[clamp(2.2rem,5vw,3.6rem)] font-medium leading-[1.1] tracking-[-0.02em] text-[#0B0B0D]"
+          >
+            Let&apos;s talk about{" "}
+            <span className="italic text-[#A26028]">your next project.</span>
+          </h1>
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-32 -top-32 h-[440px] w-[440px] rounded-full bg-[radial-gradient(circle,rgba(232,197,153,0.22)_0%,rgba(232,197,153,0)_70%)]"
-        />
+          <p className="mt-5 max-w-xl text-[clamp(0.98rem,1.5vw,1.1rem)] leading-[1.75] text-[#43433F]">
+            New build, refurbishment, or an ongoing maintenance contract — tell
+            us what you need and we&apos;ll come back with clear next steps, free
+            of charge.
+          </p>
 
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-48 -left-24 h-[380px] w-[380px] rounded-full bg-[radial-gradient(circle,rgba(162,96,40,0.16)_0%,rgba(162,96,40,0)_70%)]"
-        />
-
-        <div className="relative mx-auto grid max-w-[1180px] grid-cols-1 items-end gap-10 md:grid-cols-[1.3fr_0.7fr] md:gap-8">
-          <div>
-            <span className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-4 py-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-[#E8C599] backdrop-blur-sm">
-              <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#E8C599]" />
-              Contact BSL Construction
-            </span>
-
-            <h1
-              id="contact-hero-heading"
-              className="bsl-serif max-w-3xl text-[clamp(2.4rem,5.4vw,4.2rem)] font-medium leading-[1.08] tracking-[-0.02em] text-white"
-            >
-              Let&apos;s talk about
-              <br />
-              <span className="bsl-hero-accent italic">your next project.</span>
-            </h1>
-
-            <p className="mt-6 max-w-xl text-[clamp(0.98rem,1.5vw,1.1rem)] leading-[1.75] text-white/70">
-              Whether it&apos;s a new build, a refurbishment, or an ongoing
-              maintenance contract — tell us what you need and we&apos;ll get
-              back to you with next steps, free of charge.
-            </p>
-          </div>
-
-          {/* Contact block — the blueprint stamp, reused from About */}
-
-          <div className="w-full max-w-sm justify-self-start rounded-2xl border border-white/10 bg-white/[0.04] p-5 shadow-[0_20px_50px_-25px_rgba(0,0,0,0.6)] backdrop-blur-xl md:justify-self-end">
-            <span className="mb-4 inline-flex items-center gap-2 text-[0.62rem] font-semibold uppercase tracking-[0.22em] text-white/40">
-              <span aria-hidden="true" className="h-px w-4 bg-white/25" />
-              Contact Block
-            </span>
-
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
-              {CONTACT_BLOCK.map((row) => (
-                <div key={row.label} className="min-w-0">
-                  <dt className="text-[0.62rem] font-medium uppercase tracking-[0.14em] text-white/40">
-                    {row.label}
-                  </dt>
-                  <dd className="bsl-serif mt-0.5 truncate text-[0.98rem] text-white">
-                    {row.value}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-          </div>
+          <dl className="mt-7 flex flex-wrap gap-x-10 gap-y-4 border-t border-[#1C1712]/10 pt-5">
+            {CONTACT_BLOCK.map((row) => (
+              <div key={row.label} className="min-w-0">
+                <dt className="text-[0.62rem] font-semibold uppercase tracking-[0.16em] text-[#A26028]">
+                  {row.label}
+                </dt>
+                <dd className="bsl-serif mt-0.5 text-[0.98rem] leading-snug text-[#0B0B0D]">
+                  {row.value}
+                </dd>
+              </div>
+            ))}
+          </dl>
         </div>
       </section>
 
@@ -849,10 +824,10 @@ export default function ContactUs() {
           </div>
 
           <Link
-            href="tel:+442079460958"
+            href="tel:+447342324660"
             className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#A26028] px-8 py-4 text-[0.9rem] font-semibold uppercase tracking-[0.08em] text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#8A5121]"
           >
-            Call +44 20 7946 0958
+            Call +44 7342 324660
           </Link>
         </div>
       </section>

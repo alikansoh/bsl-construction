@@ -304,7 +304,14 @@ export default function Navbar() {
     }, 120);
   };
 
-  const showBackground = isScrolled || isMenuOpen;
+  // Pages that have no dark hero behind the nav — the bar must be solid
+  // from the very top rather than transparent.
+  const NO_HERO_ROUTES = ["/about", "/contact"];
+  const forceSolidNav = NO_HERO_ROUTES.some(
+    (route) => pathname === route || pathname?.startsWith(`${route}/`),
+  );
+
+  const showBackground = isScrolled || isMenuOpen || forceSolidNav;
 
   return (
     <>
