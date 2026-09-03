@@ -38,7 +38,7 @@ const fraunces = Fraunces({
 const CONTACT_BLOCK = [
   { label: "Response", value: "Within 1 working day" },
   { label: "Hours", value: "Mon–Fri, 8:00–18:00" },
-  { label: "Call", value: "+44 7342 324660" },
+  { label: "Call", value: "07378 412002" },
   { label: "Coverage", value: "London & surrounding" },
 ];
 
@@ -46,8 +46,8 @@ const CONTACT_METHODS = [
   {
     icon: "phone",
     label: "Call Us",
-    value: "+44 7342 324660",
-    href: "tel:+447342324660",
+    value: "07378 412002",
+    href: "tel:+447378412002",
     note: "Mon–Fri, 8:00–18:00",
   },
   {
@@ -249,7 +249,7 @@ const STRUCTURED_DATA = {
     name: "BSL Construction",
     areaServed: "London",
     email: "info@bsl-construction.co.uk",
-    telephone: "+44 7342 324660",
+    telephone: "07378 412002",
   },
 };
 
@@ -824,10 +824,10 @@ export default function ContactUs() {
           </div>
 
           <Link
-            href="tel:+447342324660"
+            href="tel:+447378412002"
             className="inline-flex shrink-0 items-center gap-2 rounded-full bg-[#A26028] px-8 py-4 text-[0.9rem] font-semibold uppercase tracking-[0.08em] text-white transition-all duration-200 ease-out hover:-translate-y-0.5 hover:bg-[#8A5121]"
           >
-            Call +44 7342 324660
+            Call 07378 412002
           </Link>
         </div>
       </section>

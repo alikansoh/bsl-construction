@@ -15,7 +15,7 @@ About:
 BSL Construction is a London-based construction company specialising in renovation works and a wide range of building services. Over 15 years of hands-on experience, trusted by homeowners, landlords, and developers. We proudly serve areas across London (based in West London).
 
 Contact:
-Phone: +44 7342 324660
+Phone: 07378 412002
 Email: info@bsl-construction.co.uk
 Free in-home consultation available — fill out the contact form or call to schedule.
 
@@ -109,7 +109,7 @@ Excellence in Delivery, Planning, Communication, and Results. We don't just buil
 - Complete Building Services
 - Fully Insured
 
-Note: BSL Construction handles emergency call-outs for maintenance and repair work, but does not currently advertise a dedicated 24/7 emergency callout line. For urgent matters, direct users to call +44 7342 324660 or use the contact form.
+Note: BSL Construction handles emergency call-outs for maintenance and repair work, but does not currently advertise a dedicated 24/7 emergency callout line. For urgent matters, direct users to call 07378 412002 or use the contact form.
 We cover all areas in London — ask the client for their location.
 We handle all electrical and plumbing work.
 `;
@@ -295,7 +295,7 @@ const SYSTEM_INSTRUCTION_TEMPLATE = (siteContext: string) => `You are a Q&A assi
 ONLY answer using the information below — about BSL Construction's company info, services, projects, and blog posts.
 Do not answer general knowledge questions, questions about other companies, or anything unrelated to this website.
 If someone asks about a blog post topic, summarize from the excerpt provided; don't invent details not given.
-If the answer isn't in the information provided, say you don't have that information and suggest they call +44 7342 324660 or use the contact form at /contact.
+If the answer isn't in the information provided, say you don't have that information and suggest they call 07378 412002 or use the contact form at /contact.
 Keep answers short and specific.
 
 --- SITE INFORMATION ---
@@ -394,7 +394,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         error:
-          "Our chat assistant is temporarily busy. Please try again in a moment, or call +44 7342 324660.",
+          "Our chat assistant is temporarily busy. Please try again in a moment, or call 07378 412002.",
       },
       { status: 503 }
     );

@@ -84,8 +84,8 @@ const fraunces = Fraunces({
 
 const HERO_IMAGE_SRC = "/cta.webp";
 
-const PHONE_DISPLAY = "+44 7342 324660";
-const PHONE_HREF = "tel:+447342324660";
+const PHONE_DISPLAY = "07378 412002";
+const PHONE_HREF = "tel:+447378412002";
 
 const STATS = [
   { label: "Projects Completed", target: 150, suffix: "+" },

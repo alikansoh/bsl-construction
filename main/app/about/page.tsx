@@ -826,10 +826,10 @@ export default function AboutUs() {
               </svg>
             </Link>
             <a
-              href="tel:+447342324660"
+              href="tel:+447378412002"
               className="inline-flex items-center gap-2 rounded-full border border-white/25 px-8 py-4 text-[0.9rem] font-semibold uppercase tracking-[0.08em] text-white transition-colors duration-200 hover:border-white/60 hover:bg-white/5"
             >
-              +44 7342 324660
+              07378 412002
             </a>
           </div>
         </div>

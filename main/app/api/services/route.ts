@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { connectDB } from "@/lib/mongodb";
 import Service from "@/models/Service";
 import { verifyToken } from "@/lib/auth";
@@ -333,6 +334,15 @@ export async function POST(request: Request) {
         keywords: Array.isArray(seo.keywords) ? seo.keywords : [],
       },
     });
+
+    // Bust the cached public renders so the new service shows up
+    // immediately instead of waiting for the ISR window to expire.
+    revalidatePath("/services");
+    revalidatePath("/services/[slug]", "page");
+    revalidatePath(`/services/${service.slug}`);
+    if (service.categorySlug) {
+      revalidatePath(`/services/${service.categorySlug}`);
+    }
 
     return NextResponse.json(
       { success: true, message: "Service created", service },

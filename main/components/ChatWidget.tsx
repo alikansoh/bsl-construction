@@ -18,7 +18,7 @@ const PHONE_REGEX = /\+44\s?\d{4}\s?\d{6}/g;
 const PAGE_REGEX = /\/(contact|about|services|projects)\b/gi;
 
 // TODO: replace with your real emergency / urgent-callout number
-const EMERGENCY_PHONE = "+44 7342 324660";
+const EMERGENCY_PHONE = "07378 412002";
 
 function PhoneIcon() {
   return (

@@ -588,6 +588,7 @@ export default function ServiceDetailView({
             <div className="space-y-28 lg:space-y-36">
               {sections.map((section, i) => {
                 const imageOnRight = section.layout === "image-right";
+                const hasImage = Boolean(section.image?.url);
 
                 const position = `${String(i + 1).padStart(2, "0")} / ${String(
                   sections.length,
@@ -599,6 +600,57 @@ export default function ServiceDetailView({
                     id={section.id || undefined}
                     className="scroll-mt-24"
                   >
+                    {!hasImage ? (
+                      /* No image — a full-width feature panel: warm tint,
+                         brass edge, spec-sheet header and an oversized ghost
+                         numeral, so it reads as designed, not empty. */
+                      <div className="group relative mx-auto max-w-[1080px] overflow-hidden border border-[#1C1712]/[0.08] border-l-[3px] border-l-[#A26028] bg-[#FBF8F3] px-6 py-10 sm:px-12 sm:py-14">
+                        <span
+                          aria-hidden="true"
+                          className="bsl-dot-grid pointer-events-none absolute inset-0 opacity-60 [mask-image:radial-gradient(circle_at_100%_0%,black,transparent_60%)]"
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="bsl-serif pointer-events-none absolute -right-4 -top-10 select-none text-[8rem] font-medium leading-none text-[#A26028]/[0.07] sm:text-[12rem]"
+                        >
+                          {String(i + 1).padStart(2, "0")}
+                        </span>
+
+                        <div className="relative">
+                          <div className="mb-6 flex items-center gap-4">
+                            <span className="bsl-mono shrink-0 text-[0.68rem] font-medium tracking-[0.2em] text-[#A26028]">
+                              {position}
+                            </span>
+                            <span aria-hidden="true" className="h-px flex-1 bg-[#1C1712]/10" />
+                            <span
+                              aria-hidden="true"
+                              className="h-1.5 w-1.5 rotate-45 bg-[#E8C599]"
+                            />
+                          </div>
+
+                          {section.title && (
+                            <h3 className="bsl-serif mb-6 max-w-[24ch] text-[clamp(1.8rem,3.2vw,2.7rem)] font-medium leading-[1.16] tracking-[-0.01em] text-[#1C1712]">
+                              {section.title}
+                            </h3>
+                          )}
+
+                          <RichText
+                            content={section.content}
+                            className="max-w-[64ch] text-[1.03rem] leading-[1.95] text-[#5C544A]"
+                          />
+
+                          {section.cta && (
+                            <Link
+                              href={section.cta.href || "#quote"}
+                              className="bsl-focus group/cta mt-8 inline-flex items-center gap-2 rounded-full border border-[#A26028] px-5 py-2.5 text-[0.76rem] font-semibold uppercase tracking-[0.06em] text-[#A26028] transition-all duration-200 ease-out hover:bg-[#A26028] hover:text-white"
+                            >
+                              {section.cta.label}
+                              <ArrowIcon size={12} />
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
                     <div
                       className={`bsl-section-row group mx-auto flex max-w-[1080px] flex-col items-start gap-12 lg:gap-16 ${
                         imageOnRight ? "lg:flex-row-reverse" : "lg:flex-row"
@@ -667,6 +719,7 @@ export default function ServiceDetailView({
                         )}
                       </div>
                     </div>
+                    )}
                   </Reveal>
                 );
               })}

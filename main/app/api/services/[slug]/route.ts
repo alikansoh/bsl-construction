@@ -155,8 +155,12 @@ export async function PUT(
 
     // Bust any cached renders of the public-facing pages so the
     // published/draft changes actually show up without a redeploy.
-    revalidatePath(`/services/${service.slug}`);
     revalidatePath("/services");
+    revalidatePath("/services/[slug]", "page");
+    revalidatePath(`/services/${service.slug}`);
+    if (service.categorySlug) {
+      revalidatePath(`/services/${service.categorySlug}`);
+    }
 
     return NextResponse.json({
       success: true,
@@ -221,8 +225,12 @@ export async function DELETE(
       );
     }
 
-    revalidatePath(`/services/${slug}`);
     revalidatePath("/services");
+    revalidatePath("/services/[slug]", "page");
+    revalidatePath(`/services/${slug}`);
+    if (service.categorySlug) {
+      revalidatePath(`/services/${service.categorySlug}`);
+    }
 
     return NextResponse.json({
       success: true,

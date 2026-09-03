@@ -1,13 +1,19 @@
 // lib/services.ts
+//
+// Server-only data access for Services. This talks to MongoDB DIRECTLY
+// (same as the /api/services route) rather than fetching the site's own
+// HTTP API. Fetching your own deployment over HTTP breaks on Vercel:
+// `generateStaticParams` has no request origin, Deployment Protection
+// returns a 401 login page instead of JSON, and a wrong/blank
+// NEXT_PUBLIC_SITE_URL points the request nowhere — all of which made
+// every /services/[slug] page fall through to notFound() (404).
+//
+// NOTE: only the *types* from this file may be imported into client
+// components (`import type { ... }`). The functions pull in Mongoose and
+// must stay server-side.
 
-/* -------------------------------------------------------------------------- */
-/* Config                                                                     */
-/* -------------------------------------------------------------------------- */
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
-
-const DEFAULT_REVALIDATE_SECONDS = 300;
+import { connectDB } from "@/lib/mongodb";
+import ServiceModel from "@/models/Service";
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -245,50 +251,6 @@ type RawService = {
 
   seo?: RawSeo;
 };
-
-type ServicesListResponse = {
-  success: boolean;
-  count?: number;
-  services?: RawService[];
-  message?: string;
-};
-
-/* -------------------------------------------------------------------------- */
-/* Fetch Helper                                                               */
-/* -------------------------------------------------------------------------- */
-
-async function fetchJson<T>(
-  path: string,
-  revalidate: number = DEFAULT_REVALIDATE_SECONDS
-): Promise<T | null> {
-  try {
-    const response = await fetch(
-      `${API_BASE_URL}${path}`,
-      {
-        next: {
-          revalidate,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      console.error(
-        `Services API error: ${response.status} ${response.statusText}`
-      );
-
-      return null;
-    }
-
-    return (await response.json()) as T;
-  } catch (error) {
-    console.error(
-      `Services API fetch failed: ${path}`,
-      error
-    );
-
-    return null;
-  }
-}
 
 /* -------------------------------------------------------------------------- */
 /* Service Type Resolver                                                      */
@@ -768,37 +730,19 @@ function normalizeService(
 /* Get All Services                                                           */
 /* -------------------------------------------------------------------------- */
 
-export async function getAllServices(): Promise<
-  Service[]
-> {
-  const data =
-    await fetchJson<ServicesListResponse>(
-      "/api/services"
-    );
+export async function getAllServices(): Promise<Service[]> {
+  try {
+    await connectDB();
 
-  if (
-    !data?.success ||
-    !Array.isArray(
-      data.services
-    )
-  ) {
+    const docs = await ServiceModel.find({ status: "published" })
+      .sort({ displayOrder: 1, createdAt: -1 })
+      .lean();
+
+    return (docs as unknown as RawService[]).map(normalizeService);
+  } catch (error) {
+    console.error("Failed to load services from the database", error);
     return [];
   }
-
-  return data.services
-    .filter(
-      (service) =>
-        service.status ===
-        "published"
-    )
-    .sort(
-      (a, b) =>
-        (a.displayOrder ?? 0) -
-        (b.displayOrder ?? 0)
-    )
-    .map(
-      normalizeService
-    );
 }
 
 /* -------------------------------------------------------------------------- */

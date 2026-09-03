@@ -125,7 +125,7 @@ const ORGANIZATION_STRUCTURED_DATA = {
   logo: `${SITE_URL}/logo.png`,
   image: `${SITE_URL}/og-image.png`,
   description: SITE_DESCRIPTION,
-  telephone: "+44 7342 324660",
+  telephone: "07378 412002",
   email: "info@bslconstruction.co.uk",
   areaServed: {
     "@type": "City",

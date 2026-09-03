@@ -189,8 +189,8 @@ export default function TermsOfServicePage() {
                       </a>
                       <br />
                       Phone:{" "}
-                      <a href="tel:+447342324660" className="text-[#A26028] hover:underline">
-                        +44 7342 324660
+                      <a href="tel:+447378412002" className="text-[#A26028] hover:underline">
+                        07378 412002
                       </a>
                       <br />
                       Based in London, United Kingdom
