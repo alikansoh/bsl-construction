@@ -378,6 +378,7 @@ const SHARED_AREAS = [
   "Haringey",
   "Barnet",
   "Brent",
+  "Harrow",
   "Ealing",
   "Hounslow",
   "Enfield",

@@ -308,9 +308,6 @@ export default function Projects() {
   const activeIndexRef = useRef(0);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
 
-  const touchStartX = useRef(0);
-  const touchStartY = useRef(0);
-  const touchTracking = useRef(false);
   const swipeConsumedClick = useRef(false);
 
   useEffect(() => {
@@ -384,42 +381,68 @@ export default function Projects() {
     }, 180);
   }
 
-  function handleTouchStart(e: React.TouchEvent) {
-    if (scrollTriggerRef.current) return;
-    const touch = e.touches[0];
-    touchStartX.current = touch.clientX;
-    touchStartY.current = touch.clientY;
-    touchTracking.current = true;
-  }
-
-  function handleTouchEnd(e: React.TouchEvent) {
-    if (!touchTracking.current) return;
-    touchTracking.current = false;
-
-    const touch = e.changedTouches[0];
-    const dx = touch.clientX - touchStartX.current;
-    const dy = touch.clientY - touchStartY.current;
-
-    if (Math.abs(dx) < SWIPE_THRESHOLD || Math.abs(dx) < Math.abs(dy)) return;
-
-    // A real horizontal swipe happened — stop the hero <a> from also firing a
-    // click and navigating to the project page instead of switching projects.
-    swipeConsumedClick.current = true;
-    e.preventDefault();
-
-    if (dx < 0) {
-      goTo(activeIndexRef.current + 1);
-    } else {
-      goTo(activeIndexRef.current - 1);
-    }
-  }
-
   function handleHeroClick(e: React.MouseEvent) {
     if (swipeConsumedClick.current) {
       e.preventDefault();
       swipeConsumedClick.current = false;
     }
   }
+
+  /* Touch swipe on the hero image (mobile). Native non-passive listeners so
+     preventDefault() can stop the page scroll and the <a> link firing. */
+  useEffect(() => {
+    const el = heroRef.current;
+    if (!el || total <= 1) return;
+
+    let startX = 0;
+    let startY = 0;
+    let horizontal = false;
+
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0];
+      startX = t.clientX;
+      startY = t.clientY;
+      horizontal = false;
+    };
+
+    const onMove = (e: TouchEvent) => {
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      if (!horizontal && Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        horizontal = true;
+      }
+      if (horizontal) {
+        // stop vertical scroll + the browser's native link drag
+        e.preventDefault();
+      }
+    };
+
+    const onEnd = (e: TouchEvent) => {
+      if (!horizontal) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      // any real horizontal drag cancels the click-through to the project page
+      swipeConsumedClick.current = true;
+      if (Math.abs(dx) >= SWIPE_THRESHOLD) {
+        goTo(activeIndexRef.current + (dx < 0 ? 1 : -1));
+      }
+    };
+
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd, { passive: true });
+    el.addEventListener("touchcancel", onEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+    // goTo is stable enough (only reads refs + setState); re-bind when the
+    // stage (re)mounts or the project count changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [total, loadState]);
 
   useEffect(() => {
     const handleResize = () => setNavbarHeight(getNavbarHeight());
@@ -701,8 +724,6 @@ export default function Projects() {
                   onMouseLeave={() => heroTimeline.current?.reverse()}
                   onFocus={() => heroTimeline.current?.play()}
                   onBlur={() => heroTimeline.current?.reverse()}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
                   onClick={handleHeroClick}
                   style={{ touchAction: "pan-y" }}
                   className="group relative block overflow-hidden rounded-2xl bg-white transition-shadow duration-300 ease-out hover:shadow-[0_28px_56px_-20px_rgba(28,23,18,0.28),0_8px_20px_-8px_rgba(162,96,40,0.18)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#A26028]"

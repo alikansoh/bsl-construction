@@ -33,22 +33,31 @@ export default function ServiceQuoteForm({
 
     const formData = new FormData(form);
 
+    const baseMessage = String(formData.get("message") || "").trim();
+    const projectType = String(formData.get("projectType") || "").trim();
+    const postcode = String(formData.get("postcode") || "").trim();
+
+    const context = [
+      projectType && `Enquiry type: ${projectType}`,
+      postcode && `Postcode: ${postcode}`,
+      serviceSlug && `Service page: /services/${serviceSlug}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
     const data = {
       name: formData.get("name"),
       email: formData.get("email"),
       phone: formData.get("phone"),
-      postcode: formData.get("postcode"),
-      projectType: formData.get("projectType"),
-      message: formData.get("message"),
 
-      // Automatically attached service information
-      service: selectedService,
-      category,
-      serviceSlug,
+      // Automatically attached — the service for this page
+      service: [selectedService, category].filter(Boolean).join(" — "),
+
+      message: [baseMessage, context].filter(Boolean).join("\n\n"),
     };
 
     try {
-      const response = await fetch("/api/quote", {
+      const response = await fetch("/api/bookings", {
         method: "POST",
 
         headers: {
@@ -98,6 +107,37 @@ export default function ServiceQuoteForm({
         name="serviceSlug"
         value={serviceSlug}
       />
+
+      {/* Service — auto-filled from this page */}
+
+      {selectedService && (
+        <div className="mb-6">
+          <label
+            htmlFor="service-display"
+            className="bsl-mono mb-2 block text-[0.68rem] uppercase tracking-[0.15em] text-[#6E6259]"
+          >
+            Service
+          </label>
+
+          <div className="flex items-center gap-2 rounded-xl border border-[#A26028]/25 bg-[#A26028]/[0.06] px-4 py-3.5">
+            <svg width="15" height="15" viewBox="0 0 14 14" fill="none" aria-hidden="true" className="shrink-0 text-[#A26028]">
+              <path d="M2 7.5L5.5 11L12 3.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <input
+              id="service-display"
+              type="text"
+              value={category ? `${selectedService} — ${category}` : selectedService}
+              readOnly
+              className="w-full bg-transparent text-sm font-medium text-[#1C1712] outline-none"
+            />
+          </div>
+
+          <p className="mt-1.5 text-xs text-[#8A8074]">
+            Automatically set from this page — your enquiry goes straight to our
+            bookings.
+          </p>
+        </div>
+      )}
 
       <div className="grid gap-6 sm:grid-cols-2">
         {/* Name */}

@@ -13,7 +13,7 @@ const SHARED_AREAS = [
   "Islington", "Hackney", "Hammersmith & Fulham", "Wandsworth",
   "Richmond upon Thames", "Kingston upon Thames", "Merton", "Lambeth",
   "Southwark", "Lewisham", "Greenwich", "Tower Hamlets", "Haringey",
-  "Barnet", "Brent", "Ealing", "Hounslow", "Enfield", "Bromley", "Croydon",
+  "Barnet", "Brent", "Harrow", "Ealing", "Hounslow", "Enfield", "Bromley", "Croydon",
 ];
 
 type PageProps = {

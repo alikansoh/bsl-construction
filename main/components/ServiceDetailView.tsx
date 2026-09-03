@@ -1178,7 +1178,11 @@ export default function ServiceDetailView({
             </div>
 
             <div>
-              <QuoteForm defaultService={serviceTitle} serviceSlug={service.slug} />
+              <QuoteForm
+                defaultService={serviceTitle}
+                serviceSlug={service.slug}
+                category={categoryName}
+              />
             </div>
           </div>
         </div>

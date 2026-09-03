@@ -68,6 +68,7 @@ const NAV_LINKS = ["Home", "About", "Services", "Projects", "Contact" ];
 // Mirrors FAQ.tsx's "areas-covered" answer.
 const AREAS = [
   "Ealing",
+  "Harrow",
   "Fulham",
   "Wembley",
   "Chiswick",
