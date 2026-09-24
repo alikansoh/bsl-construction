@@ -8,6 +8,8 @@ import OurProcess from "@/components/OurProcess";
 import Gallery from "@/components/Gallery";
 import Cta from "@/components/Cta";
 import FAQ from "@/components/Faqs";
+import AccreditationsMarquee from "@/components/AccreditationsMarquee";
+import HotelCommercial from "@/components/HotelCommercial";
 
 export default function Home() {
   return (
@@ -16,12 +18,14 @@ export default function Home() {
     <WhoWeAre />
 
     <Services />
+    <HotelCommercial />
     <Projects />
     <WhyChooseUs />
     <OurProcess />
     <Gallery />
     <Cta />
     <FAQ />
+    <AccreditationsMarquee />
 
       </main>
   );

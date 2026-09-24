@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { sendEnquiryEmail } from "@/lib/emailjs";
 
 type ServiceQuoteFormProps = {
   defaultService?: string;
@@ -46,9 +47,9 @@ export default function ServiceQuoteForm({
       .join("\n");
 
     const data = {
-      name: formData.get("name"),
-      email: formData.get("email"),
-      phone: formData.get("phone"),
+      name: String(formData.get("name") || ""),
+      email: String(formData.get("email") || ""),
+      phone: String(formData.get("phone") || ""),
 
       // Automatically attached — the service for this page
       service: [selectedService, category].filter(Boolean).join(" — "),
@@ -72,6 +73,8 @@ export default function ServiceQuoteForm({
           "Failed to submit quote request"
         );
       }
+
+      await sendEnquiryEmail(data);
 
       form.reset();
 

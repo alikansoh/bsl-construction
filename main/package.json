@@ -13,6 +13,7 @@
     "@editorjs/header": "^2.8.9",
     "@editorjs/list": "^2.0.9",
     "@editorjs/quote": "^2.7.6",
+    "@emailjs/browser": "^4.4.1",
     "@google/generative-ai": "^0.24.1",
     "@lexical/history": "^0.48.0",
     "@lexical/link": "^0.48.0",

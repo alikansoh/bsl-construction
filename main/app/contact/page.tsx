@@ -22,6 +22,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Fraunces } from "next/font/google";
+import { sendEnquiryEmail } from "@/lib/emailjs";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -310,6 +311,8 @@ export default function ContactUs() {
       if (!response.ok || !data.success) {
         throw new Error(data.message || "Something went wrong sending your message.");
       }
+
+      await sendEnquiryEmail(form);
 
       setStatus("success");
       setForm(INITIAL_FORM);
