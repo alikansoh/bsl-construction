@@ -104,11 +104,20 @@ function serviceHref(service: NavService) {
   return `/services/${service.slug}`;
 }
 
-// Assumption: there's no dedicated category page, so a category name
-// links to the services page filtered to that category via query param.
-// If BSL adds real category pages later, swap this for `/services/category/${categorySlug}`.
+// The three top-level categories have dedicated pages at
+// /services/construction, /services/mechanical-electrical and
+// /services/commercial. Anything else (an orphaned category) falls back to
+// the filtered services index.
+const CATEGORY_PAGE_SLUGS = new Set([
+  "construction",
+  "mechanical-electrical",
+  "commercial",
+]);
+
 function categoryHref(categorySlug: string) {
-  return `/services?category=${categorySlug}`;
+  return CATEGORY_PAGE_SLUGS.has(categorySlug)
+    ? `/services/${categorySlug}`
+    : `/services?category=${categorySlug}`;
 }
 
 /* ----------------------------------------------------------------------- */
