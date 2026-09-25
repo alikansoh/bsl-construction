@@ -409,6 +409,17 @@ export default function Footer() {
               <Link href="/privacy" className="footer-link">Privacy Policy</Link>
               <Link href="/terms" className="footer-link">Terms of Service</Link>
             </span>
+            <span>
+              Designed &amp; developed by{" "}
+              <a
+                href="https://viorix.co.uk"
+                target="_blank"
+                rel="noopener"
+                className="footer-link font-semibold text-white/70"
+              >
+                Viorix Digital Solutions
+              </a>
+            </span>
           </div>
 
           <div className="flex items-center gap-5">
