@@ -71,7 +71,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     title: "Construction",
     description:
       "From new builds and extensions to conversions, refurbishments, kitchens, bathrooms and roofing.",
-    image: "/building.jpg",
+    image: "/cons.jpeg",
     href: "/services/construction",
     services: [
       "New Builds",
@@ -90,7 +90,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     title: "Mechanical & Electrical",
     description:
       "Complete mechanical and electrical services covering plumbing, heating, gas, air conditioning and electrical systems.",
-    image: "/main.jpg",
+    image: "/main.jpeg",
     href: "/services/mechanical-electrical",
     services: [
       "Plumbing",
@@ -110,7 +110,7 @@ const SERVICE_CATEGORIES: ServiceCategory[] = [
     title: "Commercial",
     description:
       "Reliable maintenance and facilities support for hotels, commercial properties and managed buildings.",
-    image: "/com.jpg",
+    image: "/com.jpeg",
     href: "/services/commercial",
     services: [
       "Hotel Maintenance",

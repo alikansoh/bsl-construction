@@ -36,7 +36,7 @@ export default async function MechanicalElectricalPage() {
 
         <div className="absolute inset-0">
           <Image
-            src="/main.jpg"
+            src="/main.jpeg"
             alt="Mechanical and electrical services by BSL Construction"
             fill
             priority

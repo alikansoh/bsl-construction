@@ -9,7 +9,9 @@ const LOGOS = [
   { name: "Checkatrade", src: "/check.png" },
   { name: "Vaillant", src: "/vaillant.jpg" },
   { name: "WRAS Approved", src: "/wras.webp" },
-  {name:"houzz",src:"/houzz.png"}
+  {name:"houzz",src:"/houzz.png"},
+  {name:"f-gas",src:"/f-gas.png"}
+
 ];
 
 function Logo({ name, src }: { name: string; src: string }) {
